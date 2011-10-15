@@ -58,6 +58,12 @@ function runSingleTest(fun, name) {
   });
 }
 
+function log(message) {
+  var div = document.createElement('div');
+  div.innerText = message;
+  document.body.appendChild(div);
+}
+
 function runTedirTests() {
   var tests = [];
   for (var prop in this) {
