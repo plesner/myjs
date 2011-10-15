@@ -471,5 +471,224 @@ var tedir = tedir || (function (namespace) {
     }
   };
 
+  /**
+   * A "hard" token with a string value.
+   */
+  function Token(value, typeOpt) {
+    this.value = value;
+    this.type = typeOpt || value;
+  }
+  
+  Token.prototype.toString = function () {
+    if (this.value != this.type) {
+      return "[" + this.type + ":" + this.value + "]";
+    } else {
+      return "[" + this.value + "]";
+    }
+  }
+
+  /**
+   * A "soft" piece of ether that doesn't affect parsing but which we need
+   * to keep around to be able to unparse the code again.
+   */
+  function Ether(value) {
+    this.value = value;
+  }
+  
+  Ether.prototype.toString = function () {
+    return "(" + this.value + ")";
+  };
+
+  /**
+   * A simple stream that provides the contents of a string one char at a
+   * time.
+   */  
+  function JavaScriptScanner(source, settingsOpt) {
+    this.settings = settingsOpt || new JavaScriptTokenizerSettings(DEFAULT_KEYWORDS);
+    this.source = source;
+    this.cursor = 0;
+  }
+  
+  JavaScriptScanner.prototype.getCurrent = function () {
+    return this.source[this.cursor];
+  };
+  
+  /**
+   * Does this character stream have more characters?
+   */
+  JavaScriptScanner.prototype.hasMore = function () {
+    return this.cursor < this.source.length;
+  };
+  
+  /**
+   * Advances the stream to the next character.
+   */
+  JavaScriptScanner.prototype.advance = function () {
+    this.cursor++;
+  };
+
+  /**
+   * Advances the stream to the next character and returns it.
+   */
+  JavaScriptScanner.prototype.advanceAndGet = function () {
+    this.cursor++;
+    return this.getCurrent();
+  };
+  
+  JavaScriptScanner.prototype.getCursor = function () {
+    return this.cursor;
+  };
+  
+  JavaScriptScanner.prototype.getPart = function (start, end) {
+    return this.source.substring(start, end);
+  }
+  
+  var DEFAULT_KEYWORDS = ["for", "var"];
+  
+  function JavaScriptTokenizerSettings(keywords) {
+    this.keywords = {};
+    keywords.forEach(function (word) {
+      this.keywords[word] = true;
+    }.bind(this));
+  }
+  
+  JavaScriptTokenizerSettings.prototype.isKeyword = function (word) {
+    return this.keywords[word];
+  };
+  
+  namespace.tokenizeJavaScript = tokenizeJavaScript;
+  /**
+   * Returns the tokens of a piece of JavaScript source code.
+   */
+  function tokenizeJavaScript(source, settings) {
+    var stream = new JavaScriptScanner(source, settings);
+    var tokens = [];
+    while (stream.hasMore()) {
+      var next = stream.scanToken();
+      tokens.push(next);
+    }
+    return tokens;
+  }
+  
+  var SHORT_DELIMITERS = "(),:;?[]{}~";
+  var SHORT_DELIMITER_MAP = {};
+  for (var i = 0; i < SHORT_DELIMITERS.length; i++) {
+    SHORT_DELIMITER_MAP[SHORT_DELIMITERS[i]] = true;
+  }
+
+  /**
+   * Is the given string a single character of whitespace?
+   */
+  function isWhiteSpace(c) {
+    return /\s/.test(c);
+  }
+  
+  function isDigit(c) {
+    return /[\d]/.test(c);
+  }
+  
+  /**
+   * Is this character allowed as the first in an identifier?
+   */
+  function isIdentifierStart(c) {
+    return /[\w]/.test(c);
+  }
+
+  /**
+   * Is this character allowed as the first in an identifier?
+   */
+  function isIdentifierPart(c) {
+    return /[\w\d]/.test(c);
+  }
+  
+  /**
+   * Extracts the next JavaScript token from the given stream.
+   */
+  JavaScriptScanner.prototype.scanToken = function () {
+    var c = this.getCurrent();
+    if (isWhiteSpace(c)) {
+      return this.scanWhiteSpace();
+    } else if (SHORT_DELIMITER_MAP[c]) {
+      return this.yield(c);
+    } else if (isDigit(c)) {
+      return this.scanNumber(c);
+    } else if (isIdentifierStart(c)) {
+      return this.scanIdentifier(c);
+    }
+    switch (c) {
+      case "=":
+        if (this.advanceAndGet() == "=") {
+          return this.skipWithFallback("=", "===", "==");
+        } else {
+          return new Token("=");
+        }
+      case "<":
+        return this.yield("<");
+      case "+":
+        switch (this.advanceAndGet()) {
+          case "+":
+            return this.yield("++");
+          case "=":
+            return this.yield("+=");
+          default:
+            return new Token("+");
+        }
+      default:
+        this.advance();
+        return c;
+    }
+  }
+  
+  /**
+   * Skips over the current character and returns a token with the given
+   * contents.
+   */
+  JavaScriptScanner.prototype.yield = function (value) {
+    this.advance();
+    return new Token(value);
+  };
+  
+  JavaScriptScanner.prototype.yieldWithFallback = function (match, ifMatch, ifNotMatch) {
+    if (this.getCurrent() == match) {
+      this.advance();
+      return new Token(ifMatch);
+    } else {
+      return new Token(ifNotMatch);
+    }
+  }
+  
+  /**
+   * Scans a single block of whitespace.
+   */
+  JavaScriptScanner.prototype.scanWhiteSpace = function () {
+    var start = this.getCursor();
+    while (this.hasMore() && isWhiteSpace(this.getCurrent()))
+      this.advance();
+    var end = this.getCursor();
+    return new Ether(this.getPart(start, end));
+  };
+  
+  JavaScriptScanner.prototype.scanIdentifier = function () {
+    var start = this.getCursor();
+    while (this.hasMore() && isIdentifierPart(this.getCurrent()))
+      this.advance();
+    var end = this.getCursor();
+    var value = this.getPart(start, end);
+    if (this.settings.isKeyword(value)) {
+      return new Token(value);
+    } else {
+      return new Token(value, "ident");
+    }
+  };
+  
+  JavaScriptScanner.prototype.scanNumber = function () {
+    var start = this.getCursor();
+    while (this.hasMore() && isDigit(this.getCurrent()))
+      this.advance();
+    var end = this.getCursor();
+    var value = this.getPart(start, end);
+    return new Token(value, "number");
+  };
+
   return namespace;
 })({});

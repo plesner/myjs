@@ -35,3 +35,7 @@ function testSyntax() {
   runParserTest([[10, [10, 10]]], "( 10 + ( 10 + 10 ) )");  
   runParserTest([[[10, 10], [10, 10]]], "( ( 10 + 10 ) + ( 10 + 10 ) )");  
 }
+
+function testJsTokenizing() {
+  log(tedir.tokenizeJavaScript("for (var i = 0; i < 10; i++) { }"));
+}
