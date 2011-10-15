@@ -1,7 +1,7 @@
 "use strict";
 
 // Declare namespace
-var tedir = tedir || (function defineTedir(namespace) {
+var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   /**
    * Signals an error condition in tedir.

@@ -2,6 +2,7 @@
 
 function testDefined() {
   assertTrue(tedir);
+  assertTrue(myjs);
 }
 
 function getExpressionSyntax() {
@@ -74,11 +75,15 @@ function testLint() {
     eqeq: true,
     plusplus: true
   };
-  if (!JSLINT(tedir.getSource(), options)) {
-    JSLINT.errors.forEach(function (error) {
-      if (error) {
-        log((error.line + 3) + ": " + error.reason, "red");
-      }
-    });
-  }
+  [tedir, myjs].forEach(function (module) {
+    var source = module.getSource();
+    var offset = Number(/offset: (\d+)/.exec(source)[1]);
+    if (!JSLINT(source, options)) {
+      JSLINT.errors.forEach(function (error) {
+        if (error) {
+          log((error.line + offset) + ": " + error.reason, "red");
+        }
+      });
+    }
+  });
 }
