@@ -36,6 +36,24 @@ function testSyntax() {
   runParserTest([[[10, 10], [10, 10]]], "( ( 10 + 10 ) + ( 10 + 10 ) )");  
 }
 
-function testJsTokenizing() {
-  log(tedir.tokenizeJavaScript("for (var i = 0; i < 10; i++) { }"));
+function runTokenTest(expected, source) {
+  var elements = tedir.tokenizeJavaScript(source);
+  var tokens = [];
+  elements.forEach(function (element) {
+    if (!element.isEther()) {
+      if (element.type != element.value) {
+        tokens.push(element.type + ":" + element.value);
+      } else {
+        tokens.push(element.value);
+      }
+    }
+  });
+  assertListEquals(expected, tokens);
+}
+
+function testTokenizing() {
+  runTokenTest(["=", "==", "==="], "= == ===");
+  runTokenTest(["ident:f", "ident:fo", "for", "ident:fork"], "f fo for fork");
+  runTokenTest(["number:0", "number:10", "number:2343"], "0 10 2343");
+  runTokenTest(["(", "[", ",", ";", "]", ")"], "([,;])");
 }

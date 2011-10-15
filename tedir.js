@@ -479,6 +479,10 @@ var tedir = tedir || (function (namespace) {
     this.type = typeOpt || value;
   }
   
+  Token.prototype.isEther = function () {
+    return false;
+  };
+  
   Token.prototype.toString = function () {
     if (this.value != this.type) {
       return "[" + this.type + ":" + this.value + "]";
@@ -497,6 +501,10 @@ var tedir = tedir || (function (namespace) {
   
   Ether.prototype.toString = function () {
     return "(" + this.value + ")";
+  };
+  
+  Ether.prototype.isEther = function () {
+    return true;
   };
 
   /**
@@ -618,7 +626,7 @@ var tedir = tedir || (function (namespace) {
     switch (c) {
       case "=":
         if (this.advanceAndGet() == "=") {
-          return this.skipWithFallback("=", "===", "==");
+          return this.yieldWithFallback("=", "===", "==");
         } else {
           return new Token("=");
         }
@@ -648,12 +656,17 @@ var tedir = tedir || (function (namespace) {
     return new Token(value);
   };
   
-  JavaScriptScanner.prototype.yieldWithFallback = function (match, ifMatch, ifNotMatch) {
-    if (this.getCurrent() == match) {
+  /**
+   * Skips over the current character and if the next character matches
+   * the given 'match' skips another and return 'ifMatch', otherwise
+   * return 'ifNoMatch'.
+   */
+  JavaScriptScanner.prototype.yieldWithFallback = function (match, ifMatch, ifNoMatch) {
+    if (this.advanceAndGet() == match) {
       this.advance();
       return new Token(ifMatch);
     } else {
-      return new Token(ifNotMatch);
+      return new Token(ifNoMatch);
     }
   }
   
