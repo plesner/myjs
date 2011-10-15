@@ -14,7 +14,7 @@ function getExpressionSyntax() {
   // <atom>
   //   -> $number
   //   |  "(" <expr> ")"
-  syntax.addRule("atom", f.token("10"));
+  syntax.addRule("atom", f.token("number"));
   syntax.addRule("atom", f.seq(f.token("("), f.nonterm("expr"), f.token(")")));
   return syntax;
 }
@@ -23,17 +23,17 @@ var EXPR = getExpressionSyntax();
 
 function runParserTest(expected, source) {
   var parser = new tedir.Parser(EXPR);
-  var tokens = source.split(" ");
+  var tokens = tedir.tokenizeJavaScript(source);
   assertListEquals(expected, parser.parse("expr", tokens));
 }
 
 function testSyntax() {
   runParserTest([10], "10");
-  runParserTest([10, 10], "10 + 10");
-  runParserTest([10, 10, 10], "10 + 10 + 10");
-  runParserTest([[10, 10, 10]], "( 10 + 10 + 10 )");  
-  runParserTest([[10, [10, 10]]], "( 10 + ( 10 + 10 ) )");  
-  runParserTest([[[10, 10], [10, 10]]], "( ( 10 + 10 ) + ( 10 + 10 ) )");  
+  runParserTest([11, 12], "11 + 12");
+  runParserTest([13, 14, 15], "13 + 14 + 15");
+  runParserTest([[16, 17, 18]], "(16 + 17 + 18)");  
+  runParserTest([[19, [20, 21]]], "(19 + (20 + 21))");  
+  runParserTest([[[22, 23], [24, 25]]], "((22 + 23) + (24 + 25))");  
 }
 
 function runTokenTest(expected, source) {

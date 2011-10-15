@@ -136,9 +136,9 @@ var tedir = tedir || (function (namespace) {
   
   Token.prototype.parse = function (parser, stream) {
     var current = stream.getCurrent();
-    if (stream.getCurrent() == this.value) {
+    if (stream.getCurrent().type == this.value) {
       stream.advance();
-      return current;
+      return current.value;
     } else {
       return ERROR_MARKER;
     }
@@ -427,20 +427,33 @@ var tedir = tedir || (function (namespace) {
     return this.syntax.getNonterm(name).normalize();
   };
   
+  var END_TOKEN = new Token("eof");
+  
   function TokenStream(tokens) {
     this.tokens = tokens;
     this.cursor = 0;
     this.highWaterMark = 0;
+    this.skipEther();
   }
   
   TokenStream.prototype.getCurrent = function () {
-    return this.tokens[this.cursor];
+    return this.hasMore() ? this.tokens[this.cursor] : END_TOKEN;
+  };
+  
+  TokenStream.prototype.hasMore = function () {
+    return this.cursor < this.tokens.length;
+  }
+  
+  TokenStream.prototype.skipEther = function () {
+    while (this.hasMore() && this.getCurrent().isEther())
+      this.cursor++;
+    if (this.cursor > this.highWaterMark)
+      this.highWaterMark = this.cursor;    
   };
   
   TokenStream.prototype.advance = function () {
     this.cursor++;
-    if (this.cursor > this.highWaterMark)
-      this.highWaterMark = this.cursor;
+    this.skipEther();
   };
   
   TokenStream.prototype.getCursor = function () {
@@ -590,11 +603,11 @@ var tedir = tedir || (function (namespace) {
   function isWhiteSpace(c) {
     return /\s/.test(c);
   }
-  
+
   function isDigit(c) {
     return /[\d]/.test(c);
   }
-  
+
   /**
    * Is this character allowed as the first in an identifier?
    */
@@ -608,7 +621,7 @@ var tedir = tedir || (function (namespace) {
   function isIdentifierPart(c) {
     return /[\w\d]/.test(c);
   }
-  
+
   /**
    * Extracts the next JavaScript token from the given stream.
    */
@@ -646,7 +659,7 @@ var tedir = tedir || (function (namespace) {
         return c;
     }
   }
-  
+
   /**
    * Skips over the current character and returns a token with the given
    * contents.

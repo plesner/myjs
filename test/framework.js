@@ -42,18 +42,24 @@ function deferredFor(from, to, thunk, onDone) {
   }
 }
 
+var CATCH_ERRORS = true;
+
 function runSingleTest(fun, name) {
   var div = document.createElement('div');
   div.innerText = name;
   div.style.color = "grey";
   document.body.appendChild(div);
   defer(function () {
-    try {
+    if (CATCH_ERRORS) {
+      try {
+        fun();
+        div.style.color = "green";
+      } catch (e) {
+        div.style.color = "red";
+        div.innerText += " (" + e + ")";
+      }
+    } else {
       fun();
-      div.style.color = "green";
-    } catch (e) {
-      div.style.color = "red";
-      div.innerText += " (" + e + ")";
     }
   });
 }
