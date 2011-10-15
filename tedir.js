@@ -193,7 +193,7 @@ var tedir = tedir || (function (namespace) {
         result.push(value);
       }
     }
-    return result;
+    return result.length == 1 ? result[0] : result;
   };
   
   Sequence.prototype.normalize = function () {

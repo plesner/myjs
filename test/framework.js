@@ -64,6 +64,40 @@ function log(message) {
   document.body.appendChild(div);
 }
 
+function compareLists(one, two) {
+  if (one === two)
+    return true;
+  if (Array.isArray(one) != Array.isArray(two))
+    return false;
+  if (one.length != two.length)
+    return false;
+  for (var i = 0; i < one.length; i++) {
+    var vOne = one[i];
+    var vTwo = two[i];
+    if (Array.isArray(vOne) && Array.isArray(vTwo)) {
+      if (!compareLists(vOne, vTwo))
+        return false;
+    } else if (one[i] != two[i]) {
+      return false;
+    }
+  }
+  return true
+}
+
+function assertListEquals(one, two) {
+  if (!compareLists(one, two)) {
+    failComparison(listToString(one), listToString(two));
+  }
+}
+
+function listToString(obj) {
+  if (Array.isArray(obj)) {
+    return "[" + obj.map(listToString).join(", ") + "]"
+  } else {
+    return String(obj);
+  }
+}
+
 function runTedirTests() {
   var tests = [];
   for (var prop in this) {
