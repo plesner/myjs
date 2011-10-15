@@ -64,9 +64,12 @@ function runSingleTest(fun, name) {
   });
 }
 
-function log(message) {
+function log(message, colorOpt) {
   var div = document.createElement('div');
   div.innerText = message;
+  if (colorOpt) {
+    div.style.color = colorOpt;
+  }
   document.body.appendChild(div);
 }
 

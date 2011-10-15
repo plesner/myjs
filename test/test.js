@@ -9,13 +9,16 @@ function getExpressionSyntax() {
   var f = tedir.factory;
   // <expr>
   //   -> <atom> +: "+"
-  syntax.addRule("expr", f.plus(f.nonterm("atom"), f.token("+")));
+  syntax.toRule("expr")
+      .addProd(f.plus(f.nonterm("atom"), f.token("+")));
 
   // <atom>
   //   -> $number
   //   |  "(" <expr> ")"
-  syntax.addRule("atom", f.token("number"));
-  syntax.addRule("atom", f.seq(f.token("("), f.nonterm("expr"), f.token(")")));
+  syntax.toRule("atom")
+      .addProd(f.token("number"))
+      .addProd(f.seq(f.token("("), f.nonterm("expr"), f.token(")")));
+
   return syntax;
 }
 
@@ -40,7 +43,7 @@ function runTokenTest(expected, source) {
   var elements = tedir.tokenizeJavaScript(source);
   var tokens = [];
   elements.forEach(function (element) {
-    if (!element.isEther()) {
+    if (!element.isSoft()) {
       if (element.type != element.value) {
         tokens.push(element.type + ":" + element.value);
       } else {
@@ -56,4 +59,26 @@ function testTokenizing() {
   runTokenTest(["ident:f", "ident:fo", "for", "ident:fork"], "f fo for fork");
   runTokenTest(["number:0", "number:10", "number:2343"], "0 10 2343");
   runTokenTest(["(", "[", ",", ";", "]", ")"], "([,;])");
+}
+
+function testJsSyntax() {
+  log(tedir.getJavaScriptSyntax());
+}
+
+function testLint() {
+  var options = {
+    sloppy: true,
+    indent: 2,
+    undef: true,
+    vars: true,
+    eqeq: true,
+    plusplus: true
+  };
+  if (!JSLINT(tedir.getSource(), options)) {
+    JSLINT.errors.forEach(function (error) {
+      if (error) {
+        log((error.line + 3) + ": " + error.reason, "red");
+      }
+    });
+  }
 }

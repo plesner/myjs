@@ -1,7 +1,7 @@
 "use strict";
 
 // Declare namespace
-var tedir = tedir || (function (namespace) {
+var tedir = tedir || (function defineTedir(namespace) {
 
   /**
    * Signals an error condition in tedir.
@@ -12,7 +12,7 @@ var tedir = tedir || (function (namespace) {
     }
     this.message = message;
   }
-  
+
   TedirException.prototype.toString = function () {
     return "TedirException: " + this.message;
   };
@@ -46,45 +46,45 @@ var tedir = tedir || (function (namespace) {
    */
   var factory = {};
   namespace.factory = factory;
-  
+
   factory.value = function (value) {
     return new Token(value);
   };
-  
+
   factory.token = function (value) {
     return this.ignore(this.value(value));
-  }
-  
+  };
+
   factory.nonterm = function (name) {
     return new Nonterm(name);
   };
-  
+
   factory.seq = function () {
     return new Sequence(toArray(arguments));
   };
-  
+
   factory.choice = function () {
     return new Choice(toArray(arguments));
   };
-  
+
   factory.star = function (value, sepOpt) {
-    return new Repeat(value, sepOpt, true)
+    return new Repeat(value, sepOpt, true);
   };
 
   factory.plus = function (value, sepOpt) {
-    return new Repeat(value, sepOpt, false)
+    return new Repeat(value, sepOpt, false);
   };
-  
+
   factory.empty = function () {
     return EMPTY;
   };
-  
+
   factory.ignore = function (value) {
     return new Ignore(value);
   };
-  
+
   var ERROR_MARKER = {};
-  
+
   function isError(value) {
     return value === ERROR_MARKER;
   }
@@ -101,8 +101,9 @@ var tedir = tedir || (function (namespace) {
    * its result so calls are O(1).
    */
   Expression.prototype.useValue = function () {
-    if (this.useValueCache === null)
-    this.useValueCache = this.calcUseValue();
+    if (this.useValueCache === null) {
+      this.useValueCache = this.calcUseValue();
+    }
     return this.useValueCache;
   };
 
@@ -112,7 +113,7 @@ var tedir = tedir || (function (namespace) {
   Expression.prototype.calcUseValue = function () {
     return true;
   };
-  
+
   /**
    * Is this the empty expression?  Note that non-normalized expression may
    * return false but effectively be the empty expression.
@@ -120,7 +121,7 @@ var tedir = tedir || (function (namespace) {
   Expression.prototype.isEmpty = function () {
     return false;
   };
-  
+
   /**
    * An atomic terminal symbol.
    */
@@ -129,11 +130,11 @@ var tedir = tedir || (function (namespace) {
     Token.parent.call(this);
     this.value = value;
   }
-  
+
   Token.prototype.normalize = function () {
     return new Token(this.value);
   };
-  
+
   Token.prototype.parse = function (parser, stream) {
     var current = stream.getCurrent();
     if (stream.getCurrent().type == this.value) {
@@ -142,29 +143,29 @@ var tedir = tedir || (function (namespace) {
     } else {
       return ERROR_MARKER;
     }
-  }
-  
+  };
+
   Token.prototype.toString = function () {
     return "\"" + this.value + "\"";
   };
-  
+
   /**
    * A nonterminal reference.
    */
-  inherits(Nonterm, Expression); 
+  inherits(Nonterm, Expression);
   function Nonterm(name) {
     Nonterm.parent.call(this);
     this.name = name;
   }
-  
+
   Nonterm.prototype.normalize = function () {
     return new Nonterm(this.name);
   };
-  
+
   Nonterm.prototype.parse = function (parser, stream) {
     return parser.grammar.getNonterm(this.name).parse(parser, stream);
   };
-    
+
   Nonterm.prototype.toString = function () {
     return "<" + this.name + ">";
   };
@@ -183,8 +184,8 @@ var tedir = tedir || (function (namespace) {
   };
 
   Sequence.prototype.parse = function (parser, stream) {
-    var result = [];
-    for (var i = 0; i < this.terms.length; i++) {
+    var i, result = [];
+    for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
       var value = term.parse(parser, stream);
       if (isError(value)) {
@@ -195,7 +196,7 @@ var tedir = tedir || (function (namespace) {
     }
     return result.length == 1 ? result[0] : result;
   };
-  
+
   Sequence.prototype.normalize = function () {
     var normalTerms = [];
     this.terms.forEach(function (term) {
@@ -204,7 +205,7 @@ var tedir = tedir || (function (namespace) {
       if (!normalTerm.isEmpty()) {
         normalTerms.push(normalTerm);
       }
-    })
+    });
     if (normalTerms.length == 0) {
       return EMPTY;
     } else if (normalTerms.length == 1) {
@@ -232,8 +233,8 @@ var tedir = tedir || (function (namespace) {
   };
 
   Choice.prototype.parse = function (parser, stream) {
-    var start = stream.getCursor();
-    for (var i = 0; i < this.terms.length; i++) {
+    var i, start = stream.getCursor();
+    for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
       var result = term.parse(parser, stream);
       if (isError(result)) {
@@ -244,30 +245,35 @@ var tedir = tedir || (function (namespace) {
     }
     return ERROR_MARKER;
   };
-  
+
   function normalizeAll(terms) {
     return terms.map(function (t) { return t.normalize(); });
   }
-  
+
   Choice.prototype.normalize = function () {
     if (this.terms.length == 1) {
       return this.terms[0].normalize();
     } else {
       return new Choice(normalizeAll(this.terms));
     }
-  }
+  };
 
   /**
    * The empty expression that trivially matches everything.
    */
-  inherits(Empty, Expression); 
+  inherits(Empty, Expression);
   function Empty() {
     Empty.parent.call(this);
   }
+
   var EMPTY = new Empty();
-  
+
   Empty.prototype.isEmpty = function () {
     return true;
+  };
+
+  Empty.prototype.toString = function () {
+    return ".";
   };
 
   /**
@@ -306,11 +312,11 @@ var tedir = tedir || (function (namespace) {
     this.sep = sepOpt || EMPTY;
     this.allowEmpty = allowEmpty;
   }
-  
+
   Repeat.prototype.normalize = function () {
     return new Repeat(this.body.normalize(), this.sep.normalize(),
         this.allowEmpty);
-  }
+  };
 
   Repeat.prototype.parse = function (parser, stream) {
     var start = stream.getCursor();
@@ -326,8 +332,9 @@ var tedir = tedir || (function (namespace) {
       }
     } else {
       var results = [];
-      if (body.useValue())
+      if (body.useValue()) {
         results.push(first);
+      }
       while (true) {
         start = stream.getCursor();
         var sepValue = sep.parse(parser, stream);
@@ -340,11 +347,12 @@ var tedir = tedir || (function (namespace) {
             stream.rewind(start);
             break;
           } else {
-            if (sep.useValue())
+            if (sep.useValue()) {
               results.push(sepValue);
-            if (body.useValue())
+            }
+            if (body.useValue()) {
               results.push(bodyValue);
-            continue;
+            }
           }
         }
       }
@@ -353,7 +361,7 @@ var tedir = tedir || (function (namespace) {
   };
 
   Repeat.prototype.toString = function () {
-    return "(" + (this.allowEmpty ? "* " : "+ ") + this.body + " " + this.sep + ")"
+    return "(" + (this.allowEmpty ? "* " : "+ ") + this.body + " " + this.sep + ")";
   };
 
   /**
@@ -378,28 +386,45 @@ var tedir = tedir || (function (namespace) {
   function LiteralSyntax() {
     this.rules = {};
   }
-  
+
+  LiteralSyntax.prototype.toString = function () {
+    var getPair = function (k) {
+      return k + ": " + this.rules[k];
+    }.bind(this);
+    return "grammar { " + Object.keys(this.rules).map(getPair).join(", ") + " } ";
+  };
+
+  function RuleBuilder(target) {
+    this.target = target;
+  }
+
+  RuleBuilder.prototype.addProd = function (value) {
+    this.target.addOption(value);
+    return this;
+  };
+
   /**
    * Adds the given expression as a possible production for the given name.
-   */  
-  LiteralSyntax.prototype.addRule = function (name, value) {
-    if (!(name in this.rules))
+   */
+  LiteralSyntax.prototype.toRule = function (name) {
+    if (!(this.rules.hasOwnProperty(name))) {
       this.rules[name] = new Choice([]);
-    this.rules[name].addOption(value);
+    }
+    return new RuleBuilder(this.rules[name]);
   };
-  
+
   /**
    * Returns a new grammar that represents this syntax.
    */
   LiteralSyntax.prototype.asGrammar = function () {
     return new Grammar(this);
   };
-  
+
   LiteralSyntax.prototype.getNonterm = function (name) {
-    check(name in this.rules, "Undefined nonterminal");
+    check(this.rules.hasOwnProperty(name), "Undefined nonterminal");
     return this.rules[name];
   };
-  
+
   /**
    * A fixed immutable grammar. Where syntaxes are (or at least can be)
    * fragments that have to be joined together to be complete, a grammar
@@ -409,7 +434,7 @@ var tedir = tedir || (function (namespace) {
     this.syntax = syntax;
     this.nonterms = {};
   }
-  
+
   Grammar.prototype.getNonterm = function (name) {
     var value = this.nonterms[name];
     if (!value) {
@@ -418,48 +443,50 @@ var tedir = tedir || (function (namespace) {
     }
     return value;
   };
-  
+
   /**
    * Returns a normalized local expression for the given that only this grammar
    * will use.
-   */ 
+   */
   Grammar.prototype.buildNonterm = function (name) {
     return this.syntax.getNonterm(name).normalize();
   };
-  
+
   var END_TOKEN = new Token("eof");
-  
+
   function TokenStream(tokens) {
     this.tokens = tokens;
     this.cursor = 0;
     this.highWaterMark = 0;
     this.skipEther();
   }
-  
+
   TokenStream.prototype.getCurrent = function () {
     return this.hasMore() ? this.tokens[this.cursor] : END_TOKEN;
   };
-  
+
   TokenStream.prototype.hasMore = function () {
     return this.cursor < this.tokens.length;
-  }
-  
-  TokenStream.prototype.skipEther = function () {
-    while (this.hasMore() && this.getCurrent().isEther())
-      this.cursor++;
-    if (this.cursor > this.highWaterMark)
-      this.highWaterMark = this.cursor;    
   };
-  
+
+  TokenStream.prototype.skipEther = function () {
+    while (this.hasMore() && this.getCurrent().isSoft()) {
+      this.cursor++;
+    }
+    if (this.cursor > this.highWaterMark) {
+      this.highWaterMark = this.cursor;
+    }
+  };
+
   TokenStream.prototype.advance = function () {
     this.cursor++;
     this.skipEther();
   };
-  
+
   TokenStream.prototype.getCursor = function () {
     return this.cursor;
   };
-  
+
   TokenStream.prototype.rewind = function (value) {
     this.cursor = value;
   };
@@ -472,7 +499,7 @@ var tedir = tedir || (function (namespace) {
   function Parser(grammarOrSyntax) {
     this.grammar = grammarOrSyntax.asGrammar();
   }
-  
+
   Parser.prototype.parse = function (nonterm, tokens) {
     var start = this.grammar.getNonterm(nonterm);
     var stream = new TokenStream(tokens);
@@ -487,60 +514,60 @@ var tedir = tedir || (function (namespace) {
   /**
    * A "hard" token with a string value.
    */
-  function Token(value, typeOpt) {
+  function HardToken(value, typeOpt) {
     this.value = value;
     this.type = typeOpt || value;
   }
-  
-  Token.prototype.isEther = function () {
+
+  HardToken.prototype.isSoft = function () {
     return false;
   };
-  
-  Token.prototype.toString = function () {
+
+  HardToken.prototype.toString = function () {
     if (this.value != this.type) {
       return "[" + this.type + ":" + this.value + "]";
     } else {
       return "[" + this.value + "]";
     }
-  }
+  };
 
   /**
    * A "soft" piece of ether that doesn't affect parsing but which we need
    * to keep around to be able to unparse the code again.
    */
-  function Ether(value) {
+  function SoftToken(value) {
     this.value = value;
   }
-  
-  Ether.prototype.toString = function () {
+
+  SoftToken.prototype.toString = function () {
     return "(" + this.value + ")";
   };
-  
-  Ether.prototype.isEther = function () {
+
+  SoftToken.prototype.isSoft = function () {
     return true;
   };
 
   /**
    * A simple stream that provides the contents of a string one char at a
    * time.
-   */  
+   */
   function JavaScriptScanner(source, settingsOpt) {
     this.settings = settingsOpt || new JavaScriptTokenizerSettings(DEFAULT_KEYWORDS);
     this.source = source;
     this.cursor = 0;
   }
-  
+
   JavaScriptScanner.prototype.getCurrent = function () {
     return this.source[this.cursor];
   };
-  
+
   /**
    * Does this character stream have more characters?
    */
   JavaScriptScanner.prototype.hasMore = function () {
     return this.cursor < this.source.length;
   };
-  
+
   /**
    * Advances the stream to the next character.
    */
@@ -555,28 +582,28 @@ var tedir = tedir || (function (namespace) {
     this.cursor++;
     return this.getCurrent();
   };
-  
+
   JavaScriptScanner.prototype.getCursor = function () {
     return this.cursor;
   };
-  
+
   JavaScriptScanner.prototype.getPart = function (start, end) {
     return this.source.substring(start, end);
-  }
-  
+  };
+
   var DEFAULT_KEYWORDS = ["for", "var"];
-  
+
   function JavaScriptTokenizerSettings(keywords) {
     this.keywords = {};
     keywords.forEach(function (word) {
       this.keywords[word] = true;
     }.bind(this));
   }
-  
+
   JavaScriptTokenizerSettings.prototype.isKeyword = function (word) {
     return this.keywords[word];
   };
-  
+
   namespace.tokenizeJavaScript = tokenizeJavaScript;
   /**
    * Returns the tokens of a piece of JavaScript source code.
@@ -590,10 +617,11 @@ var tedir = tedir || (function (namespace) {
     }
     return tokens;
   }
-  
+
   var SHORT_DELIMITERS = "(),:;?[]{}~";
   var SHORT_DELIMITER_MAP = {};
-  for (var i = 0; i < SHORT_DELIMITERS.length; i++) {
+  var i;
+  for (i = 0; i < SHORT_DELIMITERS.length; i++) {
     SHORT_DELIMITER_MAP[SHORT_DELIMITERS[i]] = true;
   }
 
@@ -601,25 +629,25 @@ var tedir = tedir || (function (namespace) {
    * Is the given string a single character of whitespace?
    */
   function isWhiteSpace(c) {
-    return /\s/.test(c);
+    return (/\s/).test(c);
   }
 
   function isDigit(c) {
-    return /[\d]/.test(c);
+    return (/[\d]/).test(c);
   }
 
   /**
    * Is this character allowed as the first in an identifier?
    */
   function isIdentifierStart(c) {
-    return /[\w]/.test(c);
+    return (/[\w]/).test(c);
   }
 
   /**
    * Is this character allowed as the first in an identifier?
    */
   function isIdentifierPart(c) {
-    return /[\w\d]/.test(c);
+    return (/[\w\d]/).test(c);
   }
 
   /**
@@ -630,90 +658,123 @@ var tedir = tedir || (function (namespace) {
     if (isWhiteSpace(c)) {
       return this.scanWhiteSpace();
     } else if (SHORT_DELIMITER_MAP[c]) {
-      return this.yield(c);
+      return this.produce(c);
     } else if (isDigit(c)) {
       return this.scanNumber(c);
     } else if (isIdentifierStart(c)) {
       return this.scanIdentifier(c);
     }
     switch (c) {
-      case "=":
-        if (this.advanceAndGet() == "=") {
-          return this.yieldWithFallback("=", "===", "==");
-        } else {
-          return new Token("=");
-        }
-      case "<":
-        return this.yield("<");
+    case "=":
+      if (this.advanceAndGet() == "=") {
+        return this.produceWithFallback("=", "===", "==");
+      } else {
+        return new HardToken("=");
+      }
+    case "<":
+      return this.produce("<");
+    case "+":
+      switch (this.advanceAndGet()) {
       case "+":
-        switch (this.advanceAndGet()) {
-          case "+":
-            return this.yield("++");
-          case "=":
-            return this.yield("+=");
-          default:
-            return new Token("+");
-        }
+        return this.produce("++");
+      case "=":
+        return this.produce("+=");
       default:
-        this.advance();
-        return c;
+        return new HardToken("+");
+      }
+    default:
+      this.advance();
+      return c;
     }
-  }
+  };
 
   /**
    * Skips over the current character and returns a token with the given
    * contents.
    */
-  JavaScriptScanner.prototype.yield = function (value) {
+  JavaScriptScanner.prototype.produce = function (value, typeOpt) {
     this.advance();
-    return new Token(value);
+    return new HardToken(value, typeOpt);
   };
-  
+
   /**
    * Skips over the current character and if the next character matches
    * the given 'match' skips another and return 'ifMatch', otherwise
    * return 'ifNoMatch'.
    */
-  JavaScriptScanner.prototype.yieldWithFallback = function (match, ifMatch, ifNoMatch) {
+  JavaScriptScanner.prototype.produceWithFallback = function (match, ifMatch, ifNoMatch) {
     if (this.advanceAndGet() == match) {
       this.advance();
-      return new Token(ifMatch);
+      return new HardToken(ifMatch);
     } else {
-      return new Token(ifNoMatch);
+      return new HardToken(ifNoMatch);
     }
-  }
-  
+  };
+
   /**
    * Scans a single block of whitespace.
    */
   JavaScriptScanner.prototype.scanWhiteSpace = function () {
     var start = this.getCursor();
-    while (this.hasMore() && isWhiteSpace(this.getCurrent()))
+    while (this.hasMore() && isWhiteSpace(this.getCurrent())) {
       this.advance();
+    }
     var end = this.getCursor();
-    return new Ether(this.getPart(start, end));
+    return new SoftToken(this.getPart(start, end));
   };
-  
+
   JavaScriptScanner.prototype.scanIdentifier = function () {
     var start = this.getCursor();
-    while (this.hasMore() && isIdentifierPart(this.getCurrent()))
+    while (this.hasMore() && isIdentifierPart(this.getCurrent())) {
       this.advance();
+    }
     var end = this.getCursor();
     var value = this.getPart(start, end);
     if (this.settings.isKeyword(value)) {
-      return new Token(value);
+      return new HardToken(value);
     } else {
-      return new Token(value, "ident");
+      return new HardToken(value, "ident");
     }
   };
-  
+
   JavaScriptScanner.prototype.scanNumber = function () {
     var start = this.getCursor();
-    while (this.hasMore() && isDigit(this.getCurrent()))
+    while (this.hasMore() && isDigit(this.getCurrent())) {
       this.advance();
+    }
     var end = this.getCursor();
     var value = this.getPart(start, end);
-    return new Token(value, "number");
+    return new HardToken(value, "number");
+  };
+
+  namespace.getJavaScriptSyntax = getJavaScriptSyntax;
+  function getJavaScriptSyntax() {
+    var f = namespace.factory;
+    var syntax = new namespace.Syntax();
+
+    // <Program>
+    //   -> <SourceElement>*
+    syntax.toRule("Program")
+      .addProd(f.star(f.nonterm("SourceElement")));
+
+    // <SourceElement>
+    //   -> <Statement>
+    //   -> <FunctionDeclaration>
+    syntax.toRule("SourceElement")
+      .addProd(f.nonterm("Statement"))
+      .addProd(f.nonterm("FunctionDeclaration"));
+
+    // <FunctionDeclaration>
+    //   -> "function" $ident "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
+    syntax.toRule("FunctionDeclaration").addProd(f.seq(f.token("function"),
+      f.value("ident"), f.token("("), f.token(")"), f.token("{"),
+      f.token("}")));
+
+    return syntax;
+  }
+
+  namespace.getSource = function () {
+    return String(defineTedir);
   };
 
   return namespace;
