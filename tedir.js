@@ -38,6 +38,7 @@ var tedir = tedir || (function (namespace) {
     function Inheriter() { }
     Inheriter.prototype = sup.prototype;
     sub.prototype = new Inheriter();
+    sub.parent = sup;
   }
 
   /**
@@ -87,13 +88,51 @@ var tedir = tedir || (function (namespace) {
   function isError(value) {
     return value === ERROR_MARKER;
   }
+
+  /**
+   * The abstract supertype for syntax expressions.
+   */
+  function Expression() {
+    this.useValueCache = null;
+  }
+
+  /**
+   * Should the value of this expression be ignored in the result?  Caches
+   * its result so calls are O(1).
+   */
+  Expression.prototype.useValue = function () {
+    if (this.useValueCache === null)
+    this.useValueCache = this.calcUseValue();
+    return this.useValueCache;
+  };
+
+  /**
+   * Calculates whether the value of this expression should be ignored.
+   */
+  Expression.prototype.calcUseValue = function () {
+    return true;
+  };
+  
+  /**
+   * Is this the empty expression?  Note that non-normalized expression may
+   * return false but effectively be the empty expression.
+   */
+  Expression.prototype.isEmpty = function () {
+    return false;
+  };
   
   /**
    * An atomic terminal symbol.
    */
+  inherits(Token, Expression);
   function Token(value) {
+    Token.parent.call(this);
     this.value = value;
   }
+  
+  Token.prototype.normalize = function () {
+    return new Token(this.value);
+  };
   
   Token.prototype.parse = function (parser, stream) {
     var current = stream.getCurrent();
@@ -112,9 +151,15 @@ var tedir = tedir || (function (namespace) {
   /**
    * A nonterminal reference.
    */
+  inherits(Nonterm, Expression); 
   function Nonterm(name) {
+    Nonterm.parent.call(this);
     this.name = name;
   }
+  
+  Nonterm.prototype.normalize = function () {
+    return new Nonterm(this.name);
+  };
   
   Nonterm.prototype.parse = function (parser, stream) {
     return parser.grammar.getNonterm(this.name).parse(parser, stream);
@@ -127,14 +172,16 @@ var tedir = tedir || (function (namespace) {
   /**
    * A sequence of expressions.
    */
+  inherits(Sequence, Expression);
   function Sequence(terms) {
+    Sequence.parent.call(this);
     this.terms = terms;
   }
-  
+
   Sequence.prototype.toString = function () {
     return "(: " + this.terms.join(" ") + ")";
   };
-  
+
   Sequence.prototype.parse = function (parser, stream) {
     var result = [];
     for (var i = 0; i < this.terms.length; i++) {
@@ -142,28 +189,48 @@ var tedir = tedir || (function (namespace) {
       var value = term.parse(parser, stream);
       if (isError(value)) {
         return ERROR_MARKER;
-      } else {
+      } else if (term.useValue()) {
         result.push(value);
       }
     }
     return result;
   };
   
+  Sequence.prototype.normalize = function () {
+    var normalTerms = [];
+    this.terms.forEach(function (term) {
+      var normalTerm = term.normalize();
+      // Ignore the empty terminal.
+      if (!normalTerm.isEmpty()) {
+        normalTerms.push(normalTerm);
+      }
+    })
+    if (normalTerms.length == 0) {
+      return EMPTY;
+    } else if (normalTerms.length == 1) {
+      return normalTerms[0];
+    } else {
+      return new Sequence(normalTerms);
+    }
+  };
+
   /**
    * An unordered choice between expressions.
    */
+  inherits(Choice, Expression);
   function Choice(terms) {
+    Choice.parent.call(this);
     this.terms = terms;
   }
-    
+
   Choice.prototype.addOption = function (term) {
     this.terms.push(term);
   };
-  
+
   Choice.prototype.toString = function () {
     return "(| " + this.terms.join(" ") + ")";
   };
-  
+
   Choice.prototype.parse = function (parser, stream) {
     var start = stream.getCursor();
     for (var i = 0; i < this.terms.length; i++) {
@@ -178,20 +245,53 @@ var tedir = tedir || (function (namespace) {
     return ERROR_MARKER;
   };
   
+  function normalizeAll(terms) {
+    return terms.map(function (t) { return t.normalize(); });
+  }
+  
+  Choice.prototype.normalize = function () {
+    if (this.terms.length == 1) {
+      return this.terms[0].normalize();
+    } else {
+      return new Choice(normalizeAll(this.terms));
+    }
+  }
+
   /**
    * The empty expression that trivially matches everything.
    */
-  function Empty() { }
+  inherits(Empty, Expression); 
+  function Empty() {
+    Empty.parent.call(this);
+  }
   var EMPTY = new Empty();
   
+  Empty.prototype.isEmpty = function () {
+    return true;
+  };
+
+  /**
+   * A marker that ensures that the value of the given subexpression will
+   * not be included in the resulting concrete syntax tree.
+   */
+  inherits(Ignore, Expression);
   function Ignore(term) {
+    Ignore.parent.call(this);
     this.term = term;
   }
-  
+
   Ignore.prototype.parse = function (parser, stream) {
     return this.term.parse(parser, stream);
   };
-  
+
+  Ignore.prototype.normalize = function () {
+    return new Ignore(this.term.normalize());
+  };
+
+  Ignore.prototype.calcUseValue = function () {
+    return false;
+  };
+
   Ignore.prototype.toString = function () {
     return "(_ " + this.term + ")";
   };
@@ -199,15 +299,24 @@ var tedir = tedir || (function (namespace) {
   /**
    * A repetition of an expression, separated by a separator expression.
    */
+  inherits(Repeat, Expression);
   function Repeat(body, sepOpt, allowEmpty) {
+    Repeat.parent.call(this);
     this.body = body;
     this.sep = sepOpt || EMPTY;
     this.allowEmpty = allowEmpty;
   }
   
+  Repeat.prototype.normalize = function () {
+    return new Repeat(this.body.normalize(), this.sep.normalize(),
+        this.allowEmpty);
+  }
+
   Repeat.prototype.parse = function (parser, stream) {
     var start = stream.getCursor();
-    var first = this.body.parse(parser, stream);
+    var body = this.body;
+    var sep = this.sep;
+    var first = body.parse(parser, stream);
     if (isError(first)) {
       if (this.allowEmpty) {
         stream.rewind(start);
@@ -216,20 +325,25 @@ var tedir = tedir || (function (namespace) {
         return ERROR_MARKER;
       }
     } else {
-      var results = [first];
+      var results = [];
+      if (body.useValue())
+        results.push(first);
       while (true) {
         start = stream.getCursor();
-        var sepValue = this.sep.parse(parser, stream);
+        var sepValue = sep.parse(parser, stream);
         if (isError(sepValue)) {
           stream.rewind(start);
           break;
         } else {
-          var bodyValue = this.body.parse(parser, stream);
+          var bodyValue = body.parse(parser, stream);
           if (isError(bodyValue)) {
             stream.rewind(start);
             break;
           } else {
-            results.push(bodyValue);
+            if (sep.useValue())
+              results.push(sepValue);
+            if (body.useValue())
+              results.push(bodyValue);
             continue;
           }
         }
@@ -237,16 +351,16 @@ var tedir = tedir || (function (namespace) {
       return results;
     }
   };
-  
+
   Repeat.prototype.toString = function () {
     return "(" + (this.allowEmpty ? "* " : "+ ") + this.body + " " + this.sep + ")"
   };
-  
+
   /**
    * Abstract supertype for syntaxes.
    */
   function AbstractSyntax() { }
-  
+
   /**
    * Returns a syntax that contains the same rules as this syntax
    * and the one passed as the argument.
@@ -254,7 +368,7 @@ var tedir = tedir || (function (namespace) {
   AbstractSyntax.prototype.compose = function (other) {
     return new CompositeSyntax([this, other]);
   };
-  
+
   /**
    * A (potentially partial) syntax definition. A number of syntaxes together
    * can be compiled into a grammar.
@@ -299,10 +413,18 @@ var tedir = tedir || (function (namespace) {
   Grammar.prototype.getNonterm = function (name) {
     var value = this.nonterms[name];
     if (!value) {
-      value = this.syntax.getNonterm(name);
+      value = this.buildNonterm(name);
       this.nonterms[name] = value;
     }
     return value;
+  };
+  
+  /**
+   * Returns a normalized local expression for the given that only this grammar
+   * will use.
+   */ 
+  Grammar.prototype.buildNonterm = function (name) {
+    return this.syntax.getNonterm(name).normalize();
   };
   
   function TokenStream(tokens) {
