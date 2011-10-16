@@ -4,6 +4,12 @@
 var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   /**
+   * Namespace for stuff that isn't really part of the public API but which
+   * it is convenient to be able to access from tests etc.
+   */
+  namespace.internal = {};
+
+  /**
    * Signals an error condition in tedir.
    */
   namespace.Error = TedirError;
@@ -38,6 +44,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return "tedir.SyntaxError: Unexpected token " + this.getOffendingToken();
   };
 
+  namespace.internal.toArray = toArray;
   /**
    * Converts any array-like object (including arguments objects) to a proper
    * array.
@@ -132,7 +139,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   /**
-   * Returns the number of filter arguments this expression yields.
+   * If the value of this expression is passed through a filter, how many
+   * filter arguments does it correspond to?
    */
   Expression.prototype.getArity = function () {
     return 1;
@@ -151,13 +159,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   /**
    * Calculates whether the value of this expression should be ignored.
+   * Generally, don't call this directly, use useValue so you get caching.
    */
   Expression.prototype.calcUseValue = function () {
     return true;
   };
 
   /**
-   * Is this the empty expression?  Note that non-normalized expression may
+   * Is this the empty expression?  Note that non-normalized expressions may
    * return false but effectively be the empty expression.
    */
   Expression.prototype.isEmpty = function () {
@@ -255,17 +264,24 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   Sequence.prototype.parse = function (parser, stream) {
-    var i, result = [];
+    var i, values = [];
     for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
       var value = term.parse(parser, stream);
       if (isError(value)) {
         return ERROR_MARKER;
       } else if (term.useValue()) {
-        result.push(value);
+        values.push(value);
       }
     }
-    return result.length == 1 ? result[0] : result;
+    switch (values.length) {
+    case 0:
+      return null;
+    case 1:
+      return values[0];
+    default:
+      return values;
+    }
   };
 
   Sequence.prototype.getArity = function () {
@@ -276,6 +292,16 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
       }
     });
     return result;
+  };
+
+  Sequence.prototype.calcUseValue = function () {
+    var i, result = false;
+    for (i = 0; i < this.terms.length; i++) {
+      if (this.terms[i].useValue()) {
+        return true;
+      }
+    }
+    return false;
   };
 
   Sequence.prototype.normalize = function () {
@@ -427,7 +453,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.isConstructor = isConstructor;
     var arity = (arityOpt === undefined) ? -1 : arityOpt;
     this.arity = arity;
-    this.invoker = Invoker.forArity(this.filter, this.isConstructor, arity);
+    this.invoker = Invoker.forArity(arity, this.isConstructor, this.filter);
   }
 
   Filter.prototype.getType = function () {
@@ -449,12 +475,13 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return new Filter(this.term.normalize(), this.filter, this.isConstructor, arity);
   };
 
+  namespace.internal.Invoker = Invoker;
   /**
    * Utility function for invoking functions with a given arity.
    */
   function Invoker() { }
 
-  Invoker.forArity = function (fun, isConstructor, arity) {
+  Invoker.forArity = function (arity, isConstructor, fun) {
     if (arity == -1) {
       return null;
     } else if (isConstructor) {
@@ -478,19 +505,39 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     }
   };
 
+  Invoker.constructorBridges = [];
   Invoker.constructorForArity = function (Cons, arity) {
-    switch (arity) {
-    case 1:
+    if (arity == 1) {
       return function (args) { return new Cons(args); };
-    case 2:
-      return function (args) { return new Cons(args[0], args[1]); };
-    case 3:
-      return function (args) { return new Cons(args[0], args[1], args[2]); };
-    case 4:
-      return function (args) { return new Cons(args[0], args[1], args[2], args[3]); };
-    default:
-      throw new TedirException("Unsupported constructor");
+    } else {
+      var bridgeBuilder = Invoker.constructorBridges[arity];
+      if (!bridgeBuilder) {
+        bridgeBuilder = Invoker.buildConstructorBridge(arity);
+        Invoker.constructorBridges[arity] = bridgeBuilder;
+      }
+      return bridgeBuilder(Cons);
     }
+  };
+
+  /**
+   * Constructs a function that calls a function with a specified number
+   * of arguments, taken from a list.
+   */
+  Invoker.buildConstructorBridge = function (arity) {
+    var i, params = [];
+    for (i = 0; i < arity; i++) {
+      params.push("args[" + i + "]");
+    }
+    var source = "return new Cons(" + params.join(", ") + ");";
+    var FunctionConstructor = Function;
+    // Apparently jslint doesn't support suppressing individual warnings to
+    // we have to trick it instead.
+    var bridge = new FunctionConstructor("Cons", "args", source);
+    return function (Cons) {
+      return function (args) {
+        return bridge(Cons, args);
+      };
+    };
   };
 
   /**
