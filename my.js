@@ -15,6 +15,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     this.syntax = null;
     this.grammar = null;
     this.start = null;
+    this.keywords = null;
+    this.settings = null;
   }
 
   /**
@@ -62,14 +64,52 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return this.grammar;
   };
 
+  Dialect.prototype.getSettings = function () {
+    if (!this.settings) {
+      var keywords = this.getKeywords();
+      this.settings = new TokenizerSettings(keywords);
+    }
+    return this.settings;
+  };
+
   /**
    * Parses the given source, returning a syntax tree.
    */
   Dialect.prototype.parseSource = function (source) {
     var grammar = this.getGrammar();
     var parser = new tedir.Parser(grammar);
-    var tokens = tokenize(source);
+    var tokens = tokenize(source, this.getSettings());
     return parser.parse(this.start, tokens);
+  };
+
+  /**
+   * Returns the set of keywords used by this dialect.
+   */
+  Dialect.prototype.getKeywords = function () {
+    if (!this.keywords) {
+      this.keywords = this.calcKeywords();
+    }
+    return this.keywords;
+  };
+
+  /**
+   * Scans the grammar and extracts a sorted list of all keywords.
+   */
+  Dialect.prototype.calcKeywords = function () {
+    var keywordMap = {};
+    function visitNode(node) {
+      if (node.getType() == "TOKEN") {
+        if (node.isKeyword) {
+          keywordMap[node.value] = true;
+        }
+      } else {
+        node.forEachChild(visitNode);
+      }
+    }
+    this.getSyntax().forEachRule(function (name, value) {
+      visitNode(value);
+    });
+    return Object.keys(keywordMap).sort();
   };
 
   namespace.registerDialect = registerDialect;
@@ -127,8 +167,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return true;
   };
 
-  var DEFAULT_KEYWORDS = ["for", "var", "function"];
-
+  namespace.TokenizerSettings = TokenizerSettings;
   function TokenizerSettings(keywords) {
     this.keywords = {};
     keywords.forEach(function (word) {
@@ -144,8 +183,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
    * A simple stream that provides the contents of a string one char at a
    * time.
    */
-  function Scanner(source, settingsOpt) {
-    this.settings = settingsOpt || new TokenizerSettings(DEFAULT_KEYWORDS);
+  function Scanner(source, settings) {
+    this.settings = settings;
     this.source = source;
     this.cursor = 0;
   }
@@ -316,7 +355,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     }
     var end = this.getCursor();
     var value = this.getPart(start, end);
-    return new HardToken(value, "number");
+    return new HardToken(value, "NumericLiteral");
   };
 
   namespace.tokenize = tokenize;
@@ -336,36 +375,59 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   namespace.getStandardSyntax = getStandardSyntax;
   function getStandardSyntax() {
     var f = tedir.factory;
+    var seq = f.seq;
+    var token = f.token;
+    var value = f.value;
+    var keyword = f.keyword;
+    var star = f.star;
+    var nonterm = f.nonterm;
+    var plus = f.plus;
+    var option = f.option;
     var syntax = new tedir.Syntax();
 
     // <Program>
     //   -> <SourceElement>*
     syntax.getRule("Program")
-      .addProd(f.star(f.nonterm("SourceElement")));
+      .addProd(star(nonterm("SourceElement")));
 
     // <SourceElement>
     //   -> <Statement>
     //   -> <FunctionDeclaration>
     syntax.getRule("SourceElement")
-      .addProd(f.nonterm("Statement"))
-      .addProd(f.nonterm("FunctionDeclaration"));
+      .addProd(nonterm("Statement"))
+      .addProd(nonterm("FunctionDeclaration"));
 
     // <FunctionDeclaration>
     //   -> "function" $Identifier "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
     syntax.getRule("FunctionDeclaration")
-      .addProd(f.seq(f.token("function"), f.value("Identifier"), f.token("("),
-        f.option(f.nonterm("FormalParameterList")), f.token(")"), f.token("{"),
-        f.token("}")));
+      .addProd(keyword("function"), value("Identifier"), token("("),
+        f.option(nonterm("FormalParameterList")), token(")"), token("{"),
+        nonterm("FunctionBody"), token("}"));
 
     // <FormalParameterList>
     //   -> $Identifier +: ","
     syntax.getRule("FormalParameterList")
-      .addProd(f.plus(f.value("Identifier"), f.token(",")));
+      .addProd(plus(value("Identifier"), token(",")));
+
+    // <FunctionBody>
+    //   -> <SourceElement>*
+    syntax.getRule("FunctionBody")
+      .addProd(star(nonterm("SourceElement")));
 
     // <Statement>
     //   -> "placeholder"
     syntax.getRule("Statement")
-      .addProd(f.token("placeholder"));
+      .addProd(nonterm("ReturnStatement"));
+
+    // <ReturnStatement>
+    //   -> "return" <Expression>? ";"
+    syntax.getRule("ReturnStatement")
+      .addProd(keyword("return"), option(nonterm("Expression")), token(";"));
+
+    // <Expression>
+    //   -> $NumericLiteral
+    syntax.getRule("Expression")
+      .addProd(value("NumericLiteral"));
 
     return syntax;
   }

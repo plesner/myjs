@@ -46,6 +46,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return Array.prototype.slice.call(args);
   }
 
+  namespace.inherits = inherits;
   /**
    * Simple prototype-based inheritance.
    */
@@ -57,17 +58,24 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   }
 
   /**
-   * Singleton factory object.
+   * Singleton factory object. In general, avoid making any assumptions about
+   * what 'this' is when the factory methods are called since it may be
+   * convenient to call those methods other than directly through a reference
+   * to 'factory'.
    */
   var factory = {};
   namespace.factory = factory;
 
   factory.value = function (value) {
-    return new Token(value);
+    return new Token(value, false);
   };
 
   factory.token = function (value) {
-    return this.ignore(this.value(value));
+    return factory.ignore(factory.value(value), false);
+  };
+
+  factory.keyword = function (value) {
+    return factory.ignore(new Token(value, true));
   };
 
   factory.nonterm = function (name) {
@@ -83,7 +91,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   factory.option = function (value) {
-    return this.choice(value, this.empty());
+    return factory.choice(value, EMPTY);
   };
 
   factory.star = function (value, sepOpt) {
@@ -115,6 +123,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.useValueCache = null;
   }
 
+  Expression.prototype.accept = function (visitor) {
+    return visitor(this, this.getType());
+  };
+
   /**
    * Should the value of this expression be ignored in the result?  Caches
    * its result so calls are O(1).
@@ -145,13 +157,26 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    * An atomic terminal symbol.
    */
   inherits(Token, Expression);
-  function Token(value) {
+  function Token(value, isKeyword) {
     Token.parent.call(this);
+
+    // What kind of input tokens does this grammar token match?
     this.value = value;
+
+    // Is this a keyword or a non-keyword delimiter?
+    this.isKeyword = isKeyword;
   }
 
+  Token.prototype.getType = function () {
+    return "TOKEN";
+  };
+
+  Token.prototype.forEachChild = function (visitor) {
+    // ignore
+  };
+
   Token.prototype.normalize = function () {
-    return new Token(this.value);
+    return new Token(this.value, this.isKeyword);
   };
 
   Token.prototype.parse = function (parser, stream) {
@@ -177,6 +202,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.name = name;
   }
 
+  Nonterm.prototype.getType = function () {
+    return "NONTERM";
+  };
+
+  Nonterm.prototype.forEachChild = function (visitor) {
+    // ignore
+  };
+
   Nonterm.prototype.normalize = function () {
     return new Nonterm(this.name);
   };
@@ -197,6 +230,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     Sequence.parent.call(this);
     this.terms = terms;
   }
+
+  Sequence.prototype.getType = function () {
+    return "SEQENCE";
+  };
+
+  Sequence.prototype.forEachChild = function (visitor) {
+    this.terms.forEach(visitor);
+  };
 
   Sequence.prototype.toString = function () {
     return "(: " + this.terms.join(" ") + ")";
@@ -243,6 +284,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.terms = terms;
   }
 
+  Choice.prototype.getType = function () {
+    return "CHOICE";
+  };
+
   Choice.prototype.addOption = function (term) {
     this.terms.push(term);
   };
@@ -263,6 +308,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
       }
     }
     return ERROR_MARKER;
+  };
+
+  Choice.prototype.forEachChild = function (visitor) {
+    this.terms.forEach(visitor);
   };
 
   function normalizeAll(terms) {
@@ -286,6 +335,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   }
 
   var EMPTY = new Empty();
+
+  Empty.prototype.getType = function () {
+    return "EMPTY";
+  };
+
+  Empty.prototype.forEachChild = function (visitor) {
+    // ignore
+  };
 
   Empty.prototype.isEmpty = function () {
     return true;
@@ -317,6 +374,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.term = term;
   }
 
+  Ignore.prototype.getType = function () {
+    return "IGNORE";
+  };
+
+  Ignore.prototype.forEachChild = function (visitor) {
+    visitor(this.term);
+  };
+
   Ignore.prototype.parse = function (parser, stream) {
     var value = this.term.parse(parser, stream);
     return isError(value) ? value : null;
@@ -344,6 +409,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.sep = sepOpt || EMPTY;
     this.allowEmpty = allowEmpty;
   }
+
+  Repeat.prototype.getType = function () {
+    return "REPEAT";
+  };
+
+  Repeat.prototype.forEachChild = function (visitor) {
+    visitor(this.body);
+    visitor(this.sep);
+  };
 
   Repeat.prototype.normalize = function () {
     return new Repeat(this.body.normalize(), this.sep.normalize(),
@@ -432,6 +506,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   /**
+   * Invokes the callback for each rule defined in this grammar.
+   */
+  AbstractSyntax.prototype.forEachRule = function (callback) {
+    this.getRuleNames().forEach(function (name) {
+      callback(name, this.getRule(name).target);
+    }.bind(this));
+  };
+
+  /**
    * A (potentially partial) syntax definition. A number of syntaxes together
    * can be compiled into a grammar.
    */
@@ -445,15 +528,19 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     var getPair = function (k) {
       return k + ": " + this.rules[k];
     }.bind(this);
-    return "grammar { " + Object.keys(this.rules).map(getPair).join(", ") + " } ";
+    return "grammar { " + this.getRuleNames().map(getPair).join(", ") + " } ";
   };
 
-  function RuleBuilder(target) {
+  LiteralSyntax.prototype.getRuleNames = function () {
+    return Object.keys(this.rules);
+  };
+
+  function Rule(target) {
     this.target = target;
   }
 
-  RuleBuilder.prototype.addProd = function (value) {
-    this.target.addOption(value);
+  Rule.prototype.addProd = function () {
+    this.target.addOption(new Sequence(toArray(arguments)));
     return this;
   };
 
@@ -464,7 +551,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     if (!(this.rules.hasOwnProperty(name))) {
       this.rules[name] = new Choice([]);
     }
-    return new RuleBuilder(this.rules[name]);
+    return new Rule(this.rules[name]);
   };
 
   /**

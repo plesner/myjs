@@ -14,15 +14,16 @@ function getExpressionSyntax() {
       .addProd(f.plus(f.nonterm("atom"), f.token("+")));
 
   // <atom>
-  //   -> $number
+  //   -> $NumericLiteral
   //   |  "(" <expr> ")"
   syntax.getRule("atom")
-      .addProd(f.value("number"))
+      .addProd(f.value("NumericLiteral"))
       .addProd(f.seq(f.token("("), f.nonterm("expr"), f.token(")")));
 
   return syntax;
 }
 
+var DEFAULT_SETTINGS = new myjs.TokenizerSettings(["function", "for"]);
 /**
  * Given a syntax and a start production, returns a function that can be
  * called with the expected output and a source and that will test that
@@ -31,7 +32,7 @@ function getExpressionSyntax() {
 function getParserTestRunner(syntax, start) {
   return function (expected, source) {
     var parser = new tedir.Parser(syntax);
-    var tokens = myjs.tokenize(source);
+    var tokens = myjs.tokenize(source, DEFAULT_SETTINGS);
     assertListEquals(expected, parser.parse(start, tokens));
   };
 }
@@ -72,7 +73,7 @@ function testErrors() {
 }
 
 function runTokenTest(expected, source) {
-  var elements = myjs.tokenize(source);
+  var elements = myjs.tokenize(source, DEFAULT_SETTINGS);
   var tokens = [];
   elements.forEach(function (element) {
     if (!element.isSoft()) {
@@ -90,12 +91,14 @@ function testTokenizing() {
   runTokenTest(["=", "==", "==="], "= == ===");
   runTokenTest(["Identifier:f", "Identifier:fo", "for", "Identifier:fork"],
     "f fo for fork");
-  runTokenTest(["number:0", "number:10", "number:2343"], "0 10 2343");
+  runTokenTest(["NumericLiteral:0", "NumericLiteral:10", "NumericLiteral:2343"],
+    "0 10 2343");
   runTokenTest(["(", "[", ",", ";", "]", ")"], "([,;])");
 }
 
 function testJsSyntax() {
-  assertTrue(myjs.getStandardSyntax().asGrammar().isValid());
+  var syntax = myjs.getDialect('default');
+  assertTrue(syntax.getGrammar().isValid());
 }
 
 function testLint() {
