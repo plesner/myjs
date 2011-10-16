@@ -3,6 +3,9 @@
 // Declare namespace
 var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
 
+  namespace.ast = namespace.ast || {};
+  var ast = namespace.ast;
+
   var dialectRegistry = {};
 
   namespace.Dialect = Dialect;
@@ -389,7 +392,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     //   -> <SourceElement>*
     syntax.getRule("Program")
       .addProd(star(nonterm("SourceElement")))
-      .setConstructor(Program);
+      .setConstructor(ast.Program);
 
     // <SourceElement>
     //   -> <Statement>
@@ -399,17 +402,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(nonterm("FunctionDeclaration"));
 
     // <FunctionDeclaration>
-    //   -> "function" $Identifier "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
+    //   -> "function" $Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
     syntax.getRule("FunctionDeclaration")
       .addProd(keyword("function"), value("Identifier"), token("("),
-        f.option(nonterm("FormalParameterList")), token(")"), token("{"),
+        nonterm("FormalParameterList"), token(")"), token("{"),
         nonterm("FunctionBody"), token("}"))
-      .setConstructor(FunctionDeclaration);
+      .setConstructor(ast.FunctionDeclaration);
 
     // <FormalParameterList>
-    //   -> $Identifier +: ","
+    //   -> $Identifier *: ","
     syntax.getRule("FormalParameterList")
-      .addProd(plus(value("Identifier"), token(",")));
+      .addProd(star(value("Identifier"), token(",")));
 
     // <FunctionBody>
     //   -> <SourceElement>*
@@ -417,18 +420,56 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(star(nonterm("SourceElement")));
 
     // <Statement>
-    //   -> "placeholder"
+    //   -> <Block>
+    //   -> <VariableStatement>
+    //   -> <ReturnStatement>
     syntax.getRule("Statement")
+      .addProd(nonterm("Block"))
+      .addProd(nonterm("VariableStatement"))
+      .addProd(nonterm("IfStatement"))
       .addProd(nonterm("ReturnStatement"));
+
+    // <Block>
+    //   -> "{" <Statement>* "}"
+    syntax.getRule("Block")
+      .addProd(token("{"), star(nonterm("Statement")), token("}"))
+      .setConstructor(ast.Block);
+
+    // <VariableStatement>
+    //   -> "var" <VariableDeclaration> +: "," ";"
+    syntax.getRule("VariableStatement")
+      .addProd(keyword("var"), plus(nonterm("VariableDeclaration"), token(",")),
+        token(";"))
+      .setConstructor(ast.VariableStatement);
+
+    // <IfStatement>
+    //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
+    syntax.getRule("IfStatement")
+      .addProd(keyword("if"), token("("), nonterm("Expression"), token(")"),
+        nonterm("Statement"), option(keyword("else"), nonterm("Statement")))
+      .setConstructor(ast.IfStatement);
+
+    // <VariableDeclaration>
+    //   -> $Identifier ("=" <AssignmentExpression>)?
+    syntax.getRule("VariableDeclaration")
+      .addProd(value("Identifier"), option(token("="),
+        nonterm("AssignmentExpression")))
+      .setConstructor(ast.VariableDeclaration);
 
     // <ReturnStatement>
     //   -> "return" <Expression>? ";"
     syntax.getRule("ReturnStatement")
-      .addProd(keyword("return"), option(nonterm("Expression")), token(";"));
+      .addProd(keyword("return"), option(nonterm("Expression")), token(";"))
+      .setConstructor(ast.ReturnStatement);
 
     // <Expression>
-    //   -> $NumericLiteral
+    //   -> <AssignmentExpression>
     syntax.getRule("Expression")
+      .addProd(nonterm("AssignmentExpression"));
+
+    // <AssignmentExpression>
+    //   -> $NumericLiteral
+    syntax.getRule("AssignmentExpression")
       .addProd(value("NumericLiteral"));
 
     return syntax;
@@ -440,16 +481,6 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .setSyntaxProvider(getStandardSyntax)
       .setStart("Program");
     registerDialect(defhault);
-  }
-
-  function Program(elements) {
-    this.elements = elements;
-  }
-
-  function FunctionDeclaration(name, params, body) {
-    this.name = name;
-    this.params = params;
-    this.body = body;
   }
 
   namespace.getSource = function () {

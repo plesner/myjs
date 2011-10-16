@@ -2,6 +2,7 @@
   <head><title>Tedir test</title></head>
   <script src="../tedir.js"></script>
   <script src="../my.js"></script>
+  <script src="../ast.js"></script>
   <script src="../mimetype.js"></script>
   <script type="text/myjs">
 function foo(a, b, c) {
@@ -9,7 +10,13 @@ function foo(a, b, c) {
 }
 
 function bar() {
-
+  var a = 4, b = 5;
+  if (5) {
+    return 5;
+  } else {
+    return 7;
+    return 8;
+  }
 }
   </script>
   <script src="framework.js"></script>

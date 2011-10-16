@@ -110,7 +110,7 @@ function testLint() {
     eqeq: true,
     plusplus: true
   };
-  [tedir, myjs, myjs.mimetype].forEach(function (module) {
+  [tedir, myjs, myjs.mimetype, myjs.ast].forEach(function (module) {
     var source = module.getSource();
     var offset = Number(/offset: (\d+)/.exec(source)[1]);
     if (!JSLINT(source, options)) {

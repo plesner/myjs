@@ -90,8 +90,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return new Choice(toArray(arguments));
   };
 
-  factory.option = function (value) {
-    return factory.choice(value, EMPTY);
+  factory.option = function () {
+    return factory.choice(new Sequence(toArray(arguments)), EMPTY);
   };
 
   factory.star = function (value, sepOpt) {
@@ -485,9 +485,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     case 2:
       return function (args) { return new Cons(args[0], args[1]); };
     case 3:
-      return function (args) { return new Cons(args[0], args[1], args[3]); };
+      return function (args) { return new Cons(args[0], args[1], args[2]); };
     case 4:
-      return function (args) { return new Cons(args[0], args[1], args[3], args[4]); };
+      return function (args) { return new Cons(args[0], args[1], args[2], args[3]); };
     default:
       throw new TedirException("Unsupported constructor");
     }
@@ -526,7 +526,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     if (isError(first)) {
       if (this.allowEmpty) {
         stream.rewind(start);
-        return null;
+        return [];
       } else {
         return ERROR_MARKER;
       }
