@@ -27,7 +27,7 @@ var EXPR = getExpressionSyntax();
 
 function runParserTest(expected, source) {
   var parser = new tedir.Parser(EXPR);
-  var tokens = tedir.tokenizeJavaScript(source);
+  var tokens = myjs.tokenize(source);
   assertListEquals(expected, parser.parse("expr", tokens));
 }
 
@@ -35,13 +35,13 @@ function testSyntax() {
   runParserTest([10], "10");
   runParserTest([11, 12], "11 + 12");
   runParserTest([13, 14, 15], "13 + 14 + 15");
-  runParserTest([[16, 17, 18]], "(16 + 17 + 18)");  
-  runParserTest([[19, [20, 21]]], "(19 + (20 + 21))");  
-  runParserTest([[[22, 23], [24, 25]]], "((22 + 23) + (24 + 25))");  
+  runParserTest([[16, 17, 18]], "(16 + 17 + 18)");
+  runParserTest([[19, [20, 21]]], "(19 + (20 + 21))");
+  runParserTest([[[22, 23], [24, 25]]], "((22 + 23) + (24 + 25))");
 }
 
 function runTokenTest(expected, source) {
-  var elements = tedir.tokenizeJavaScript(source);
+  var elements = myjs.tokenize(source);
   var tokens = [];
   elements.forEach(function (element) {
     if (!element.isSoft()) {
@@ -63,7 +63,7 @@ function testTokenizing() {
 }
 
 function testJsSyntax() {
-  log(tedir.getJavaScriptSyntax());
+  assertTrue(myjs.getStandardSyntax().asGrammar().isValid());
 }
 
 function testLint() {
@@ -75,13 +75,14 @@ function testLint() {
     eqeq: true,
     plusplus: true
   };
-  [tedir, myjs].forEach(function (module) {
+  [tedir, myjs, myjs.mimetype].forEach(function (module) {
     var source = module.getSource();
     var offset = Number(/offset: (\d+)/.exec(source)[1]);
     if (!JSLINT(source, options)) {
       JSLINT.errors.forEach(function (error) {
         if (error) {
-          log((error.line + offset) + ": " + error.reason, "red");
+          var line = error.line + offset;
+          log("Lint(" + line + ")" + ": " + error.reason, "red");
         }
       });
     }

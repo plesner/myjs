@@ -8,7 +8,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    */
   function TedirException(message) {
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, check);
+      Error.captureStackTrace(this, TedirException);
     }
     this.message = message;
   }
@@ -16,12 +16,6 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   TedirException.prototype.toString = function () {
     return "TedirException: " + this.message;
   };
-
-  function check(value, message) {
-    if (!value) {
-      throw new TedirException(message);
-    }
-  }
 
   /**
    * Converts any array-like object (including arguments objects) to a proper
@@ -272,6 +266,18 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return true;
   };
 
+  Empty.prototype.normalize = function () {
+    return this;
+  };
+
+  Empty.prototype.parse = function (parser, stream) {
+    return null;
+  };
+
+  Empty.prototype.calcUseValue = function () {
+    return false;
+  };
+
   Empty.prototype.toString = function () {
     return ".";
   };
@@ -365,8 +371,14 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   /**
+   * Abstract supertype for grammar and syntax objects.
+   */
+  function GrammarOrSyntax() { }
+
+  /**
    * Abstract supertype for syntaxes.
    */
+  inherits(AbstractSyntax, GrammarOrSyntax);
   function AbstractSyntax() { }
 
   /**
@@ -421,7 +433,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   LiteralSyntax.prototype.getNonterm = function (name) {
-    check(this.rules.hasOwnProperty(name), "Undefined nonterminal");
+    if (!this.rules.hasOwnProperty(name)) {
+      throw new TedirException("Undefined nonterminal <" + name + ">");
+    }
     return this.rules[name];
   };
 
@@ -435,6 +449,25 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.nonterms = {};
   }
 
+  /**
+   * Returns true if this grammar is valid.
+   */
+  Grammar.prototype.isValid = function () {
+    return true;
+  };
+
+  /**
+   * Convenience method that allows syntaxes and grammars to be treated
+   * uniformly.
+   */
+  Grammar.prototype.asGrammar = function () {
+    return this;
+  };
+
+  /**
+   * Returns the local nonterminal with the given name, building it the
+   * first time the method is called.
+   */
   Grammar.prototype.getNonterm = function (name) {
     var value = this.nonterms[name];
     if (!value) {
@@ -504,274 +537,12 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     var start = this.grammar.getNonterm(nonterm);
     var stream = new TokenStream(tokens);
     var result = start.parse(this, stream);
-    if (isError(result)) {
+    if (isError(result) || stream.hasMore()) {
       throw stream.tokens[stream.highWaterMark];
     } else {
       return result;
     }
   };
-
-  /**
-   * A "hard" token with a string value.
-   */
-  function HardToken(value, typeOpt) {
-    this.value = value;
-    this.type = typeOpt || value;
-  }
-
-  HardToken.prototype.isSoft = function () {
-    return false;
-  };
-
-  HardToken.prototype.toString = function () {
-    if (this.value != this.type) {
-      return "[" + this.type + ":" + this.value + "]";
-    } else {
-      return "[" + this.value + "]";
-    }
-  };
-
-  /**
-   * A "soft" piece of ether that doesn't affect parsing but which we need
-   * to keep around to be able to unparse the code again.
-   */
-  function SoftToken(value) {
-    this.value = value;
-  }
-
-  SoftToken.prototype.toString = function () {
-    return "(" + this.value + ")";
-  };
-
-  SoftToken.prototype.isSoft = function () {
-    return true;
-  };
-
-  /**
-   * A simple stream that provides the contents of a string one char at a
-   * time.
-   */
-  function JavaScriptScanner(source, settingsOpt) {
-    this.settings = settingsOpt || new JavaScriptTokenizerSettings(DEFAULT_KEYWORDS);
-    this.source = source;
-    this.cursor = 0;
-  }
-
-  JavaScriptScanner.prototype.getCurrent = function () {
-    return this.source[this.cursor];
-  };
-
-  /**
-   * Does this character stream have more characters?
-   */
-  JavaScriptScanner.prototype.hasMore = function () {
-    return this.cursor < this.source.length;
-  };
-
-  /**
-   * Advances the stream to the next character.
-   */
-  JavaScriptScanner.prototype.advance = function () {
-    this.cursor++;
-  };
-
-  /**
-   * Advances the stream to the next character and returns it.
-   */
-  JavaScriptScanner.prototype.advanceAndGet = function () {
-    this.cursor++;
-    return this.getCurrent();
-  };
-
-  JavaScriptScanner.prototype.getCursor = function () {
-    return this.cursor;
-  };
-
-  JavaScriptScanner.prototype.getPart = function (start, end) {
-    return this.source.substring(start, end);
-  };
-
-  var DEFAULT_KEYWORDS = ["for", "var"];
-
-  function JavaScriptTokenizerSettings(keywords) {
-    this.keywords = {};
-    keywords.forEach(function (word) {
-      this.keywords[word] = true;
-    }.bind(this));
-  }
-
-  JavaScriptTokenizerSettings.prototype.isKeyword = function (word) {
-    return this.keywords[word];
-  };
-
-  namespace.tokenizeJavaScript = tokenizeJavaScript;
-  /**
-   * Returns the tokens of a piece of JavaScript source code.
-   */
-  function tokenizeJavaScript(source, settings) {
-    var stream = new JavaScriptScanner(source, settings);
-    var tokens = [];
-    while (stream.hasMore()) {
-      var next = stream.scanToken();
-      tokens.push(next);
-    }
-    return tokens;
-  }
-
-  var SHORT_DELIMITERS = "(),:;?[]{}~";
-  var SHORT_DELIMITER_MAP = {};
-  var i;
-  for (i = 0; i < SHORT_DELIMITERS.length; i++) {
-    SHORT_DELIMITER_MAP[SHORT_DELIMITERS[i]] = true;
-  }
-
-  /**
-   * Is the given string a single character of whitespace?
-   */
-  function isWhiteSpace(c) {
-    return (/\s/).test(c);
-  }
-
-  function isDigit(c) {
-    return (/[\d]/).test(c);
-  }
-
-  /**
-   * Is this character allowed as the first in an identifier?
-   */
-  function isIdentifierStart(c) {
-    return (/[\w]/).test(c);
-  }
-
-  /**
-   * Is this character allowed as the first in an identifier?
-   */
-  function isIdentifierPart(c) {
-    return (/[\w\d]/).test(c);
-  }
-
-  /**
-   * Extracts the next JavaScript token from the given stream.
-   */
-  JavaScriptScanner.prototype.scanToken = function () {
-    var c = this.getCurrent();
-    if (isWhiteSpace(c)) {
-      return this.scanWhiteSpace();
-    } else if (SHORT_DELIMITER_MAP[c]) {
-      return this.produce(c);
-    } else if (isDigit(c)) {
-      return this.scanNumber(c);
-    } else if (isIdentifierStart(c)) {
-      return this.scanIdentifier(c);
-    }
-    switch (c) {
-    case "=":
-      if (this.advanceAndGet() == "=") {
-        return this.produceWithFallback("=", "===", "==");
-      } else {
-        return new HardToken("=");
-      }
-    case "<":
-      return this.produce("<");
-    case "+":
-      switch (this.advanceAndGet()) {
-      case "+":
-        return this.produce("++");
-      case "=":
-        return this.produce("+=");
-      default:
-        return new HardToken("+");
-      }
-    default:
-      this.advance();
-      return c;
-    }
-  };
-
-  /**
-   * Skips over the current character and returns a token with the given
-   * contents.
-   */
-  JavaScriptScanner.prototype.produce = function (value, typeOpt) {
-    this.advance();
-    return new HardToken(value, typeOpt);
-  };
-
-  /**
-   * Skips over the current character and if the next character matches
-   * the given 'match' skips another and return 'ifMatch', otherwise
-   * return 'ifNoMatch'.
-   */
-  JavaScriptScanner.prototype.produceWithFallback = function (match, ifMatch, ifNoMatch) {
-    if (this.advanceAndGet() == match) {
-      this.advance();
-      return new HardToken(ifMatch);
-    } else {
-      return new HardToken(ifNoMatch);
-    }
-  };
-
-  /**
-   * Scans a single block of whitespace.
-   */
-  JavaScriptScanner.prototype.scanWhiteSpace = function () {
-    var start = this.getCursor();
-    while (this.hasMore() && isWhiteSpace(this.getCurrent())) {
-      this.advance();
-    }
-    var end = this.getCursor();
-    return new SoftToken(this.getPart(start, end));
-  };
-
-  JavaScriptScanner.prototype.scanIdentifier = function () {
-    var start = this.getCursor();
-    while (this.hasMore() && isIdentifierPart(this.getCurrent())) {
-      this.advance();
-    }
-    var end = this.getCursor();
-    var value = this.getPart(start, end);
-    if (this.settings.isKeyword(value)) {
-      return new HardToken(value);
-    } else {
-      return new HardToken(value, "ident");
-    }
-  };
-
-  JavaScriptScanner.prototype.scanNumber = function () {
-    var start = this.getCursor();
-    while (this.hasMore() && isDigit(this.getCurrent())) {
-      this.advance();
-    }
-    var end = this.getCursor();
-    var value = this.getPart(start, end);
-    return new HardToken(value, "number");
-  };
-
-  namespace.getJavaScriptSyntax = getJavaScriptSyntax;
-  function getJavaScriptSyntax() {
-    var f = namespace.factory;
-    var syntax = new namespace.Syntax();
-
-    // <Program>
-    //   -> <SourceElement>*
-    syntax.toRule("Program")
-      .addProd(f.star(f.nonterm("SourceElement")));
-
-    // <SourceElement>
-    //   -> <Statement>
-    //   -> <FunctionDeclaration>
-    syntax.toRule("SourceElement")
-      .addProd(f.nonterm("Statement"))
-      .addProd(f.nonterm("FunctionDeclaration"));
-
-    // <FunctionDeclaration>
-    //   -> "function" $ident "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
-    syntax.toRule("FunctionDeclaration").addProd(f.seq(f.token("function"),
-      f.value("ident"), f.token("("), f.token(")"), f.token("{"),
-      f.token("}")));
-
-    return syntax;
-  }
 
   namespace.getSource = function () {
     return String(defineTedir);
