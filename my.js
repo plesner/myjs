@@ -388,7 +388,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <Program>
     //   -> <SourceElement>*
     syntax.getRule("Program")
-      .addProd(star(nonterm("SourceElement"))).setConstructor(Program);
+      .addProd(star(nonterm("SourceElement")))
+      .setConstructor(Program);
 
     // <SourceElement>
     //   -> <Statement>
@@ -402,7 +403,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     syntax.getRule("FunctionDeclaration")
       .addProd(keyword("function"), value("Identifier"), token("("),
         f.option(nonterm("FormalParameterList")), token(")"), token("{"),
-        nonterm("FunctionBody"), token("}"));
+        nonterm("FunctionBody"), token("}"))
+      .setConstructor(FunctionDeclaration);
 
     // <FormalParameterList>
     //   -> $Identifier +: ","
@@ -442,6 +444,12 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
 
   function Program(elements) {
     this.elements = elements;
+  }
+
+  function FunctionDeclaration(name, params, body) {
+    this.name = name;
+    this.params = params;
+    this.body = body;
   }
 
   namespace.getSource = function () {

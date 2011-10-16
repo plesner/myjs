@@ -110,6 +110,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return new Ignore(value);
   };
 
+  factory.filter = function (body, filter, isConstructor) {
+    return new Filter(body, filter, isConstructor);
+  };
+
   var ERROR_MARKER = {};
 
   function isError(value) {
@@ -125,6 +129,13 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   Expression.prototype.accept = function (visitor) {
     return visitor(this, this.getType());
+  };
+
+  /**
+   * Returns the number of filter arguments this expression yields.
+   */
+  Expression.prototype.getArity = function () {
+    return 1;
   };
 
   /**
@@ -255,6 +266,16 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
       }
     }
     return result.length == 1 ? result[0] : result;
+  };
+
+  Sequence.prototype.getArity = function () {
+    var result = 0;
+    this.terms.forEach(function (term) {
+      if (term.useValue()) {
+        result++;
+      }
+    });
+    return result;
   };
 
   Sequence.prototype.normalize = function () {
@@ -399,6 +420,79 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return "(_ " + this.term + ")";
   };
 
+  inherits(Filter, Expression);
+  function Filter(term, filter, isConstructor, arityOpt) {
+    this.term = term;
+    this.filter = filter;
+    this.isConstructor = isConstructor;
+    var arity = (arityOpt === undefined) ? -1 : arityOpt;
+    this.arity = arity;
+    this.invoker = Invoker.forArity(this.filter, this.isConstructor, arity);
+  }
+
+  Filter.prototype.getType = function () {
+    return "FILTER";
+  };
+
+  Filter.prototype.forEachChild = function (visitor) {
+    visitor(this.term);
+  };
+
+  Filter.prototype.parse = function (parser, stream) {
+    var value = this.term.parse(parser, stream);
+    return isError(value) ? value : (this.invoker)(value);
+  };
+
+  Filter.prototype.normalize = function () {
+    var term = this.term.normalize();
+    var arity = (this.arity === -1) ? term.getArity() : this.arity;
+    return new Filter(this.term.normalize(), this.filter, this.isConstructor, arity);
+  };
+
+  /**
+   * Utility function for invoking functions with a given arity.
+   */
+  function Invoker() { }
+
+  Invoker.forArity = function (fun, isConstructor, arity) {
+    if (arity == -1) {
+      return null;
+    } else if (isConstructor) {
+      return Invoker.constructorForArity(fun, arity);
+    } else {
+      return Invoker.callerForArity(fun, arity);
+    }
+  };
+
+  /**
+   * Returns a function that, when called with an arguments array (that is,
+   * a real array of arguments not an arguments object) calls the given
+   * function in the appropriate way for passing it 'arity' arguments.
+   */
+  Invoker.callerForArity = function (fun, arity) {
+    switch (arity) {
+    case 1:
+      return function (args) { return fun(args); };
+    default:
+      return function (args) { return fun.apply(null, args); };
+    }
+  };
+
+  Invoker.constructorForArity = function (Cons, arity) {
+    switch (arity) {
+    case 1:
+      return function (args) { return new Cons(args); };
+    case 2:
+      return function (args) { return new Cons(args[0], args[1]); };
+    case 3:
+      return function (args) { return new Cons(args[0], args[1], args[3]); };
+    case 4:
+      return function (args) { return new Cons(args[0], args[1], args[3], args[4]); };
+    default:
+      throw new TedirException("Unsupported constructor");
+    }
+  };
+
   /**
    * A repetition of an expression, separated by a separator expression.
    */
@@ -540,11 +634,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    */
   function Production(value) {
     this.value = value;
-    this.handler = null;
+    this.filter = null;
   }
 
   Production.prototype.asExpression = function () {
-    return this.value;
+    if (this.filter) {
+      return factory.filter(this.value, this.filter.fun, this.filter.isConstructor);
+    } else {
+      return this.value;
+    }
   };
 
   /**
@@ -575,15 +673,16 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    * production that was added succeeds during parsing.
    */
   Rule.prototype.setConstructor = function (Constructor) {
-    this.setHandler(function (value) { return new Constructor(value); });
+    return this.setHandler(Constructor, true);
   };
 
   /**
    * Sets the function that should be called when the last production that
    * was added succeeds during parsing.
    */
-  Rule.prototype.setHandler = function (handler) {
-    this.getLastProd().handler = handler;
+  Rule.prototype.setHandler = function (handler, isConstructor) {
+    this.getLastProd().filter = {fun: handler, isConstructor: isConstructor};
+    return this;
   };
 
   Rule.prototype.asExpression = function () {
