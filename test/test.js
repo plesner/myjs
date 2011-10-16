@@ -10,34 +10,65 @@ function getExpressionSyntax() {
   var f = tedir.factory;
   // <expr>
   //   -> <atom> +: "+"
-  syntax.toRule("expr")
+  syntax.getRule("expr")
       .addProd(f.plus(f.nonterm("atom"), f.token("+")));
 
   // <atom>
   //   -> $number
   //   |  "(" <expr> ")"
-  syntax.toRule("atom")
-      .addProd(f.token("number"))
+  syntax.getRule("atom")
+      .addProd(f.value("number"))
       .addProd(f.seq(f.token("("), f.nonterm("expr"), f.token(")")));
 
   return syntax;
 }
 
-var EXPR = getExpressionSyntax();
-
-function runParserTest(expected, source) {
-  var parser = new tedir.Parser(EXPR);
-  var tokens = myjs.tokenize(source);
-  assertListEquals(expected, parser.parse("expr", tokens));
+/**
+ * Given a syntax and a start production, returns a function that can be
+ * called with the expected output and a source and that will test that
+ * parsing it produces the expected value.
+ */
+function getParserTestRunner(syntax, start) {
+  return function (expected, source) {
+    var parser = new tedir.Parser(syntax);
+    var tokens = myjs.tokenize(source);
+    assertListEquals(expected, parser.parse(start, tokens));
+  };
 }
 
-function testSyntax() {
-  runParserTest([10], "10");
-  runParserTest([11, 12], "11 + 12");
-  runParserTest([13, 14, 15], "13 + 14 + 15");
-  runParserTest([[16, 17, 18]], "(16 + 17 + 18)");
-  runParserTest([[19, [20, 21]]], "(19 + (20 + 21))");
-  runParserTest([[[22, 23], [24, 25]]], "((22 + 23) + (24 + 25))");
+function testSimpleExpressions() {
+  var run = getParserTestRunner(getExpressionSyntax(), "expr");
+  run([10], "10");
+  run([11, 12], "11 + 12");
+  run([13, 14, 15], "13 + 14 + 15");
+  run([[16, 17, 18]], "(16 + 17 + 18)");
+  run([[19, [20, 21]]], "(19 + (20 + 21))");
+  run([[[22, 23], [24, 25]]], "((22 + 23) + (24 + 25))");
+}
+
+function testTokenValues() {
+  var syntax = new tedir.Syntax();
+  var f = tedir.factory;
+
+  syntax.getRule("start")
+    .addProd(f.token("for"))
+    .addProd(f.value("function"))
+    .addProd(f.ignore(f.value("[")));
+
+  var run = getParserTestRunner(syntax, "start");
+  run(null, "for");
+  run("function", "function");
+  run(null, "[");
+}
+
+function testErrors() {
+  var run = getParserTestRunner(getExpressionSyntax(), "expr");
+  try {
+    run(null, "10 10 10");
+    fail();
+  } catch (e) {
+    assertTrue(e instanceof tedir.SyntaxError);
+  }
 }
 
 function runTokenTest(expected, source) {
@@ -57,7 +88,8 @@ function runTokenTest(expected, source) {
 
 function testTokenizing() {
   runTokenTest(["=", "==", "==="], "= == ===");
-  runTokenTest(["ident:f", "ident:fo", "for", "ident:fork"], "f fo for fork");
+  runTokenTest(["Identifier:f", "Identifier:fo", "for", "Identifier:fork"],
+    "f fo for fork");
   runTokenTest(["number:0", "number:10", "number:2343"], "0 10 2343");
   runTokenTest(["(", "[", ",", ";", "]", ")"], "([,;])");
 }

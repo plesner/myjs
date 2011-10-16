@@ -305,7 +305,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     if (this.settings.isKeyword(value)) {
       return new HardToken(value);
     } else {
-      return new HardToken(value, "ident");
+      return new HardToken(value, "Identifier");
     }
   };
 
@@ -340,25 +340,31 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
 
     // <Program>
     //   -> <SourceElement>*
-    syntax.toRule("Program")
+    syntax.getRule("Program")
       .addProd(f.star(f.nonterm("SourceElement")));
 
     // <SourceElement>
     //   -> <Statement>
     //   -> <FunctionDeclaration>
-    syntax.toRule("SourceElement")
+    syntax.getRule("SourceElement")
       .addProd(f.nonterm("Statement"))
       .addProd(f.nonterm("FunctionDeclaration"));
 
     // <FunctionDeclaration>
-    //   -> "function" $ident "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
-    syntax.toRule("FunctionDeclaration").addProd(f.seq(f.token("function"),
-      f.value("ident"), f.token("("), f.token(")"), f.token("{"),
-      f.token("}")));
+    //   -> "function" $Identifier "(" <FormalParameterList>? ")" "{" <FunctionBody> "}"
+    syntax.getRule("FunctionDeclaration")
+      .addProd(f.seq(f.token("function"), f.value("Identifier"), f.token("("),
+        f.option(f.nonterm("FormalParameterList")), f.token(")"), f.token("{"),
+        f.token("}")));
+
+    // <FormalParameterList>
+    //   -> $Identifier +: ","
+    syntax.getRule("FormalParameterList")
+      .addProd(f.plus(f.value("Identifier"), f.token(",")));
 
     // <Statement>
     //   -> "placeholder"
-    syntax.toRule("Statement")
+    syntax.getRule("Statement")
       .addProd(f.token("placeholder"));
 
     return syntax;

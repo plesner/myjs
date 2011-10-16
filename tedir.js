@@ -6,15 +6,36 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   /**
    * Signals an error condition in tedir.
    */
-  function TedirException(message) {
+  namespace.Error = TedirError;
+  function TedirError(message) {
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, TedirException);
+      Error.captureStackTrace(this, TedirError);
     }
     this.message = message;
   }
 
-  TedirException.prototype.toString = function () {
-    return "TedirException: " + this.message;
+  TedirError.prototype.toString = function () {
+    return "tedir.Error: " + this.message;
+  };
+
+  /**
+   * Signals an error while parsing.
+   */
+  namespace.SyntaxError = TedirSyntaxError;
+  function TedirSyntaxError(input, tokenIndex) {
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, SyntaxError);
+    }
+    this.input = input;
+    this.tokenIndex = tokenIndex;
+  }
+
+  TedirSyntaxError.prototype.getOffendingToken = function () {
+    return this.input.tokens[this.tokenIndex].value;
+  };
+
+  TedirSyntaxError.prototype.toString = function () {
+    return "tedir.SyntaxError: Unexpected token " + this.getOffendingToken();
   };
 
   /**
@@ -59,6 +80,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   factory.choice = function () {
     return new Choice(toArray(arguments));
+  };
+
+  factory.option = function (value) {
+    return this.choice(value, this.empty());
   };
 
   factory.star = function (value, sepOpt) {
@@ -293,7 +318,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   }
 
   Ignore.prototype.parse = function (parser, stream) {
-    return this.term.parse(parser, stream);
+    var value = this.term.parse(parser, stream);
+    return isError(value) ? value : null;
   };
 
   Ignore.prototype.normalize = function () {
@@ -370,6 +396,22 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return "(" + (this.allowEmpty ? "* " : "+ ") + this.body + " " + this.sep + ")";
   };
 
+  function Operator(value) {
+    this.value = value;
+    this.infixPrecedence = -1;
+    this.prefixPrecedence = -1;
+    this.suffixPrecedence = -1;
+  }
+
+  function OperatorTable() {
+    this.ops = {};
+  }
+
+  function Operators(body, table) {
+    this.body = body;
+    this.table = table;
+  }
+
   /**
    * Abstract supertype for grammar and syntax objects.
    */
@@ -418,7 +460,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   /**
    * Adds the given expression as a possible production for the given name.
    */
-  LiteralSyntax.prototype.toRule = function (name) {
+  LiteralSyntax.prototype.getRule = function (name) {
     if (!(this.rules.hasOwnProperty(name))) {
       this.rules[name] = new Choice([]);
     }
@@ -434,7 +476,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   LiteralSyntax.prototype.getNonterm = function (name) {
     if (!this.rules.hasOwnProperty(name)) {
-      throw new TedirException("Undefined nonterminal <" + name + ">");
+      throw new TedirError("Undefined nonterminal <" + name + ">");
     }
     return this.rules[name];
   };
@@ -538,7 +580,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     var stream = new TokenStream(tokens);
     var result = start.parse(this, stream);
     if (isError(result) || stream.hasMore()) {
-      throw stream.tokens[stream.highWaterMark];
+      var error = new TedirSyntaxError(stream, stream.highWaterMark);
+      throw error;
     } else {
       return result;
     }
