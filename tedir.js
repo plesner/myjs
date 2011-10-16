@@ -71,7 +71,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   };
 
   factory.token = function (value) {
-    return factory.ignore(factory.value(value), false);
+    return factory.ignore(new Token(value, false));
   };
 
   factory.keyword = function (value) {
@@ -510,7 +510,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    */
   AbstractSyntax.prototype.forEachRule = function (callback) {
     this.getRuleNames().forEach(function (name) {
-      callback(name, this.getRule(name).target);
+      callback(name, this.getRule(name).asExpression());
     }.bind(this));
   };
 
@@ -535,23 +535,76 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return Object.keys(this.rules);
   };
 
-  function Rule(target) {
-    this.target = target;
+  /**
+   * A single production.
+   */
+  function Production(value) {
+    this.value = value;
+    this.handler = null;
   }
 
+  Production.prototype.asExpression = function () {
+    return this.value;
+  };
+
+  /**
+   * The "value" of a nonterm, the productions the nonterm expands to.
+   */
+  function Rule(target) {
+    this.prods = [];
+    this.expr = null;
+  }
+
+  /**
+   * Returns the last production that was added.
+   */
+  Rule.prototype.getLastProd = function () {
+    return this.prods[this.prods.length - 1];
+  };
+
+  /**
+   * Adds a new production to this rule.
+   */
   Rule.prototype.addProd = function () {
-    this.target.addOption(new Sequence(toArray(arguments)));
+    this.prods.push(new Production(new Sequence(toArray(arguments))));
     return this;
+  };
+
+  /**
+   * Sets the constructor function that should be instantiated when the last
+   * production that was added succeeds during parsing.
+   */
+  Rule.prototype.setConstructor = function (Constructor) {
+    this.setHandler(function (value) { return new Constructor(value); });
+  };
+
+  /**
+   * Sets the function that should be called when the last production that
+   * was added succeeds during parsing.
+   */
+  Rule.prototype.setHandler = function (handler) {
+    this.getLastProd().handler = handler;
+  };
+
+  Rule.prototype.asExpression = function () {
+    if (!this.expr) {
+      this.expr = new Choice(this.prods.map(function (p) { return p.asExpression(); }));
+    }
+    return this.expr;
   };
 
   /**
    * Adds the given expression as a possible production for the given name.
    */
-  LiteralSyntax.prototype.getRule = function (name) {
+  LiteralSyntax.prototype.getRule = function (name, failIfMissingOpt) {
     if (!(this.rules.hasOwnProperty(name))) {
-      this.rules[name] = new Choice([]);
+      if (failIfMissingOpt) {
+        throw new TedirError("Undefined nonterminal <" + name + ">");
+      } else {
+        this.rules[name] = new Rule();
+      }
     }
-    return new Rule(this.rules[name]);
+    return this.rules[name];
   };
 
   /**
@@ -559,13 +612,6 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    */
   LiteralSyntax.prototype.asGrammar = function () {
     return new Grammar(this);
-  };
-
-  LiteralSyntax.prototype.getNonterm = function (name) {
-    if (!this.rules.hasOwnProperty(name)) {
-      throw new TedirError("Undefined nonterminal <" + name + ">");
-    }
-    return this.rules[name];
   };
 
   /**
@@ -611,7 +657,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    * will use.
    */
   Grammar.prototype.buildNonterm = function (name) {
-    return this.syntax.getNonterm(name).normalize();
+    var rule = this.syntax.getRule(name, true);
+    return rule.asExpression().normalize();
   };
 
   var END_TOKEN = new Token("eof");

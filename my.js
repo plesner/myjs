@@ -388,7 +388,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <Program>
     //   -> <SourceElement>*
     syntax.getRule("Program")
-      .addProd(star(nonterm("SourceElement")));
+      .addProd(star(nonterm("SourceElement"))).setConstructor(Program);
 
     // <SourceElement>
     //   -> <Statement>
@@ -438,6 +438,10 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .setSyntaxProvider(getStandardSyntax)
       .setStart("Program");
     registerDialect(defhault);
+  }
+
+  function Program(elements) {
+    this.elements = elements;
   }
 
   namespace.getSource = function () {
