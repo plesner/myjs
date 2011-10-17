@@ -288,8 +288,10 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       } else {
         return new HardToken("=");
       }
+    case ">":
+      return this.produceWithFallback(">", ">>", ">");
     case "<":
-      return this.produce("<");
+      return this.produceWithFallback("<", "<<", "<");
     case "+":
       switch (this.advanceAndGet()) {
       case "+":
@@ -393,17 +395,22 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return tokens;
   }
 
+  var PLAIN_OPS = ["<", "<<", ">", ">>"];
+
   namespace.getStandardSyntax = getStandardSyntax;
   function getStandardSyntax() {
     var f = tedir.factory;
+
+    var choice = f.choice;
+    var keyword = f.keyword;
+    var nonterm = f.nonterm;
+    var option = f.option;
+    var plus = f.plus;
     var seq = f.seq;
+    var star = f.star;
     var token = f.token;
     var value = f.value;
-    var keyword = f.keyword;
-    var star = f.star;
-    var nonterm = f.nonterm;
-    var plus = f.plus;
-    var option = f.option;
+
     var syntax = new tedir.Syntax();
 
     // <Program>
@@ -521,9 +528,19 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(plus(nonterm("AssignmentExpression"), token(",")));
 
     // <AssignmentExpression>
-    //   -> <MemberExpression> +: <AssignmentOperator>
+    //   -> <OperatorExpression> +: <AssignmentOperator>
     syntax.getRule("AssignmentExpression")
-      .addProd(plus(nonterm("MemberExpression"), nonterm("AssignmentOperator")));
+      .addProd(plus(nonterm("OperatorExpression"), nonterm("AssignmentOperator")));
+
+    // <OperatorExpression>
+    //   <MemberExpression> +: <PlainOperator>
+    syntax.getRule("OperatorExpression")
+      .addProd(plus(nonterm("MemberExpression"), nonterm("PlainOperator")));
+
+    // <PlainOperator>
+    //   -> ... operators ...
+    syntax.getRule("PlainOperator")
+      .addProd(choice.apply(PLAIN_OPS.map(token)));
 
     // <AssignmentOperator>
     //   -> "="
@@ -562,11 +579,14 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
         token(")"));
 
     // <PrimaryExpression>
-    //   -> <Literal>
     //   -> $Identifier
+    //   -> <Literal>
+    //   -> "(" <Expression> ")"
     syntax.getRule("PrimaryExpression")
+      .addProd(keyword("this"))
+      .addProd(value("Identifier"))
       .addProd(nonterm("Literal"))
-      .addProd(value("Identifier"));
+      .addProd(token("("), nonterm("Expression"), token(")"));
 
     // <Literal>
     //   -> $NumericLiteral

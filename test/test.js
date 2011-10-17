@@ -250,7 +250,10 @@ function runTokenTest(expected, source) {
 }
 
 function testTokenizing() {
-  runTokenTest(["=", "==", "==="], "= == ===");
+  runTokenTest(["=", "==", "===", "===", "="], "= == === ====");
+  runTokenTest([">", ">>", ">>", ">", ">>", ">>"], "> >> >>> >>>>");
+  runTokenTest(["<", "<<", "<<", "<", "<<", "<<"], "< << <<< <<<<");
+
   runTokenTest(["Identifier:f", "Identifier:fo", "for", "Identifier:fork"],
     "f fo for fork");
   runTokenTest(["NumericLiteral:0", "NumericLiteral:10", "NumericLiteral:2343"],
