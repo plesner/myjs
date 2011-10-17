@@ -310,11 +310,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
         return this.scanEndOfLineComment();
       } else {
         this.advance();
-        return c;
+        return new SoftToken(c);
       }
     default:
       this.advance();
-      return c;
+      return new SoftToken(c);
     }
   };
 
@@ -604,11 +604,18 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     //   -> $Identifier
     //   -> <Literal>
     //   -> "(" <Expression> ")"
+    //   -> <ObjectLiteral>
     syntax.getRule("PrimaryExpression")
       .addProd(keyword("this"))
       .addProd(value("Identifier"))
       .addProd(nonterm("Literal"))
-      .addProd(token("("), nonterm("Expression"), token(")"));
+      .addProd(token("("), nonterm("Expression"), token(")"))
+      .addProd(nonterm("ObjectLiteral"));
+
+    // <ObjectLiteral>
+    //   -> "{" "}"
+    syntax.getRule("ObjectLiteral")
+      .addProd(token("{"), token("}"));
 
     // <Literal>
     //   -> $NumericLiteral
