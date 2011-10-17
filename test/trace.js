@@ -47,7 +47,7 @@ TraceReplay.prototype.replayTrace = function (lastPos, step) {
     }
     window.setTimeout(function () {
       this.replayTrace(newPos, step + 1);
-    }.bind(this), 50);
+    }.bind(this), 0);
   }
 };
 

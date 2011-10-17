@@ -90,7 +90,7 @@ function compareLists(one, two) {
       return false;
     }
   }
-  return true
+  return true;
 }
 
 function assertListEquals(one, two) {
@@ -101,7 +101,7 @@ function assertListEquals(one, two) {
 
 function listToString(obj) {
   if (Array.isArray(obj)) {
-    return "[" + obj.map(listToString).join(", ") + "]"
+    return "[" + obj.map(listToString).join(", ") + "]";
   } else {
     return String(obj);
   }

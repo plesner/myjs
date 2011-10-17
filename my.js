@@ -207,11 +207,23 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return this.cursor < this.source.length;
   };
 
+  Scanner.prototype.hasLookahead = function () {
+    return (this.cursor + 1) < this.source.length;
+  };
+
   /**
    * Advances the stream to the next character.
    */
   Scanner.prototype.advance = function () {
     this.cursor++;
+  };
+
+  /**
+   * Advance the specified amount if possible but not past the end of the
+   * input.
+   */
+  Scanner.prototype.advanceIfPossible = function (amount) {
+    this.cursor = Math.min(this.cursor + amount, this.source.length);
   };
 
   /**
@@ -276,7 +288,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     if (isWhiteSpace(c)) {
       return this.scanWhiteSpace();
     } else if (SHORT_DELIMITER_MAP[c]) {
-      return this.produce(c);
+      return this.advanceAndYield(c);
     } else if (isDigit(c)) {
       return this.scanNumber(c);
     } else if (isIdentifierStart(c)) {
@@ -287,28 +299,65 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     case "'":
       return this.scanString();
     case "=":
-      if (this.advanceAndGet() == "=") {
-        return this.produceWithFallback("=", "===", "==");
-      } else {
-        return new HardToken("=");
+      switch (this.advanceAndGet()) {
+      case "=":
+        return this.checkAndYield("=", "===", "==");
+      default:
+        return this.justYield("=");
+      }
+    case "!":
+      switch (this.advanceAndGet()) {
+      case "=":
+        return this.checkAndYield("=", "!==", "!=");
+      default:
+        return this.justYield("!");
       }
     case ">":
-      return this.produceWithFallback(">", ">>", ">");
-    case "<":
-      return this.produceWithFallback("<", "<<", "<");
-    case "+":
       switch (this.advanceAndGet()) {
-      case "+":
-        return this.produce("++");
+      case ">":
+        switch (this.advanceAndGet()) {
+        case ">":
+          return this.checkAndYield("=", ">>>=", ">>>");
+        case "=":
+          return this.advanceAndYield(">>=");
+        default:
+          return this.justYield(">>");
+        }
       case "=":
-        return this.produce("+=");
+        return this.advanceAndYield(">=");
       default:
-        return new HardToken("+");
+        return this.justYield(">");
       }
+    case "<":
+      switch (this.advanceAndGet()) {
+      case "<":
+        return this.checkAndYield("=", "<<=", "<<");
+      case "=":
+        return this.advanceAndYield("<=");
+      default:
+        return this.justYield("<");
+      }
+    case "|":
+      return this.doubleOrAssignment("|", "||", "|=");
+    case "&":
+      return this.doubleOrAssignment("&", "&&", "&=");
+    case "+":
+      return this.doubleOrAssignment("+", "++", "+=");
+    case "-":
+      return this.doubleOrAssignment("-", "--", "-=");
+    case "*":
+      return this.checkAndYield("=", "*=", "*");
+    case "%":
+      return this.checkAndYield("=", "%=", "%");
+    case "^":
+      return this.checkAndYield("=", "^=", "^");
     case "/":
-      if (this.getLookahead() == "/") {
+      switch (this.getLookahead()) {
+      case "/":
         return this.scanEndOfLineComment();
-      } else {
+      case "*":
+        return this.scanBlockComment();
+      default:
         this.advance();
         return new SoftToken(c);
       }
@@ -319,10 +368,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   };
 
   /**
+   * Doesn't advance but just returns a token with the given contents.
+   */
+  Scanner.prototype.justYield = function (value, typeOpt) {
+    return new HardToken(value, typeOpt);
+  };
+
+  /**
    * Skips over the current character and returns a token with the given
    * contents.
    */
-  Scanner.prototype.produce = function (value, typeOpt) {
+  Scanner.prototype.advanceAndYield = function (value, typeOpt) {
     this.advance();
     return new HardToken(value, typeOpt);
   };
@@ -330,14 +386,29 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   /**
    * Skips over the current character and if the next character matches
    * the given 'match' skips another and return 'ifMatch', otherwise
-   * return 'ifNoMatch'.
+   * doesn't skip but just returns 'ifNoMatch'.
    */
-  Scanner.prototype.produceWithFallback = function (match, ifMatch, ifNoMatch) {
+  Scanner.prototype.checkAndYield = function (match, ifMatch, ifNoMatch) {
     if (this.advanceAndGet() == match) {
       this.advance();
       return new HardToken(ifMatch);
     } else {
       return new HardToken(ifNoMatch);
+    }
+  };
+
+  /**
+   * If the next character is 'single', returns onDouble, otherwise if the
+   * next is equality returns onAssignment, otherwise returns single.
+   */
+  Scanner.prototype.doubleOrAssignment = function (single, onDouble, onAssignment) {
+    switch (this.advanceAndGet()) {
+    case single:
+      return this.advanceAndYield(onDouble);
+    case "=":
+      return this.advanceAndYield(onAssignment);
+    default:
+      return this.justYield(single);
     }
   };
 
@@ -378,16 +449,14 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   };
 
   Scanner.prototype.scanString = function () {
+    var start = this.getCursor();
     var first = this.getCurrent();
     this.advance();
-    var start = this.getCursor();
     while (this.hasMore() && this.getCurrent() != first) {
       this.advance();
     }
+    this.advanceIfPossible(1);
     var end = this.getCursor();
-    if (this.hasMore()) {
-      this.advance();
-    }
     var value = this.getPart(start, end);
     return new HardToken(value, "StringLiteral");
   };
@@ -397,6 +466,18 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     while (this.hasMore() && (this.getCurrent() != "\n")) {
       this.advance();
     }
+    this.advanceIfPossible(1);
+    var end = this.getCursor();
+    var value = this.getPart(start, end);
+    return new SoftToken(value);
+  };
+
+  Scanner.prototype.scanBlockComment = function () {
+    var start = this.getCursor();
+    while (this.hasLookahead() && (this.getCurrent() != "*" || this.getLookahead() != "/")) {
+      this.advance();
+    }
+    this.advanceIfPossible(2);
     var end = this.getCursor();
     var value = this.getPart(start, end);
     return new SoftToken(value);
@@ -416,7 +497,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return tokens;
   }
 
-  var PLAIN_OPS = ["<", "<<", ">", ">>"];
+  var ASSIGNMENT_OPERATORS = ["=", "+="];
+  var INFIX_OPERATORS = ["<", "<<", ">", ">>", "|", "||", "==", "!=", "+",
+    "===", "&&", "&", "|", "-", "*", "%", "^"];
+  var PREFIX_OPERATORS = ["++", "--", "+", "-", "~", "!"];
+  var POSTFIX_OPERATORS = ["++", "--"];
 
   namespace.getStandardSyntax = getStandardSyntax;
   function getStandardSyntax() {
@@ -473,6 +558,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     //   -> <IterationStatement>
     //   -> <ReturnStatement>
     //   -> <ContinueStatement>
+    //   -> <ThrowStatement>
+    //   -> <TryStatement>
     syntax.getRule("Statement")
       .addProd(nonterm("Block"))
       .addProd(nonterm("VariableStatement"))
@@ -480,7 +567,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(nonterm("IfStatement"))
       .addProd(nonterm("IterationStatement"))
       .addProd(nonterm("ReturnStatement"))
-      .addProd(nonterm("ContinueStatement"));
+      .addProd(nonterm("ContinueStatement"))
+      .addProd(nonterm("ThrowStatement"))
+      .addProd(nonterm("TryStatement"));
 
     // <Block>
     //   -> "{" <Statement>* "}"
@@ -511,7 +600,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <IterationStatement>
     //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
     //   -> "while" "(" <Expression> ")" <Statement>
+    //   -> "for" "(" "var" <VariableDeclaration> ";" <Expression>? ";" <Expression>? ")" <Statement>
     //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")" <Statement>
+    //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")" <Statement>
     syntax.getRule("IterationStatement")
       .addProd(keyword("do"), nonterm("Statement"), keyword("while"),
         token("("), nonterm("Expression"), token(")"), token(";"))
@@ -519,16 +610,45 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(keyword("while"), token("("), nonterm("Expression"), token(")"),
         nonterm("Statement"))
       .setConstructor(ast.WhileStatement)
+      .addProd(keyword("for"), token("("), keyword("var"),
+        nonterm("VariableDeclaration"), token(";"),
+        option(nonterm("Expression")), token(";"),
+        option(nonterm("Expression")), token(")"), nonterm("Statement"))
       .addProd(keyword("for"), token("("), option(nonterm("Expression")),
         token(";"), option(nonterm("Expression")), token(";"),
         option(nonterm("Expression")), token(")"), nonterm("Statement"))
-      .setConstructor(ast.ForStatement);
+      .setConstructor(ast.ForStatement)
+      .addProd(keyword("for"), token("("), keyword("var"),
+        nonterm("VariableDeclaration"), keyword("in"),
+        option(nonterm("Expression")), token(")"), nonterm("Statement"));
 
     // <ContinueStatement>
     //   -> "continue" $Identifier? ";"
     syntax.getRule("ContinueStatement")
       .addProd(keyword("continue"), option(value("Identifier")), token(";"))
       .setConstructor(ast.ContinueStatement);
+
+    // <ThrowStatement>
+    //   -> "throw" <Expression> ";"
+    syntax.getRule("ThrowStatement")
+      .addProd(keyword("throw"), nonterm("Expression"), token(";"));
+
+    // <TryStatement>
+    //   -> "try" <Block> <Catch>? <Finally>?
+    syntax.getRule("TryStatement")
+      .addProd(keyword("try"), nonterm("Block"), option(nonterm("Catch")),
+        option(nonterm("Finally")));
+
+    // <Catch>
+    //   -> "catch" "(" $Identifier ")" <Block>
+    syntax.getRule("Catch")
+      .addProd(keyword("catch"), token("("), value("Identifier"), token(")"),
+        nonterm("Block"));
+
+    // <Finally>
+    //   -> "finally" <Block>
+    syntax.getRule("Finally")
+      .addProd(keyword("finally"), nonterm("Block"));
 
     // <VariableDeclaration>
     //   -> $Identifier ("=" <AssignmentExpression>)?
@@ -553,20 +673,44 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     syntax.getRule("AssignmentExpression")
       .addProd(plus(nonterm("OperatorExpression"), nonterm("AssignmentOperator")));
 
-    // <OperatorExpression>
-    //   <MemberExpression> +: <PlainOperator>
-    syntax.getRule("OperatorExpression")
-      .addProd(plus(nonterm("MemberExpression"), nonterm("PlainOperator")));
-
-    // <PlainOperator>
-    //   -> ... operators ...
-    syntax.getRule("PlainOperator")
-      .addProd(choice.apply(PLAIN_OPS.map(token)));
-
     // <AssignmentOperator>
-    //   -> "="
-    syntax.getRule("AssignmentOperator")
-      .addProd(token("="));
+    //   -> ... assignment operators ...
+    ASSIGNMENT_OPERATORS.forEach(function (op) {
+      syntax.getRule("AssignmentOperator")
+        .addProd(token(op));
+    });
+
+    // <OperatorExpression>
+    //   <UnaryExpression> +: <InfixOperator>
+    syntax.getRule("OperatorExpression")
+      .addProd(plus(nonterm("UnaryExpression"), nonterm("InfixOperator")));
+
+    // <InfixOperator>
+    //   -> ... infix operators ...
+    INFIX_OPERATORS.forEach(function (op) {
+      syntax.getRule("InfixOperator")
+        .addProd(token(op));
+    });
+
+    // <UnaryExpression>
+    //   -> <PrefixOperator>* <MemberExpression> <PostfixOperator>*
+    syntax.getRule("UnaryExpression")
+      .addProd(star(nonterm("PrefixOperator")), nonterm("MemberExpression"),
+        star(nonterm("PostfixOperator")));
+
+    // <PrefixOperator>
+    //   -> ... prefix operators ...
+    PREFIX_OPERATORS.forEach(function (op) {
+      syntax.getRule("PrefixOperator")
+        .addProd(token(op));
+    });
+
+    // <PostfixOperator>
+    //   -> ... postfix operators ...
+    POSTFIX_OPERATORS.forEach(function (op) {
+      syntax.getRule("PostfixOperator")
+        .addProd(token(op));
+    });
 
     // <MemberExpression>
     //   -> <PrimaryExpression> <MemberAccessor>*
@@ -603,19 +747,27 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <PrimaryExpression>
     //   -> $Identifier
     //   -> <Literal>
-    //   -> "(" <Expression> ")"
+    //   -> <ArrayLiteral>
     //   -> <ObjectLiteral>
+    //   -> "(" <Expression> ")"
     syntax.getRule("PrimaryExpression")
       .addProd(keyword("this"))
       .addProd(value("Identifier"))
       .addProd(nonterm("Literal"))
-      .addProd(token("("), nonterm("Expression"), token(")"))
-      .addProd(nonterm("ObjectLiteral"));
+      .addProd(nonterm("ArrayLiteral"))
+      .addProd(nonterm("ObjectLiteral"))
+      .addProd(token("("), nonterm("Expression"), token(")"));
 
     // <ObjectLiteral>
     //   -> "{" "}"
     syntax.getRule("ObjectLiteral")
       .addProd(token("{"), token("}"));
+
+    // <ArrayLiteral>
+    //   -> "[" <AssignmentExpression> *: "," "]"
+    syntax.getRule("ArrayLiteral")
+      .addProd(token("["), star(nonterm("AssignmentExpression"), token(",")),
+        token("]"));
 
     // <Literal>
     //   -> $NumericLiteral
