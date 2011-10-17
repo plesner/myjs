@@ -232,7 +232,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return this.source.substring(start, end);
   };
 
-  var SHORT_DELIMITERS = "(),:;?[]{}~";
+  var SHORT_DELIMITERS = "(),:;?[]{}~.";
   var SHORT_DELIMITER_MAP = {};
   var i;
   for (i = 0; i < SHORT_DELIMITERS.length; i++) {
@@ -516,14 +516,62 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .setConstructor(ast.ReturnStatement);
 
     // <Expression>
-    //   -> <AssignmentExpression>
+    //   -> <AssignmentExpression> +: ","
     syntax.getRule("Expression")
-      .addProd(nonterm("AssignmentExpression"));
+      .addProd(plus(nonterm("AssignmentExpression"), token(",")));
 
     // <AssignmentExpression>
+    //   -> <MemberExpression> +: <AssignmentOperator>
+    syntax.getRule("AssignmentExpression")
+      .addProd(plus(nonterm("MemberExpression"), nonterm("AssignmentOperator")));
+
+    // <AssignmentOperator>
+    //   -> "="
+    syntax.getRule("AssignmentOperator")
+      .addProd(token("="));
+
+    // <MemberExpression>
+    //   -> <PrimaryExpression> <MemberAccessor>*
+    //   -> "new" <MemberExpression> <Arguments>
+    //   -> <FunctionExpression>
+    syntax.getRule("MemberExpression")
+      .addProd(nonterm("PrimaryExpression"), star(nonterm("MemberAccessor")))
+      .addProd(keyword("new"), nonterm("MemberExpression"), nonterm("Arguments"))
+      .addProd(nonterm("FunctionExpression"));
+
+    // <FunctionExpression>
+    //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
+    syntax.getRule("FunctionExpression")
+      .addProd(keyword("function"), option(value("Identifier")), token("("),
+        nonterm("FormalParameterList"), token(")"), token("{"),
+        nonterm("FunctionBody"), token("}"));
+
+    // <MemberAccessor>
+    //   -> "[" <Expression> "]"
+    //   -> <Arguments>
+    //   -> "." $Identifier
+    syntax.getRule("MemberAccessor")
+      .addProd(token("["), nonterm("Expression"), token("]"))
+      .addProd(nonterm("Arguments"))
+      .addProd(token("."), value("Identifier"));
+
+    // <Arguments>
+    //   -> "(" <AssignmentExpression> *: "," ")"
+    syntax.getRule("Arguments")
+      .addProd(token("("), star(nonterm("AssignmentExpression"), token(",")),
+        token(")"));
+
+    // <PrimaryExpression>
+    //   -> <Literal>
+    //   -> $Identifier
+    syntax.getRule("PrimaryExpression")
+      .addProd(nonterm("Literal"))
+      .addProd(value("Identifier"));
+
+    // <Literal>
     //   -> $NumericLiteral
     //   -> $StringLiteral
-    syntax.getRule("AssignmentExpression")
+    syntax.getRule("Literal")
       .addProd(value("NumericLiteral"))
       .addProd(value("StringLiteral"));
 
