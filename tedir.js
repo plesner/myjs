@@ -28,20 +28,47 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
    * Signals an error while parsing.
    */
   namespace.SyntaxError = TedirSyntaxError;
-  function TedirSyntaxError(input, tokenIndex) {
+  function TedirSyntaxError(origin, input, tokenIndex) {
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, SyntaxError);
     }
+    this.origin = origin;
     this.input = input;
     this.tokenIndex = tokenIndex;
   }
 
+  TedirSyntaxError.prototype.getToken = function (index) {
+    return this.input.tokens[index].value;
+  };
+
   TedirSyntaxError.prototype.getOffendingToken = function () {
-    return this.input.tokens[this.tokenIndex].value;
+    return this.getToken(this.tokenIndex);
+  };
+
+  TedirSyntaxError.prototype.getLineIndex = function () {
+    var i, lines = 0;
+    for (i = 0; i < this.tokenIndex; i++) {
+      var token = this.getToken(i);
+      var offset = token.indexOf("\n");
+      while (offset != -1) {
+        lines++;
+        offset = token.indexOf("\n", offset + 1);
+      }
+    }
+    return lines;
   };
 
   TedirSyntaxError.prototype.toString = function () {
-    return "tedir.SyntaxError: Unexpected token " + this.getOffendingToken();
+    var token = this.getOffendingToken();
+    var locList = [];
+    var fileName = this.origin.getFileName();
+    if (fileName) {
+      locList.push(fileName);
+    }
+    var lineNumber = this.getLineIndex() + 1;
+    locList.push(lineNumber);
+    var loc = "(" + locList.join(":") + ")";
+    return "tedir.SyntaxError" + loc + ": Unexpected token " + token;
   };
 
   namespace.internal.toArray = toArray;
@@ -846,6 +873,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.cursor = value;
   };
 
+  namespace.SourceOrigin = SourceOrigin;
+  function SourceOrigin(fileNameOpt) {
+    this.fileName = fileNameOpt;
+  }
+
+  SourceOrigin.prototype.getFileName = function () {
+    return this.fileName;
+  };
+
   /**
    * Creates a new parser that can be used to parse the given sequence of
    * tokens.
@@ -855,13 +891,13 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.grammar = grammarOrSyntax.asGrammar();
   }
 
-  Parser.prototype.parse = function (nonterm, tokens) {
+  Parser.prototype.parse = function (nonterm, tokens, originOpt) {
+    var origin = originOpt || new SourceOrigin();
     var start = this.grammar.getNonterm(nonterm);
     var stream = new TokenStream(tokens);
     var result = start.parse(this, stream);
     if (isError(result) || stream.hasMore()) {
-      var error = new TedirSyntaxError(stream, stream.highWaterMark);
-      throw error;
+      throw new TedirSyntaxError(origin, stream, stream.highWaterMark);
     } else {
       return result;
     }

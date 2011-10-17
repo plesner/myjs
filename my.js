@@ -78,11 +78,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   /**
    * Parses the given source, returning a syntax tree.
    */
-  Dialect.prototype.parseSource = function (source) {
+  Dialect.prototype.parseSource = function (source, origin) {
     var grammar = this.getGrammar();
     var parser = new tedir.Parser(grammar);
     var tokens = tokenize(source, this.getSettings());
-    return parser.parse(this.start, tokens);
+    return parser.parse(this.start, tokens, origin);
   };
 
   /**
@@ -279,6 +279,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       return this.scanIdentifier(c);
     }
     switch (c) {
+    case "\"":
+    case "'":
+      return this.scanString();
     case "=":
       if (this.advanceAndGet() == "=") {
         return this.produceWithFallback("=", "===", "==");
@@ -361,6 +364,21 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return new HardToken(value, "NumericLiteral");
   };
 
+  Scanner.prototype.scanString = function () {
+    var first = this.getCurrent();
+    this.advance();
+    var start = this.getCursor();
+    while (this.hasMore() && this.getCurrent() != first) {
+      this.advance();
+    }
+    var end = this.getCursor();
+    if (this.hasMore()) {
+      this.advance();
+    }
+    var value = this.getPart(start, end);
+    return new HardToken(value, "StringLiteral");
+  };
+
   namespace.tokenize = tokenize;
   /**
    * Returns the tokens of a piece of JavaScript source code.
@@ -422,12 +440,19 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <Statement>
     //   -> <Block>
     //   -> <VariableStatement>
+    //   -> <ExpressionStatement>
+    //   -> <IfStatement>
+    //   -> <IterationStatement>
     //   -> <ReturnStatement>
+    //   -> <ContinueStatement>
     syntax.getRule("Statement")
       .addProd(nonterm("Block"))
       .addProd(nonterm("VariableStatement"))
+      .addProd(nonterm("ExpressionStatement"))
       .addProd(nonterm("IfStatement"))
-      .addProd(nonterm("ReturnStatement"));
+      .addProd(nonterm("IterationStatement"))
+      .addProd(nonterm("ReturnStatement"))
+      .addProd(nonterm("ContinueStatement"));
 
     // <Block>
     //   -> "{" <Statement>* "}"
@@ -442,12 +467,40 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
         token(";"))
       .setConstructor(ast.VariableStatement);
 
+    // <ExpressionStatement>
+    //   -> <Expression> ";"
+    syntax.getRule("ExpressionStatement")
+      .addProd(nonterm("Expression"), token(";"))
+      .setConstructor(ast.ExpressionStatement);
+
     // <IfStatement>
     //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
     syntax.getRule("IfStatement")
       .addProd(keyword("if"), token("("), nonterm("Expression"), token(")"),
         nonterm("Statement"), option(keyword("else"), nonterm("Statement")))
       .setConstructor(ast.IfStatement);
+
+    // <IterationStatement>
+    //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
+    //   -> "while" "(" <Expression> ")" <Statement>
+    //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")" <Statement>
+    syntax.getRule("IterationStatement")
+      .addProd(keyword("do"), nonterm("Statement"), keyword("while"),
+        token("("), nonterm("Expression"), token(")"), token(";"))
+      .setConstructor(ast.DoStatement)
+      .addProd(keyword("while"), token("("), nonterm("Expression"), token(")"),
+        nonterm("Statement"))
+      .setConstructor(ast.WhileStatement)
+      .addProd(keyword("for"), token("("), option(nonterm("Expression")),
+        token(";"), option(nonterm("Expression")), token(";"),
+        option(nonterm("Expression")), token(")"), nonterm("Statement"))
+      .setConstructor(ast.ForStatement);
+
+    // <ContinueStatement>
+    //   -> "continue" $Identifier? ";"
+    syntax.getRule("ContinueStatement")
+      .addProd(keyword("continue"), option(value("Identifier")), token(";"))
+      .setConstructor(ast.ContinueStatement);
 
     // <VariableDeclaration>
     //   -> $Identifier ("=" <AssignmentExpression>)?
@@ -469,8 +522,10 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
 
     // <AssignmentExpression>
     //   -> $NumericLiteral
+    //   -> $StringLiteral
     syntax.getRule("AssignmentExpression")
-      .addProd(value("NumericLiteral"));
+      .addProd(value("NumericLiteral"))
+      .addProd(value("StringLiteral"));
 
     return syntax;
   }

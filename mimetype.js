@@ -57,8 +57,8 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
   /**
    * Loads the given source code string using the given dialect.
    */
-  function processSource(dialect, source) {
-    var ast = dialect.parseSource(source);
+  function processSource(dialect, source, originOpt) {
+    var ast = dialect.parseSource(source, originOpt);
     console.log(ast);
   }
 
@@ -75,7 +75,8 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
     if (script.src) {
       // Load a remote src if there is one.
       getFile(script.src, function (source) {
-        processSource(dialect, source);
+        var origin = new tedir.SourceOrigin(script.src);
+        processSource(dialect, source, origin);
         processInnerText();
       });
     } else {

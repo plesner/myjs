@@ -40,6 +40,36 @@
     this.elsePart = elsePart;
   }
 
+  namespace.DoStatement = DoStatement;
+  function DoStatement(body, cond) {
+    this.body = body;
+    this.cond = cond;
+  }
+
+  namespace.WhileStatement = WhileStatement;
+  function WhileStatement(cond, body) {
+    this.cond = cond;
+    this.body = body;
+  }
+
+  namespace.ForStatement = ForStatement;
+  function ForStatement(init, test, update, body) {
+    this.init = init;
+    this.test = test;
+    this.update = update;
+    this.body = body;
+  }
+
+  namespace.ContinueStatement = ContinueStatement;
+  function ContinueStatement(label) {
+    this.label = label;
+  }
+
+  namespace.ExpressionStatement = ExpressionStatement;
+  function ExpressionStatement(expr) {
+    this.expr = expr;
+  }
+
   namespace.getSource = function () {
     return String(defineMyJsAst);
   };
