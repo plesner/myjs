@@ -834,17 +834,22 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return rule.asExpression().normalize();
   };
 
-  var END_TOKEN = new Token("eof");
+  var EOF_TOKEN = new Token("eof");
 
-  function TokenStream(tokens) {
+  function TokenStream(tokens, traceOut) {
     this.tokens = tokens;
     this.cursor = 0;
     this.highWaterMark = 0;
+    this.traceOut = traceOut;
     this.skipEther();
   }
 
   TokenStream.prototype.getCurrent = function () {
-    return this.hasMore() ? this.tokens[this.cursor] : END_TOKEN;
+    if (this.hasMore()) {
+      return this.tokens[this.cursor];
+    } else {
+      return EOF_TOKEN;
+    }
   };
 
   TokenStream.prototype.hasMore = function () {
@@ -857,6 +862,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     }
     if (this.cursor > this.highWaterMark) {
       this.highWaterMark = this.cursor;
+    }
+    if (this.traceOut) {
+      this.traceOut.push(this.cursor);
     }
   };
 
@@ -891,13 +899,37 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.grammar = grammarOrSyntax.asGrammar();
   }
 
-  Parser.prototype.parse = function (nonterm, tokens, originOpt) {
+  /**
+   * A collection of information about the process of parsing one piece
+   * of input.
+   */
+  function ParseTrace(steps, tokens, result) {
+    this.steps = steps;
+    this.tokens = tokens;
+    this.result = result;
+  }
+
+  ParseTrace.prototype.isError = function () {
+    return this.result instanceof TedirSyntaxError;
+  };
+
+  /**
+   * Parses the given tokens according to this parser's grammar. If traceOpt
+   * is set a trace of the parsing is returned, otherwise just the result.
+   */
+  Parser.prototype.parse = function (nonterm, tokens, originOpt, traceOpt) {
     var origin = originOpt || new SourceOrigin();
     var start = this.grammar.getNonterm(nonterm);
-    var stream = new TokenStream(tokens);
+    var steps = traceOpt ? [] : null;
+    var stream = new TokenStream(tokens, steps);
     var result = start.parse(this, stream);
-    if (isError(result) || stream.hasMore()) {
-      throw new TedirSyntaxError(origin, stream, stream.highWaterMark);
+    var error = (isError(result) || stream.hasMore())
+        ? new TedirSyntaxError(origin, stream, stream.highWaterMark)
+        : null;
+    if (traceOpt) {
+      return new ParseTrace(steps, tokens, error || result);
+    } else if (isError(result) || stream.hasMore()) {
+      throw error;
     } else {
       return result;
     }

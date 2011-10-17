@@ -1,0 +1,28 @@
+<html>
+  <head><title>Tedir trace</title></head>
+  <link link rel="stylesheet" type="text/css" href="trace.css">
+  <script src="../tedir.js"></script>
+  <script src="../my.js"></script>
+  <script src="../ast.js"></script>
+  <script src="../mimetype.js"></script>
+  <script src="framework.js"></script>
+  <script src="trace.js"></script>
+  <script type="text/myjs" onTrace="showTrace">
+function foo() {
+  for (2; 4; 5) {
+    while (this) {
+      if (1) {
+        // foo
+      } else {
+        4 5; // bar
+      }
+    }
+  }
+}
+  </script>
+  <body>
+    <pre>
+      <div id="trace"></div>
+    </pre>
+  </body>
+</html>

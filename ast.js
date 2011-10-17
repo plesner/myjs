@@ -70,6 +70,13 @@
     this.expr = expr;
   }
 
+  namespace.FunctionExpression = FunctionExpression;
+  function FunctionExpression(name, params, body) {
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
   namespace.getSource = function () {
     return String(defineMyJsAst);
   };

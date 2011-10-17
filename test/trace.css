@@ -1,0 +1,27 @@
+#trace {
+  line-height: 140%;
+}
+
+.soft {
+  margin: 1px;
+  color: silver;
+}
+
+.plain {
+  color: silver;
+  border: 1px solid #dddddd;
+  background: #f3f3f3;
+  margin: 2px;
+}
+
+.touched {
+  border: 1px solid #bdddbd;
+  background: #d3f3d3;
+  margin: 2px;
+}
+
+.error {
+  border: 1px solid #ddbdbd;
+  background: #f3d3d3;
+  margin: 2px;
+}

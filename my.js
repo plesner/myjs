@@ -78,11 +78,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   /**
    * Parses the given source, returning a syntax tree.
    */
-  Dialect.prototype.parseSource = function (source, origin) {
+  Dialect.prototype.parseSource = function (source, origin, trace) {
     var grammar = this.getGrammar();
     var parser = new tedir.Parser(grammar);
     var tokens = tokenize(source, this.getSettings());
-    return parser.parse(this.start, tokens, origin);
+    return parser.parse(this.start, tokens, origin, trace);
   };
 
   /**
@@ -196,6 +196,10 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return this.source[this.cursor];
   };
 
+  Scanner.prototype.getLookahead = function () {
+    return this.source[this.cursor + 1];
+  };
+
   /**
    * Does this character stream have more characters?
    */
@@ -301,6 +305,13 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       default:
         return new HardToken("+");
       }
+    case "/":
+      if (this.getLookahead() == "/") {
+        return this.scanEndOfLineComment();
+      } else {
+        this.advance();
+        return c;
+      }
     default:
       this.advance();
       return c;
@@ -381,6 +392,16 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return new HardToken(value, "StringLiteral");
   };
 
+  Scanner.prototype.scanEndOfLineComment = function () {
+    var start = this.getCursor();
+    while (this.hasMore() && (this.getCurrent() != "\n")) {
+      this.advance();
+    }
+    var end = this.getCursor();
+    var value = this.getPart(start, end);
+    return new SoftToken(value);
+  };
+
   namespace.tokenize = tokenize;
   /**
    * Returns the tokens of a piece of JavaScript source code.
@@ -420,11 +441,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .setConstructor(ast.Program);
 
     // <SourceElement>
-    //   -> <Statement>
     //   -> <FunctionDeclaration>
+    //   -> <Statement>
     syntax.getRule("SourceElement")
-      .addProd(nonterm("Statement"))
-      .addProd(nonterm("FunctionDeclaration"));
+      .addProd(nonterm("FunctionDeclaration"))
+      .addProd(nonterm("Statement"));
 
     // <FunctionDeclaration>
     //   -> "function" $Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
@@ -561,7 +582,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     syntax.getRule("FunctionExpression")
       .addProd(keyword("function"), option(value("Identifier")), token("("),
         nonterm("FormalParameterList"), token(")"), token("{"),
-        nonterm("FunctionBody"), token("}"));
+        nonterm("FunctionBody"), token("}"))
+      .setConstructor(ast.FunctionExpression);
 
     // <MemberAccessor>
     //   -> "[" <Expression> "]"

@@ -57,9 +57,11 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
   /**
    * Loads the given source code string using the given dialect.
    */
-  function processSource(dialect, source, originOpt) {
-    var ast = dialect.parseSource(source, originOpt);
-    console.log(ast);
+  function processSource(dialect, source, origin, traceTarget) {
+    var result = dialect.parseSource(source, origin, !!traceTarget);
+    if (traceTarget) {
+      (window[traceTarget])(result);
+    }
   }
 
   /**
@@ -67,16 +69,17 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
    * dialect.
    */
   function processScriptWithDialect(dialect, script) {
+    var traceTarget = script.getAttribute("onTrace");
     function processInnerText() {
       if (script.innerText) {
-        processSource(dialect, script.innerText);
+        processSource(dialect, script.innerText.trim(), null, traceTarget);
       }
     }
     if (script.src) {
       // Load a remote src if there is one.
       getFile(script.src, function (source) {
         var origin = new tedir.SourceOrigin(script.src);
-        processSource(dialect, source, origin);
+        processSource(dialect, source, origin, traceTarget);
         processInnerText();
       });
     } else {
