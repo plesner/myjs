@@ -659,13 +659,15 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
         nonterm("VariableDeclaration"), token(";"),
         option(nonterm("Expression")), token(";"),
         option(nonterm("Expression")), token(")"), nonterm("Statement"))
+      .setConstructor(ast.ForStatement)
       .addProd(keyword("for"), token("("), option(nonterm("Expression")),
         token(";"), option(nonterm("Expression")), token(";"),
         option(nonterm("Expression")), token(")"), nonterm("Statement"))
       .setConstructor(ast.ForStatement)
       .addProd(keyword("for"), token("("), keyword("var"),
         nonterm("VariableDeclaration"), keyword("in"),
-        option(nonterm("Expression")), token(")"), nonterm("Statement"));
+        nonterm("Expression"), token(")"), nonterm("Statement"))
+      .setConstructor(ast.ForInStatement);
 
     // <ContinueStatement>
     //   -> "continue" $Identifier? ";"
@@ -698,7 +700,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <ThrowStatement>
     //   -> "throw" <Expression> ";"
     syntax.getRule("ThrowStatement")
-      .addProd(keyword("throw"), nonterm("Expression"), token(";"));
+      .addProd(keyword("throw"), nonterm("Expression"), token(";"))
+      .setConstructor(ast.ThrowStatement);
 
     // <TryStatement>
     //   -> "try" <Block> <Catch>? <Finally>?

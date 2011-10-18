@@ -98,6 +98,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
     function Inheriter() { }
     Inheriter.prototype = sup.prototype;
     sub.prototype = new Inheriter();
+    sub.prototype.constructor = sub;
     sub.parent = sup;
   }
 

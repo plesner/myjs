@@ -70,6 +70,17 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
     var result = dialect.parseSource(source, origin, !!traceTarget);
     if (traceTarget) {
       (window[traceTarget])(result);
+    } else {
+      var visitor = new myjs.ast.Visitor();
+      try {
+        result.accept(visitor);
+      } catch (e) {
+        if (!(e instanceof Error)) {
+          console.log(e);
+        } else {
+          throw e;
+        }
+      }
     }
   }
 
