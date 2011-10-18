@@ -742,8 +742,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
    * Returns a syntax that contains the same rules as this syntax
    * and the one passed as the argument.
    */
-  AbstractSyntax.prototype.compose = function (other) {
-    return new CompositeSyntax([this, other]);
+  AbstractSyntax.prototype.compose = function (members) {
+    return new CompositeSyntax([this].concat(members));
   };
 
   /**
@@ -753,6 +753,13 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
     this.getRuleNames().forEach(function (name) {
       callback(name, this.getRule(name).asExpression());
     }.bind(this));
+  };
+
+  /**
+   * Returns a new grammar that represents this syntax.
+   */
+  AbstractSyntax.prototype.asGrammar = function () {
+    return new Grammar(this);
   };
 
   /**
@@ -777,6 +784,57 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
   };
 
   /**
+   * Adds the given expression as a possible production for the given name.
+   */
+  LiteralSyntax.prototype.getRule = function (name, failIfMissingOpt) {
+    if (!(this.rules.hasOwnProperty(name))) {
+      if (failIfMissingOpt) {
+        throw new TedirError("Undefined nonterminal <" + name + ">");
+      } else {
+        this.rules[name] = new Rule([]);
+      }
+    }
+    return this.rules[name];
+  };
+
+  inherits(CompositeSyntax, AbstractSyntax);
+  function CompositeSyntax(members) {
+    this.members = members;
+    this.ruleCache = null;
+  }
+
+  CompositeSyntax.prototype.getRuleNames = function () {
+    return Object.keys(this.getRules());
+  };
+
+  CompositeSyntax.prototype.getRule = function (name, failIfMissingOpt) {
+    var rules = this.getRules();
+    if (!(rules.hasOwnProperty(name))) {
+      throw new TedirError("Undefined nonterminal <" + name + ">");
+    }
+    return rules[name];
+  };
+
+  CompositeSyntax.prototype.getRules = function () {
+    if (!this.ruleCache) {
+      var ruleLists = {};
+      this.members.forEach(function (member) {
+        member.getRuleNames().forEach(function (name) {
+          if (!ruleLists.hasOwnProperty(name)) {
+            ruleLists[name] = [];
+          }
+          ruleLists[name].push(member.getRule(name));
+        });
+      });
+      this.ruleCache = {};
+      Object.keys(ruleLists).forEach(function (name) {
+        this.ruleCache[name] = Rule.merge(ruleLists[name]);
+      }.bind(this));
+    }
+    return this.ruleCache;
+  };
+
+  /**
    * A single production.
    */
   function Production(value) {
@@ -795,9 +853,25 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
   /**
    * The "value" of a nonterm, the productions the nonterm expands to.
    */
-  function Rule(target) {
-    this.prods = [];
-    this.expr = null;
+  function Rule(prods) {
+    this.prods = prods;
+    this.exprCache = null;
+  }
+
+  /**
+   * Merges the given rules into a single rule with the union of all the
+   * productions.
+   */
+  Rule.merge = function (rules) {
+    if (rules.length == 1) {
+      return rules[0];
+    } else {
+      var prods = [];
+      rules.forEach(function (rule) {
+        prods = prods.concat(rule.prods);
+      });
+      return new Rule(prods)
+    }
   }
 
   /**
@@ -833,31 +907,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
   };
 
   Rule.prototype.asExpression = function () {
-    if (!this.expr) {
-      this.expr = new Choice(this.prods.map(function (p) { return p.asExpression(); }));
+    if (!this.exprCache) {
+      this.exprCache = new Choice(this.prods.map(function (p) { return p.asExpression(); }));
     }
-    return this.expr;
-  };
-
-  /**
-   * Adds the given expression as a possible production for the given name.
-   */
-  LiteralSyntax.prototype.getRule = function (name, failIfMissingOpt) {
-    if (!(this.rules.hasOwnProperty(name))) {
-      if (failIfMissingOpt) {
-        throw new TedirError("Undefined nonterminal <" + name + ">");
-      } else {
-        this.rules[name] = new Rule();
-      }
-    }
-    return this.rules[name];
-  };
-
-  /**
-   * Returns a new grammar that represents this syntax.
-   */
-  LiteralSyntax.prototype.asGrammar = function () {
-    return new Grammar(this);
+    return this.exprCache;
   };
 
   /**

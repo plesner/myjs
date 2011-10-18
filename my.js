@@ -16,6 +16,22 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   var ast = namespace.ast;
   var inherits = tedir.internal.inherits;
 
+  /**
+   * Signals an error condition in tedir.
+   */
+  namespace.Error = MyJsError;
+  function MyJsError(message) {
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, MyJsError);
+    }
+    this.message = message;
+  }
+
+  MyJsError.prototype.toString = function () {
+    return "myjs.Error: " + this.message;
+  };
+
+
   var dialectRegistry = {};
 
   namespace.Dialect = Dialect;
@@ -24,10 +40,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
    */
   function Dialect(name) {
     this.name = name;
-    this.syntaxProvider = null;
+    this.baseSyntaxProvider = getStandardSyntax;
+    this.extensionSyntaxProviders = [];
     this.syntax = null;
     this.grammar = null;
-    this.start = null;
+    this.start = "Program";
     this.keywords = null;
     this.settings = null;
   }
@@ -44,10 +61,15 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
    * The reason for not setting the syntax directly is that constructing a
    * syntax for every dialect object up front is unnecessarily expensive.
    */
-  Dialect.prototype.setSyntaxProvider = function (value) {
-    this.syntaxProvider = value;
+  Dialect.prototype.setBaseSyntaxProvider = function (value) {
+    this.baseSyntaxProvider = value;
     return this;
   };
+
+  Dialect.prototype.addExtensionSyntaxProvider = function (value) {
+    this.extensionSyntaxProviders.push(value);
+    return this;
+  }
 
   /**
    * Sets the start production to use.
@@ -57,12 +79,23 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return this;
   };
 
+  Dialect.prototype.getStart = function () {
+    return this.start;
+  };
+
   /**
    * Returns this dialect's syntax, building it if necessary.
    */
   Dialect.prototype.getSyntax = function () {
     if (!this.syntax) {
-      this.syntax = (this.syntaxProvider)();
+      var syntax = (this.baseSyntaxProvider)();
+      var extensions = this.extensionSyntaxProviders.map(function (ext) {
+        return ext();
+      });
+      if (extensions.length > 0) {
+        syntax = syntax.compose(extensions);
+      }
+      this.syntax = syntax
     }
     return this.syntax;
   };
@@ -92,7 +125,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var grammar = this.getGrammar();
     var parser = new tedir.Parser(grammar);
     var tokens = tokenize(source, this.getSettings());
-    return parser.parse(this.start, tokens, origin, trace);
+    return parser.parse(this.getStart(), tokens, origin, trace);
   };
 
   /**
@@ -576,8 +609,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   var PREFIX_KEYWORDS = ["delete", "void", "typeof"];
   var POSTFIX_OPERATORS = ["++", "--"];
 
+  var standardSyntaxCache = null;
+
   namespace.getStandardSyntax = getStandardSyntax;
   function getStandardSyntax() {
+    if (!standardSyntaxCache) {
+      standardSyntaxCache = buildStandardSyntax();
+    }
+    return standardSyntaxCache;
+  }
+
+  function buildStandardSyntax() {
     var f = tedir.factory;
 
     var choice = f.choice;
@@ -1004,11 +1046,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   }
 
   function registerBuiltInDialects() {
-    // Default
-    var defhault = new Dialect("default")
-      .setSyntaxProvider(getStandardSyntax)
-      .setStart("Program");
-    registerDialect(defhault);
+    registerDialect(new Dialect("default"));
   }
 
   namespace.getSource = function () {
