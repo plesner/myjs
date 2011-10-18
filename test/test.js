@@ -268,6 +268,9 @@ function testTokenizing() {
   runTokenTest(["*", "*", "*", "*=", "*", "*="], "* ** *= **=");
   runTokenTest(["%", "%", "%", "%=", "%", "%="], "% %% %= %%=");
   runTokenTest(["^", "^", "^", "^=", "^", "^="], "^ ^^ ^= ^^=");
+  runTokenTest(["/", "/=", "/=", "="], "/ /= /==");
+
+  runTokenTest(["Identifier:toString"], "toString");
 
   runTokenTest(["Identifier:f", "Identifier:fo", "for", "Identifier:fork"],
     "f fo for fork");

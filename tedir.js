@@ -80,7 +80,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return Array.prototype.slice.call(args);
   }
 
-  namespace.inherits = inherits;
+  namespace.internal.inherits = inherits;
   /**
    * Simple prototype-based inheritance.
    */
@@ -114,6 +114,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   factory.nonterm = function (name) {
     return new Nonterm(name);
+  };
+
+  factory.custom = function (handler) {
+    return new Custom(handler);
   };
 
   factory.seq = function () {
@@ -226,10 +230,11 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return new Token(this.value, this.isKeyword);
   };
 
-  Token.prototype.parse = function (parser, stream) {
-    var current = stream.getCurrent();
-    if (stream.getCurrent().type == this.value) {
-      stream.advance();
+  Token.prototype.parse = function (context) {
+    var input = context.input;
+    var current = input.getCurrent();
+    if (current.type == this.value) {
+      input.advance();
       return current.value;
     } else {
       return ERROR_MARKER;
@@ -261,12 +266,68 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return new Nonterm(this.name);
   };
 
-  Nonterm.prototype.parse = function (parser, stream) {
-    return parser.grammar.getNonterm(this.name).parse(parser, stream);
+  Nonterm.prototype.parse = function (context) {
+    var grammar = context.parser.grammar;
+    return grammar.getNonterm(this.name).parse(context);
   };
 
   Nonterm.prototype.toString = function () {
     return "<" + this.name + ">";
+  };
+
+  namespace.CustomHandler = CustomHandler;
+  /**
+   * Abstract supertype for handlers that define how user-defined expressions
+   * parse input.
+   */
+  function CustomHandler() { }
+
+  /**
+   * Invokes the given callback for each child element under this expression.
+   */
+  CustomHandler.prototype.forEachChild = function (callback) {
+    // no children by default
+  };
+
+  /**
+   * If this handler has subexpressions, must return a new handler with each
+   * subexpression t replaced by t.normalize(). Otherwise this handler should
+   * be returned.
+   */
+  CustomHandler.prototype.normalize = function () {
+    // No normalization
+    return this;
+  };
+
+  /**
+   * Subtypes must implement this method to parse input from the given context.
+   */
+  CustomHandler.prototype.parse = function (context) {
+    throw new Error("Abstract method called");
+  };
+
+  /**
+   * A custom user-defined parser expression.
+   */
+  inherits(Custom, Expression);
+  function Custom(handler) {
+    this.handler = handler;
+  }
+
+  Custom.prototype.getType = function () {
+    return "CUSTOM";
+  };
+
+  Custom.prototype.forEachChild = function (callback) {
+    this.handler.forEachChild(callback);
+  };
+
+  Custom.prototype.normalize = function () {
+    return new Custom(this.handler.normalize());
+  };
+
+  Custom.prototype.parse = function (context) {
+    return this.handler.parse(context);
   };
 
   /**
@@ -279,7 +340,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
   }
 
   Sequence.prototype.getType = function () {
-    return "SEQENCE";
+    return "SEQUENCE";
   };
 
   Sequence.prototype.forEachChild = function (visitor) {
@@ -290,11 +351,11 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return "(: " + this.terms.join(" ") + ")";
   };
 
-  Sequence.prototype.parse = function (parser, stream) {
+  Sequence.prototype.parse = function (context) {
     var i, values = [];
     for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
-      var value = term.parse(parser, stream);
+      var value = term.parse(context);
       if (isError(value)) {
         return ERROR_MARKER;
       } else if (term.useValue()) {
@@ -370,13 +431,13 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return "(| " + this.terms.join(" ") + ")";
   };
 
-  Choice.prototype.parse = function (parser, stream) {
-    var i, start = stream.getCursor();
+  Choice.prototype.parse = function (context) {
+    var i, start = context.input.getCursor();
     for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
-      var result = term.parse(parser, stream);
+      var result = term.parse(context);
       if (isError(result)) {
-        stream.rewind(start);
+        context.input.rewind(start);
       } else {
         return result;
       }
@@ -426,7 +487,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     return this;
   };
 
-  Empty.prototype.parse = function (parser, stream) {
+  Empty.prototype.parse = function (context) {
     return null;
   };
 
@@ -456,8 +517,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     visitor(this.term);
   };
 
-  Ignore.prototype.parse = function (parser, stream) {
-    var value = this.term.parse(parser, stream);
+  Ignore.prototype.parse = function (context) {
+    var value = this.term.parse(context);
     return isError(value) ? value : null;
   };
 
@@ -491,8 +552,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     visitor(this.term);
   };
 
-  Filter.prototype.parse = function (parser, stream) {
-    var value = this.term.parse(parser, stream);
+  Filter.prototype.parse = function (context) {
+    var value = this.term.parse(context);
     return isError(value) ? value : (this.invoker)(value);
   };
 
@@ -592,14 +653,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
         this.allowEmpty);
   };
 
-  Repeat.prototype.parse = function (parser, stream) {
-    var start = stream.getCursor();
+  Repeat.prototype.parse = function (context) {
+    var input = context.input;
+    var start = input.getCursor();
     var body = this.body;
     var sep = this.sep;
-    var first = body.parse(parser, stream);
+    var first = body.parse(context);
     if (isError(first)) {
       if (this.allowEmpty) {
-        stream.rewind(start);
+        input.rewind(start);
         return [];
       } else {
         return ERROR_MARKER;
@@ -610,15 +672,15 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
         results.push(first);
       }
       while (true) {
-        start = stream.getCursor();
-        var sepValue = sep.parse(parser, stream);
+        start = input.getCursor();
+        var sepValue = sep.parse(context);
         if (isError(sepValue)) {
-          stream.rewind(start);
+          input.rewind(start);
           break;
         } else {
-          var bodyValue = body.parse(parser, stream);
+          var bodyValue = body.parse(context);
           if (isError(bodyValue)) {
-            stream.rewind(start);
+            input.rewind(start);
             break;
           } else {
             if (sep.useValue()) {
@@ -836,6 +898,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   var EOF_TOKEN = new Token("eof");
 
+  /**
+   * A stream of tokens with information about the current position.
+   */
   function TokenStream(tokens, traceOut) {
     this.tokens = tokens;
     this.cursor = 0;
@@ -844,6 +909,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     this.skipEther();
   }
 
+  /**
+   * Returns the current token.
+   */
   TokenStream.prototype.getCurrent = function () {
     if (this.hasMore()) {
       return this.tokens[this.cursor];
@@ -852,6 +920,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     }
   };
 
+  /**
+   * Does this stream have more tokens?
+   */
   TokenStream.prototype.hasMore = function () {
     return this.cursor < this.tokens.length;
   };
@@ -879,6 +950,35 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
 
   TokenStream.prototype.rewind = function (value) {
     this.cursor = value;
+  };
+
+  /**
+   * A collection of information about a parse process.
+   */
+  function ParseContext(parser, input) {
+    this.parser = parser;
+    this.input = input;
+  }
+
+  /**
+   * Returns the token stream currently being parsed.
+   */
+  ParseContext.prototype.getTokenStream = function () {
+    return this.input;
+  };
+
+  /**
+   * Returns the token stream of input.
+   */
+  ParseContext.prototype.getInput = function () {
+    return this.input;
+  };
+
+  /**
+   * Returns the sentinel object used to signal that parsing failed.
+   */
+  ParseContext.prototype.getErrorMarker = function () {
+    return ERROR_MARKER;
   };
 
   namespace.SourceOrigin = SourceOrigin;
@@ -922,7 +1022,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 3
     var start = this.grammar.getNonterm(nonterm);
     var steps = traceOpt ? [] : null;
     var stream = new TokenStream(tokens, steps);
-    var result = start.parse(this, stream);
+    var context = new ParseContext(this, stream);
+    var result = start.parse(context);
     var error = (isError(result) || stream.hasMore())
         ? new TedirSyntaxError(origin, stream, stream.highWaterMark)
         : null;

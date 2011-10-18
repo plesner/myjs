@@ -5,6 +5,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
 
   namespace.ast = namespace.ast || {};
   var ast = namespace.ast;
+  var inherits = tedir.internal.inherits;
 
   var dialectRegistry = {};
 
@@ -179,7 +180,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
   }
 
   TokenizerSettings.prototype.isKeyword = function (word) {
-    return this.keywords[word];
+    return this.keywords.hasOwnProperty(word);
   };
 
   /**
@@ -357,9 +358,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
         return this.scanEndOfLineComment();
       case "*":
         return this.scanBlockComment();
-      default:
+      case "=":
         this.advance();
-        return new SoftToken(c);
+        return this.advanceAndYield("/=");
+      default:
+        return this.advanceAndYield("/");
       }
     default:
       this.advance();
@@ -453,6 +456,10 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     var first = this.getCurrent();
     this.advance();
     while (this.hasMore() && this.getCurrent() != first) {
+      // Skip over escaped characters
+      if (this.getCurrent() == "\\") {
+        this.advance();
+      }
       this.advance();
     }
     this.advanceIfPossible(1);
@@ -497,10 +504,36 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     return tokens;
   }
 
+  inherits(RegExpHandler, tedir.CustomHandler);
+  /**
+   * Custom expression used to parse regular expressions.
+   */
+  function RegExpHandler() { }
+
+  RegExpHandler.prototype.parse = function (context) {
+    var input = context.getTokenStream();
+    var tokens = [];
+    var current = input.getCurrent().value;
+    // Scan forward until we meet the end of the input or a "/".
+    while (input.hasMore() && (current != "/")) {
+      tokens.push(current);
+      input.advance();
+      current = input.getCurrent().value;
+    }
+    if (input.hasMore()) {
+      input.advance();
+    } else {
+      return context.getErrorMarker();
+    }
+    return tokens.join("");
+  };
+
   var ASSIGNMENT_OPERATORS = ["=", "+="];
   var INFIX_OPERATORS = ["<", "<<", ">", ">>", "|", "||", "==", "!=", "+",
     "===", "&&", "&", "|", "-", "*", "%", "^"];
+  var INFIX_KEYWORDS = ["instanceof"];
   var PREFIX_OPERATORS = ["++", "--", "+", "-", "~", "!"];
+  var PREFIX_KEYWORDS = ["delete", "void", "typeof"];
   var POSTFIX_OPERATORS = ["++", "--"];
 
   namespace.getStandardSyntax = getStandardSyntax;
@@ -508,6 +541,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     var f = tedir.factory;
 
     var choice = f.choice;
+    var custom = f.custom;
     var keyword = f.keyword;
     var nonterm = f.nonterm;
     var option = f.option;
@@ -558,6 +592,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     //   -> <IterationStatement>
     //   -> <ReturnStatement>
     //   -> <ContinueStatement>
+    //   -> <SwitchStatement>
     //   -> <ThrowStatement>
     //   -> <TryStatement>
     syntax.getRule("Statement")
@@ -568,6 +603,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(nonterm("IterationStatement"))
       .addProd(nonterm("ReturnStatement"))
       .addProd(nonterm("ContinueStatement"))
+      .addProd(nonterm("SwitchStatement"))
       .addProd(nonterm("ThrowStatement"))
       .addProd(nonterm("TryStatement"));
 
@@ -628,6 +664,28 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(keyword("continue"), option(value("Identifier")), token(";"))
       .setConstructor(ast.ContinueStatement);
 
+    // <SwitchStatement>
+    //   -> "switch" "(" <Expression> ")" <CaseBlock>
+    syntax.getRule("SwitchStatement")
+      .addProd(keyword("switch"), token("("), nonterm("Expression"),
+        token(")"), nonterm("CaseBlock"));
+
+    // <CaseBlock>
+    //   -> "{" (<CaseClause>|<DefaultClause>)* "}"
+    syntax.getRule("CaseBlock")
+      .addProd(token("{"), star(choice(nonterm("CaseClause"), nonterm("DefaultClause"))), token("}"));
+
+    // <CaseClause>
+    //   -> "case" <Expression> ":" <Statement>*
+    syntax.getRule("CaseClause")
+      .addProd(keyword("case"), nonterm("Expression"), token(":"),
+        star(nonterm("Statement")));
+
+    // <DefaultClause>
+    //   // -> "default" ":" <Statement>*
+    syntax.getRule("DefaultClause")
+      .addProd(keyword("default"), token(":"), star(nonterm("Statement")));
+
     // <ThrowStatement>
     //   -> "throw" <Expression> ";"
     syntax.getRule("ThrowStatement")
@@ -671,7 +729,14 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <AssignmentExpression>
     //   -> <OperatorExpression> +: <AssignmentOperator>
     syntax.getRule("AssignmentExpression")
-      .addProd(plus(nonterm("OperatorExpression"), nonterm("AssignmentOperator")));
+      .addProd(plus(nonterm("ConditionalExpression"), nonterm("AssignmentOperator")));
+
+    // <ConditionalExpression>
+    //   -> <OperatorExpression> ("?" <OperatorExpression> ":" <OperatorExpression>)?
+    syntax.getRule("ConditionalExpression")
+      .addProd(nonterm("OperatorExpression"), option(token("?"),
+        nonterm("OperatorExpression"), token(":"),
+        nonterm("OperatorExpression")));
 
     // <AssignmentOperator>
     //   -> ... assignment operators ...
@@ -681,28 +746,38 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     });
 
     // <OperatorExpression>
-    //   <UnaryExpression> +: <InfixOperator>
+    //   <UnaryExpression> +: <InfixToken>
     syntax.getRule("OperatorExpression")
-      .addProd(plus(nonterm("UnaryExpression"), nonterm("InfixOperator")));
+      .addProd(plus(nonterm("UnaryExpression"), nonterm("InfixToken")));
 
-    // <InfixOperator>
+    // <InfixToken>
     //   -> ... infix operators ...
+    //   -> ... infix keywords ...
     INFIX_OPERATORS.forEach(function (op) {
-      syntax.getRule("InfixOperator")
+      syntax.getRule("InfixToken")
         .addProd(token(op));
+    });
+    INFIX_KEYWORDS.forEach(function (word) {
+      syntax.getRule("InfixToken")
+        .addProd(keyword(word));
     });
 
     // <UnaryExpression>
-    //   -> <PrefixOperator>* <MemberExpression> <PostfixOperator>*
+    //   -> <PrefixToken>* <CallExpression> <PostfixOperator>*
     syntax.getRule("UnaryExpression")
-      .addProd(star(nonterm("PrefixOperator")), nonterm("MemberExpression"),
+      .addProd(star(nonterm("PrefixToken")), nonterm("CallExpression"),
         star(nonterm("PostfixOperator")));
 
-    // <PrefixOperator>
+    // <PrefixToken>
     //   -> ... prefix operators ...
+    //   -> ... prefix keywords ...
     PREFIX_OPERATORS.forEach(function (op) {
-      syntax.getRule("PrefixOperator")
+      syntax.getRule("PrefixToken")
         .addProd(token(op));
+    });
+    PREFIX_KEYWORDS.forEach(function (word) {
+      syntax.getRule("PrefixToken")
+        .addProd(keyword(word));
     });
 
     // <PostfixOperator>
@@ -713,12 +788,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     });
 
     // <MemberExpression>
-    //   -> <PrimaryExpression> <MemberAccessor>*
-    //   -> "new" <MemberExpression> <Arguments>
-    //   -> <FunctionExpression>
+    //   -> <MemberAtom> <MemberSuffix>*
+    //   -> "new" <MemberExpression>
     syntax.getRule("MemberExpression")
-      .addProd(nonterm("PrimaryExpression"), star(nonterm("MemberAccessor")))
-      .addProd(keyword("new"), nonterm("MemberExpression"), nonterm("Arguments"))
+      .addProd(nonterm("MemberAtom"), star(nonterm("MemberSuffix")))
+      .addProd(keyword("new"), nonterm("MemberExpression"));
+
+    // <MemberAtom>
+    //   -> <FunctionExpression>
+    //   -> <PrimaryExpression>
+    syntax.getRule("MemberAtom")
+      .addProd(nonterm("PrimaryExpression"))
       .addProd(nonterm("FunctionExpression"));
 
     // <FunctionExpression>
@@ -729,14 +809,25 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
         nonterm("FunctionBody"), token("}"))
       .setConstructor(ast.FunctionExpression);
 
-    // <MemberAccessor>
+    // <MemberSuffix>
     //   -> "[" <Expression> "]"
-    //   -> <Arguments>
     //   -> "." $Identifier
-    syntax.getRule("MemberAccessor")
+    syntax.getRule("MemberSuffix")
       .addProd(token("["), nonterm("Expression"), token("]"))
-      .addProd(nonterm("Arguments"))
       .addProd(token("."), value("Identifier"));
+
+    // <CallSuffix>
+    //   -> <MemberSuffix>
+    //   -> <Arguments>
+    syntax.getRule("CallSuffix")
+      .addProd(nonterm("MemberSuffix"))
+      .addProd(nonterm("Arguments"));
+
+    // <CallExpression>
+    //   -> <MemberExpression> (<Arguments> <CallSuffix>*)?
+    syntax.getRule("CallExpression")
+      .addProd(nonterm("MemberExpression"), option(nonterm("Arguments"),
+        star(nonterm("CallSuffix"))));
 
     // <Arguments>
     //   -> "(" <AssignmentExpression> *: "," ")"
@@ -759,9 +850,25 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
       .addProd(token("("), nonterm("Expression"), token(")"));
 
     // <ObjectLiteral>
-    //   -> "{" "}"
+    //   -> "{" <PropertyAssignment> *: "," "}"
     syntax.getRule("ObjectLiteral")
-      .addProd(token("{"), token("}"));
+      .addProd(token("{"), star(nonterm("PropertyAssignment"), token(",")),
+        token("}"));
+
+    // <PropertyAssignment>
+    //   -> <PropertyName> ":" <AssignmentExpression>
+    syntax.getRule("PropertyAssignment")
+      .addProd(nonterm("PropertyName"), token(":"),
+        nonterm("AssignmentExpression"));
+
+    // <PropertyName>
+    //   -> $Identifier
+    //   -> $StringLiteral
+    //   -> $NumericLiteral
+    syntax.getRule("PropertyName")
+      .addProd(value("Identifier"))
+      .addProd(value("StringLiteral"))
+      .addProd(value("NumericLiteral"));
 
     // <ArrayLiteral>
     //   -> "[" <AssignmentExpression> *: "," "]"
@@ -772,9 +879,16 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
     // <Literal>
     //   -> $NumericLiteral
     //   -> $StringLiteral
+    //   -> <RegularExpressionLiteral>
     syntax.getRule("Literal")
       .addProd(value("NumericLiteral"))
-      .addProd(value("StringLiteral"));
+      .addProd(value("StringLiteral"))
+      .addProd(nonterm("RegularExpressionLiteral"));
+
+    // <RegularExpressionLiteral>
+    //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
+    syntax.getRule("RegularExpressionLiteral")
+      .addProd(token("/"), custom(new RegExpHandler()));
 
     return syntax;
   }

@@ -19,7 +19,7 @@ TraceReplay.prototype.addElements = function () {
     if (token.isSoft()) {
       div.className = "soft";
     } else {
-      div.className = "plain"
+      div.className = "plain";
     }
     this.root.appendChild(div);
     this.nodes[i] = div;
