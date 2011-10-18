@@ -74,6 +74,7 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
       var visitor = new myjs.ast.Visitor();
       try {
         result.accept(visitor);
+        console.log(result);
       } catch (e) {
         if (!(e instanceof Error)) {
           console.log(e);
