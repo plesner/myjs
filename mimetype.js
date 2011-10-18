@@ -1,6 +1,15 @@
+// Copyright 2011 the MyJs project authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/**
+ * Implementation of the "text/myjs" script type.
+ */
+
 "use strict";
 
-myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset: 0
+myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset: 12
 
   /**
    * Signals an error condition in myjs.

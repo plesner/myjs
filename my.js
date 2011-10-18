@@ -1,7 +1,16 @@
+// Copyright 2011 the MyJs project authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/**
+ * Implementation of the javascript parser and processor, delegating the actual
+ * parsing to the tedir library.
+ */
+
 "use strict";
 
-// Declare namespace
-var myjs = myjs || (function defineMyJs(namespace) { // offset: 3
+var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
 
   namespace.ast = namespace.ast || {};
   var ast = namespace.ast;

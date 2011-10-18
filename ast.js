@@ -1,4 +1,15 @@
-(function defineMyJsAst(namespace) { // offset: 0
+// Copyright 2011 the MyJs project authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/**
+ * Syntax tree definitions and utilities for working with them.
+ */
+
+"use strict";
+
+(function defineMyJsAst(namespace) { // offset: 12
 
   namespace.Program = Program;
   function Program(elements) {

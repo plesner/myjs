@@ -1,7 +1,17 @@
+// Copyright 2011 the MyJs project authors. All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/**
+ * Generic (non js-specific) parser library. The interface is similar to the
+ * library described in http://data.quenta.org/tedir.pdf but the implementation
+ * is somewhat different.
+ */
+
 "use strict";
 
-// Declare namespace
-var tedir = tedir || (function defineTedir(namespace) { // offset: 3
+var tedir = tedir || (function defineTedir(namespace) { // offset: 14
 
   /**
    * Namespace for stuff that isn't really part of the public API but which
