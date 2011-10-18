@@ -17,6 +17,12 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   var inherits = tedir.internal.inherits;
 
   /**
+   * Reexports from tedir.
+   */
+  namespace.Syntax = tedir.Syntax;
+  namespace.factory = tedir.factory;
+
+  /**
    * Signals an error condition in tedir.
    */
   namespace.Error = MyJsError;
@@ -31,7 +37,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return "myjs.Error: " + this.message;
   };
 
-
+  /**
+   * A map from dialect name to dialect object.
+   */
   var dialectRegistry = {};
 
   namespace.Dialect = Dialect;
@@ -69,7 +77,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   Dialect.prototype.addExtensionSyntaxProvider = function (value) {
     this.extensionSyntaxProviders.push(value);
     return this;
-  }
+  };
 
   /**
    * Sets the start production to use.
@@ -95,7 +103,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
       if (extensions.length > 0) {
         syntax = syntax.compose(extensions);
       }
-      this.syntax = syntax
+      this.syntax = syntax;
     }
     return this.syntax;
   };
@@ -993,6 +1001,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     syntax.getRule("PrimaryExpression")
       .addProd(keyword("this"))
       .addProd(value("Identifier"))
+      .setConstructor(ast.Identifier)
       .addProd(nonterm("Literal"))
       .addProd(nonterm("ArrayLiteral"))
       .addProd(nonterm("ObjectLiteral"))
@@ -1002,7 +1011,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> "{" <PropertyAssignment> *: "," "}"
     syntax.getRule("ObjectLiteral")
       .addProd(token("{"), star(nonterm("PropertyAssignment"), token(",")),
-        token("}"));
+        token("}"))
+      .setConstructor(ast.ObjectLiteral);
 
     // <PropertyAssignment>
     //   -> <PropertyName> ":" <AssignmentExpression>
@@ -1043,6 +1053,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
       .addProd(token("/"), custom(new RegExpHandler()));
 
     return syntax;
+  }
+
+  namespace.unparse = unparse;
+  function unparse(node) {
+    var settings = {
+      newline: "\n",
+      indent: "  "
+    }
+    var out = new ast.internal.TextFormatter(settings);
+    node.unparse(out);
+    return out.flush();
   }
 
   function registerBuiltInDialects() {

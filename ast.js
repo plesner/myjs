@@ -11,6 +11,7 @@
 
 (function defineMyJsAst(namespace) { // offset: 12
 
+  namespace.internal = {};
   var inherits = tedir.internal.inherits;
 
   function accept(parent, node, visitor, skipOpt) {
@@ -28,6 +29,73 @@
     }
   }
 
+  namespace.internal.TextFormatter = TextFormatter;
+  function TextFormatter(settings) {
+    this.settings = settings;
+    this.tokens = [];
+    this.indentLevel = 0;
+    this.newlineScheduled = false;
+  }
+
+  TextFormatter.prototype.indent = function () {
+    this.indentLevel++;
+    return this;
+  };
+
+  TextFormatter.prototype.deindent = function () {
+    this.indentLevel--;
+    return this;
+  };
+
+  TextFormatter.prototype.addStrings = function (elms, sepOpt) {
+    var i;
+    for (i = 0; i < elms.length; i++) {
+      if (sepOpt && i > 0) {
+        this.addString(sepOpt);
+      }
+      this.addString(elms[i]);
+    }
+    return this;
+  };
+
+  TextFormatter.prototype.addString = function (format) {
+    var i;
+    if (this.newlineScheduled) {
+      this.newlineScheduled = false;
+      this.addString(this.settings.newline);
+      for (i = 0; i < this.indentLevel; i++) {
+        this.addString(this.settings.indent);
+      }
+    }
+    this.tokens.push(format);
+    return this;
+  };
+
+  TextFormatter.prototype.addNodes = function (elms, sepOpt) {
+    var i;
+    for (i = 0; i < elms.length; i++) {
+      if (sepOpt && i > 0) {
+        this.addString(sepOpt);
+      }
+      this.addNode(elms[i]);
+    }
+    return this;
+  };
+
+  TextFormatter.prototype.addNode = function (elm) {
+    elm.unparse(this);
+    return this;
+  };
+
+  TextFormatter.prototype.addNewline = function () {
+    this.newlineScheduled = true;
+    return this;
+  };
+
+  TextFormatter.prototype.flush = function () {
+    return this.tokens.join("");
+  };
+
   namespace.Visitor = Visitor;
   function Visitor() { }
 
@@ -42,6 +110,10 @@
     return this.traverse(visitor);
   };
 
+  Node.prototype.unparse = function (out) {
+    out.addString("#<" + this.constructor.name + ">");
+  };
+
   Visitor.prototype.visitNode = function (node) {
     return node.traverse(this);
   };
@@ -51,6 +123,12 @@
   function Program(elements) {
     this.elements = elements;
   }
+
+  Program.prototype.unparse = function (out) {
+    this.elements.forEach(function (element) {
+      element.unparse(out);
+    });
+  };
 
   Program.prototype.accept = function (visitor) {
     return visitor.visitProgram(this);
@@ -72,6 +150,12 @@
     this.body = body;
   }
 
+  FunctionDeclaration.prototype.unparse = function (out) {
+    out.addString("function ").addString(this.name).addString("(")
+      .addStrings(this.params, ", ").addString(") {").indent().addNewline()
+      .deindent().addString("}").addNewline();
+  };
+
   FunctionDeclaration.prototype.accept = function (visitor) {
     visitor.visitFunctionDeclaration(this);
   };
@@ -89,6 +173,14 @@
   function ReturnStatement(valueOpt) {
     this.value = valueOpt;
   }
+
+  ReturnStatement.prototype.unparse = function (out) {
+    if (this.value) {
+      out.addString("return ").addNode(this.value).addString(";").addNewline();
+    } else {
+      out.addString("return;").addNewline();
+    }
+  };
 
   ReturnStatement.prototype.accept = function (visitor) {
     visitor.visitReturnStatement(this);
@@ -146,6 +238,10 @@
     this.decls = decls;
   }
 
+  VariableStatement.prototype.unparse = function (out) {
+    out.addString("var ").addNodes(this.decls).addString(";").addNewline();
+  };
+
   VariableStatement.prototype.accept = function (visitor) {
     visitor.visitVariableStatement(this);
   };
@@ -164,6 +260,10 @@
     this.name = name;
     this.value = value;
   }
+
+  VariableDeclaration.prototype.unparse = function (out) {
+    out.addString(this.name).addString(" = ").addNode(this.value);
+  };
 
   VariableDeclaration.prototype.accept = function (visitor) {
     visitor.visitVariableDeclaration(this);
@@ -345,6 +445,10 @@
     this.expr = expr;
   }
 
+  ExpressionStatement.prototype.unparse = function (out) {
+    out.addNode(this.expr).addString(";").addNewline();
+  };
+
   ExpressionStatement.prototype.accept = function (visitor) {
     return visitor.visitExpressionStatement(this);
   };
@@ -395,6 +499,11 @@
     this.right = right;
   }
 
+  InfixExpression.prototype.unparse = function (out) {
+    out.addString("(").addNode(this.left).addString(" " + this.op + " ")
+      .addNode(this.right).addString(")");
+  };
+
   InfixExpression.prototype.accept = function (visitor) {
     return visitor.visitInfixExpression(this);
   };
@@ -438,6 +547,12 @@
     this.body = body;
   }
 
+  FunctionExpression.prototype.unparse = function (out) {
+    out.addString("(function ").addString(this.name).addString("(")
+      .addStrings(this.params, ", ").addString(") {").indent().addNewline()
+      .addNodes(this.body).deindent().addString("})");
+  };
+
   FunctionExpression.prototype.accept = function (visitor) {
     visitor.visitFunctionExpression(this);
   };
@@ -464,6 +579,10 @@
     this.args = args;
   }
 
+  CallExpression.prototype.unparse = function (out) {
+    out.addNode(this.base).addString("(").addNodes(this.args, ", ").addString(")");
+  };
+
   CallExpression.prototype.accept = function (visitor) {
     return visitor.visitCallExpression(this);
   };
@@ -483,6 +602,10 @@
     this.value = value;
   }
 
+  Literal.prototype.unparse = function (out) {
+    out.addString(this.value);
+  };
+
   Literal.prototype.accept = function (visitor) {
     return visitor.visitLiteral(this);
   };
@@ -494,6 +617,22 @@
   Visitor.prototype.visitLiteral = function (node) {
     return this.visitExpression(node);
   };
+
+  namespace.Identifier = Identifier;
+  inherits(Identifier, Expression);
+  function Identifier(name) {
+    this.name = name;
+  }
+
+  Identifier.prototype.unparse = function (out) {
+    out.addString(this.name);
+  };
+
+  namespace.ObjectLiteral = ObjectLiteral;
+  inherits(ObjectLiteral, Expression);
+  function ObjectLiteral(elms) {
+    this.elms = elms;
+  }
 
   namespace.getSource = function () {
     return String(defineMyJsAst);

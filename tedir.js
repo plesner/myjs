@@ -870,9 +870,9 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
       rules.forEach(function (rule) {
         prods = prods.concat(rule.prods);
       });
-      return new Rule(prods)
+      return new Rule(prods);
     }
-  }
+  };
 
   /**
    * Returns the last production that was added.

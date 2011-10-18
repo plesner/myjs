@@ -56,7 +56,7 @@ TraceReplay.prototype.replayTrace = function (lastPos, step) {
     }
     window.setTimeout(function () {
       this.replayTrace(newPos, step + 1);
-    }.bind(this), 0);
+    }.bind(this), 250);
   }
 };
 

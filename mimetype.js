@@ -71,17 +71,8 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
     if (traceTarget) {
       (window[traceTarget])(result);
     } else {
-      var visitor = new myjs.ast.Visitor();
-      try {
-        result.accept(visitor);
-        console.log(result);
-      } catch (e) {
-        if (!(e instanceof Error)) {
-          console.log(e);
-        } else {
-          throw e;
-        }
-      }
+      var text = myjs.unparse(result);
+      console.log(text);
     }
   }
 
