@@ -952,7 +952,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
 
     function buildGetMember(member) {
       return function (base) {
-        return ast.GetMemberExpression(base, member);
+        return new ast.GetMemberExpression(base, member);
       };
     }
 
@@ -1000,6 +1000,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> "(" <Expression> ")"
     syntax.getRule("PrimaryExpression")
       .addProd(keyword("this"))
+      .setConstructor(ast.This)
       .addProd(value("Identifier"))
       .setConstructor(ast.Identifier)
       .addProd(nonterm("Literal"))
@@ -1033,7 +1034,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> "[" <AssignmentExpression> *: "," "]"
     syntax.getRule("ArrayLiteral")
       .addProd(token("["), star(nonterm("AssignmentExpression"), token(",")),
-        token("]"));
+        token("]"))
+      .setConstructor(ast.ArrayLiteral);
 
     // <Literal>
     //   -> $NumericLiteral
@@ -1060,7 +1062,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var settings = {
       newline: "\n",
       indent: "  "
-    }
+    };
     var out = new ast.internal.TextFormatter(settings);
     node.unparse(out);
     return out.flush();

@@ -202,6 +202,10 @@
     this.value = value;
   }
 
+  ThrowStatement.prototype.unparse = function (out) {
+    out.addString("throw ").addNode(this.value).addString(";");
+  };
+
   ThrowStatement.prototype.accept = function (visitor) {
     visitor.visitThrowStatement(this);
   };
@@ -219,6 +223,11 @@
   function Block(stmts) {
     this.stmts = stmts;
   }
+
+  Block.prototype.unparse = function (out) {
+    out.addString("{").indent().addNewline().addNodes(this.stmts).deindent()
+      .addString("}");
+  };
 
   Block.prototype.accept = function (visitor) {
     visitor.visitBlock(this);
@@ -239,7 +248,7 @@
   }
 
   VariableStatement.prototype.unparse = function (out) {
-    out.addString("var ").addNodes(this.decls).addString(";").addNewline();
+    out.addString("var ").addNodes(this.decls, ", ").addString(";").addNewline();
   };
 
   VariableStatement.prototype.accept = function (visitor) {
@@ -262,7 +271,10 @@
   }
 
   VariableDeclaration.prototype.unparse = function (out) {
-    out.addString(this.name).addString(" = ").addNode(this.value);
+    out.addString(this.name);
+    if (this.value) {
+      out.addString(" = (").addNode(this.value).addString(")");
+    }
   };
 
   VariableDeclaration.prototype.accept = function (visitor) {
@@ -294,6 +306,14 @@
     this.cond = cond;
     this.thenPart = thenPart;
     this.elsePart = elsePart;
+  }
+
+  IfStatement.prototype.unparse = function (out) {
+    out.addString("if (").addNode(this.cond).addString(") ").addNode(this.thenPart);
+    if (this.elsePart) {
+      out.addString(" else ").addNode(this.elsePart);
+    }
+    out.addNewline();
   }
 
   IfStatement.prototype.accept = function (visitor) {
@@ -478,6 +498,11 @@
     this.source = source;
   }
 
+  AssignmentExpression.prototype.unparse = function (out) {
+    out.addNode(this.target).addString(" " + this.op + " (")
+      .addNode(this.source).addString(")");
+  };
+
   AssignmentExpression.prototype.accept = function (visitor) {
     visitor.visitAssignmentExpression(this);
   };
@@ -500,7 +525,7 @@
   }
 
   InfixExpression.prototype.unparse = function (out) {
-    out.addString("(").addNode(this.left).addString(" " + this.op + " ")
+    out.addString("(").addNode(this.left).addString(") " + this.op + " (")
       .addNode(this.right).addString(")");
   };
 
@@ -548,9 +573,9 @@
   }
 
   FunctionExpression.prototype.unparse = function (out) {
-    out.addString("(function ").addString(this.name).addString("(")
+    out.addString("function ").addString(this.name).addString("(")
       .addStrings(this.params, ", ").addString(") {").indent().addNewline()
-      .addNodes(this.body).deindent().addString("})");
+      .addNodes(this.body).deindent().addString("}");
   };
 
   FunctionExpression.prototype.accept = function (visitor) {
@@ -572,6 +597,11 @@
     this.member = member;
   }
 
+  GetMemberExpression.prototype.unparse = function (out) {
+    out.addString("(").addNode(this.base).addString(")").addString(".")
+      .addString(this.member);
+  };
+
   namespace.CallExpression = CallExpression;
   inherits(CallExpression, Expression);
   function CallExpression(base, args) {
@@ -580,7 +610,8 @@
   }
 
   CallExpression.prototype.unparse = function (out) {
-    out.addNode(this.base).addString("(").addNodes(this.args, ", ").addString(")");
+    out.addString("(").addNode(this.base).addString(")(")
+      .addNodes(this.args, ", ").addString(")");
   };
 
   CallExpression.prototype.accept = function (visitor) {
@@ -628,10 +659,28 @@
     out.addString(this.name);
   };
 
+  namespace.This = This;
+  inherits(This, Expression);
+  function This() { }
+
+  This.prototype.unparse = function (out) {
+    out.addString("this");
+  };
+
   namespace.ObjectLiteral = ObjectLiteral;
   inherits(ObjectLiteral, Expression);
   function ObjectLiteral(elms) {
     this.elms = elms;
+  }
+
+  namespace.ArrayLiteral = ArrayLiteral;
+  inherits(ArrayLiteral, Expression);
+  function ArrayLiteral(elms) {
+    this.elms = elms;
+  }
+
+  ArrayLiteral.prototype.unparse = function (out) {
+    out.addString("[").addNodes(this.elms, ", ").addString("]");
   }
 
   namespace.getSource = function () {
