@@ -9,7 +9,17 @@
 
 "use strict";
 
-myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset: 12
+myjs.nolint = myjs.nolint || (function (namespace) {
+
+  namespace.execute = function (text) {
+    window.eval(text);
+  };
+
+  return namespace;
+
+})({});
+
+myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset: 20
 
   /**
    * Signals an error condition in myjs.
@@ -72,7 +82,7 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
       (window[traceTarget])(result);
     } else {
       var text = myjs.unparse(result);
-      console.log(text);
+      myjs.nolint.execute(text);
     }
   }
 

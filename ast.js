@@ -47,47 +47,54 @@
     return this;
   };
 
-  TextFormatter.prototype.addStrings = function (elms, sepOpt) {
+  TextFormatter.prototype.strings = function (elms, sepOpt) {
     var i;
     for (i = 0; i < elms.length; i++) {
       if (sepOpt && i > 0) {
-        this.addString(sepOpt);
+        this.string(sepOpt);
       }
-      this.addString(elms[i]);
+      this.string(elms[i]);
     }
     return this;
   };
 
-  TextFormatter.prototype.addString = function (format) {
+  TextFormatter.prototype.string = function (format) {
     var i;
     if (this.newlineScheduled) {
       this.newlineScheduled = false;
-      this.addString(this.settings.newline);
+      this.string(this.settings.newline);
       for (i = 0; i < this.indentLevel; i++) {
-        this.addString(this.settings.indent);
+        this.string(this.settings.indent);
       }
     }
     this.tokens.push(format);
     return this;
   };
 
-  TextFormatter.prototype.addNodes = function (elms, sepOpt) {
+  TextFormatter.prototype.nodes = function (elms, sepOpt) {
     var i;
     for (i = 0; i < elms.length; i++) {
       if (sepOpt && i > 0) {
-        this.addString(sepOpt);
+        this.string(sepOpt);
       }
-      this.addNode(elms[i]);
+      this.node(elms[i]);
     }
     return this;
   };
 
-  TextFormatter.prototype.addNode = function (elm) {
+  TextFormatter.prototype.node = function (elm) {
     elm.unparse(this);
     return this;
   };
 
-  TextFormatter.prototype.addNewline = function () {
+  TextFormatter.prototype.addOptNode = function (elm) {
+    if (elm) {
+      elm.unparse(this);
+    }
+    return this;
+  };
+
+  TextFormatter.prototype.newline = function () {
     this.newlineScheduled = true;
     return this;
   };
@@ -111,7 +118,7 @@
   };
 
   Node.prototype.unparse = function (out) {
-    out.addString("#<" + this.constructor.name + ">");
+    out.string("#<" + this.constructor.name + ">");
   };
 
   Visitor.prototype.visitNode = function (node) {
@@ -151,9 +158,9 @@
   }
 
   FunctionDeclaration.prototype.unparse = function (out) {
-    out.addString("function ").addString(this.name).addString("(")
-      .addStrings(this.params, ", ").addString(") {").indent().addNewline()
-      .deindent().addString("}").addNewline();
+    out.string("function ").string(this.name).string("(")
+      .strings(this.params, ", ").string(") {").indent().newline()
+      .deindent().string("}").newline();
   };
 
   FunctionDeclaration.prototype.accept = function (visitor) {
@@ -176,9 +183,9 @@
 
   ReturnStatement.prototype.unparse = function (out) {
     if (this.value) {
-      out.addString("return ").addNode(this.value).addString(";").addNewline();
+      out.string("return ").node(this.value).string(";").newline();
     } else {
-      out.addString("return;").addNewline();
+      out.string("return;").newline();
     }
   };
 
@@ -203,7 +210,7 @@
   }
 
   ThrowStatement.prototype.unparse = function (out) {
-    out.addString("throw ").addNode(this.value).addString(";");
+    out.string("throw ").node(this.value).string(";").newline();
   };
 
   ThrowStatement.prototype.accept = function (visitor) {
@@ -225,8 +232,8 @@
   }
 
   Block.prototype.unparse = function (out) {
-    out.addString("{").indent().addNewline().addNodes(this.stmts).deindent()
-      .addString("}");
+    out.string("{").indent().newline().nodes(this.stmts).deindent()
+      .string("}");
   };
 
   Block.prototype.accept = function (visitor) {
@@ -248,7 +255,7 @@
   }
 
   VariableStatement.prototype.unparse = function (out) {
-    out.addString("var ").addNodes(this.decls, ", ").addString(";").addNewline();
+    out.string("var ").nodes(this.decls, ", ").string(";").newline();
   };
 
   VariableStatement.prototype.accept = function (visitor) {
@@ -271,9 +278,9 @@
   }
 
   VariableDeclaration.prototype.unparse = function (out) {
-    out.addString(this.name);
+    out.string(this.name);
     if (this.value) {
-      out.addString(" = (").addNode(this.value).addString(")");
+      out.string(" = (").node(this.value).string(")");
     }
   };
 
@@ -309,11 +316,11 @@
   }
 
   IfStatement.prototype.unparse = function (out) {
-    out.addString("if (").addNode(this.cond).addString(") ").addNode(this.thenPart);
+    out.string("if (").node(this.cond).string(") ").node(this.thenPart);
     if (this.elsePart) {
-      out.addString(" else ").addNode(this.elsePart);
+      out.string(" else ").node(this.elsePart);
     }
-    out.addNewline();
+    out.newline();
   };
 
   IfStatement.prototype.accept = function (visitor) {
@@ -339,6 +346,12 @@
     this.cases = cases;
   }
 
+  SwitchStatement.prototype.unparse = function (out) {
+    out.string("switch (").node(this.value).string(") {")
+      .indent().newline().nodes(this.cases).deindent()
+      .string("}").newline();
+  };
+
   SwitchStatement.prototype.accept = function (visitor) {
     visitor.visitSwitchStatement(this);
   };
@@ -358,6 +371,15 @@
     this.test = test;
     this.body = body;
   }
+
+  SwitchCase.prototype.unparse = function (out) {
+    if (this.test) {
+      out.string("case ").node(this.test).string(": ");
+    } else {
+      out.string("default: ");
+    }
+    out.indent().newline().nodes(this.body).deindent().newline();
+  };
 
   SwitchCase.prototype.accept = function (visitor) {
     visitor.visitSwitchCase(this);
@@ -388,6 +410,11 @@
     this.body = body;
   }
 
+  WhileStatement.prototype.unparse = function (out) {
+    out.string("while (").node(this.cond).string(") ")
+      .node(this.body).newline();
+  };
+
   WhileStatement.prototype.accept = function (visitor) {
     visitor.visitWhileStatement(this);
   };
@@ -409,6 +436,12 @@
     this.update = update;
     this.body = body;
   }
+
+  ForStatement.prototype.unparse = function (out) {
+    out.string("for (").addOptNode(this.init).string(";")
+      .addOptNode(this.test).string(";").addOptNode(this.update)
+      .string(") ").node(this.body).newline();
+  };
 
   ForStatement.prototype.accept = function (visitor) {
     visitor.visitForStatement(this);
@@ -466,7 +499,7 @@
   }
 
   ExpressionStatement.prototype.unparse = function (out) {
-    out.addNode(this.expr).addString(";").addNewline();
+    out.node(this.expr).string(";").newline();
   };
 
   ExpressionStatement.prototype.accept = function (visitor) {
@@ -499,8 +532,8 @@
   }
 
   AssignmentExpression.prototype.unparse = function (out) {
-    out.addNode(this.target).addString(" " + this.op + " (")
-      .addNode(this.source).addString(")");
+    out.node(this.target).string(" " + this.op + " (")
+      .node(this.source).string(")");
   };
 
   AssignmentExpression.prototype.accept = function (visitor) {
@@ -525,8 +558,8 @@
   }
 
   InfixExpression.prototype.unparse = function (out) {
-    out.addString("(").addNode(this.left).addString(") " + this.op + " (")
-      .addNode(this.right).addString(")");
+    out.string("(").node(this.left).string(") " + this.op + " (")
+      .node(this.right).string(")");
   };
 
   InfixExpression.prototype.accept = function (visitor) {
@@ -551,9 +584,9 @@
   }
 
   ConditionalExpression.prototype.unparse = function (out) {
-    out.addString("(").addNode(this.cond).addString(") ? (")
-      .addNode(this.thenPart).addString(") : (").addNode(this.elsePart)
-      .addString(")");
+    out.string("(").node(this.cond).string(") ? (")
+      .node(this.thenPart).string(") : (").node(this.elsePart)
+      .string(")");
   };
 
   ConditionalExpression.prototype.accept = function (visitor) {
@@ -579,9 +612,9 @@
   }
 
   FunctionExpression.prototype.unparse = function (out) {
-    out.addString("function ").addString(this.name).addString("(")
-      .addStrings(this.params, ", ").addString(") {").indent().addNewline()
-      .addNodes(this.body).deindent().addString("}");
+    out.string("function ").string(this.name).string("(")
+      .strings(this.params, ", ").string(") {").indent().newline()
+      .nodes(this.body).deindent().string("}");
   };
 
   FunctionExpression.prototype.accept = function (visitor) {
@@ -604,8 +637,8 @@
   }
 
   GetMemberExpression.prototype.unparse = function (out) {
-    out.addString("(").addNode(this.base).addString(")").addString(".")
-      .addString(this.member);
+    out.string("(").node(this.base).string(")").string(".")
+      .string(this.member);
   };
 
   namespace.CallExpression = CallExpression;
@@ -616,8 +649,8 @@
   }
 
   CallExpression.prototype.unparse = function (out) {
-    out.addString("(").addNode(this.base).addString(")(")
-      .addNodes(this.args, ", ").addString(")");
+    out.string("(").node(this.base).string(")(")
+      .nodes(this.args, ", ").string(")");
   };
 
   CallExpression.prototype.accept = function (visitor) {
@@ -640,7 +673,7 @@
   }
 
   Literal.prototype.unparse = function (out) {
-    out.addString(this.value);
+    out.string(this.value);
   };
 
   Literal.prototype.accept = function (visitor) {
@@ -662,7 +695,7 @@
   }
 
   Identifier.prototype.unparse = function (out) {
-    out.addString(this.name);
+    out.string(this.name);
   };
 
   namespace.This = This;
@@ -670,7 +703,7 @@
   function This() { }
 
   This.prototype.unparse = function (out) {
-    out.addString("this");
+    out.string("this");
   };
 
   namespace.ObjectLiteral = ObjectLiteral;
@@ -679,6 +712,10 @@
     this.elms = elms;
   }
 
+  ObjectLiteral.prototype.unparse = function (out) {
+    out.string("{").string(this.elms, ", ").string("}");
+  };
+
   namespace.ArrayLiteral = ArrayLiteral;
   inherits(ArrayLiteral, Expression);
   function ArrayLiteral(elms) {
@@ -686,7 +723,7 @@
   }
 
   ArrayLiteral.prototype.unparse = function (out) {
-    out.addString("[").addNodes(this.elms, ", ").addString("]");
+    out.string("[").nodes(this.elms, ", ").string("]");
   };
 
   namespace.getSource = function () {
