@@ -314,7 +314,7 @@
       out.addString(" else ").addNode(this.elsePart);
     }
     out.addNewline();
-  }
+  };
 
   IfStatement.prototype.accept = function (visitor) {
     visitor.visitIfStatement(this);
@@ -550,6 +550,12 @@
     this.elsePart = elsePart;
   }
 
+  ConditionalExpression.prototype.unparse = function (out) {
+    out.addString("(").addNode(this.cond).addString(") ? (")
+      .addNode(this.thenPart).addString(") : (").addNode(this.elsePart)
+      .addString(")");
+  };
+
   ConditionalExpression.prototype.accept = function (visitor) {
     visitor.visitConditionalExpression(this);
   };
@@ -681,7 +687,7 @@
 
   ArrayLiteral.prototype.unparse = function (out) {
     out.addString("[").addNodes(this.elms, ", ").addString("]");
-  }
+  };
 
   namespace.getSource = function () {
     return String(defineMyJsAst);
