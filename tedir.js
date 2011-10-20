@@ -115,6 +115,10 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
     return new Token(value, false);
   };
 
+  factory.keywordValue = function (name) {
+    return new Token(name, true);
+  };
+
   factory.token = function (value) {
     return factory.ignore(new Token(value, false));
   };

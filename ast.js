@@ -121,15 +121,36 @@
     out.string("#<" + this.constructor.name + ">");
   };
 
+  Node.prototype.translate = function () {
+    return this;
+  };
+
   Visitor.prototype.visitNode = function (node) {
     return node.traverse(this);
   };
+
+  function translateAll(elms) {
+    var result = [];
+    elms.forEach(function (elm) {
+      var newElm = elm.translate();
+      if (Array.isArray(newElm)) {
+        result = result.concat(newElm);
+      } else {
+        result.push(newElm);
+      }
+    });
+    return result;
+  }
 
   namespace.Program = Program;
   inherits(Program, Node);
   function Program(elements) {
     this.elements = elements;
   }
+
+  Program.prototype.translate = function () {
+    return new Program(translateAll(this.elements));
+  };
 
   Program.prototype.unparse = function (out) {
     this.elements.forEach(function (element) {
@@ -160,7 +181,7 @@
   FunctionDeclaration.prototype.unparse = function (out) {
     out.string("function ").string(this.name).string("(")
       .strings(this.params, ", ").string(") {").indent().newline()
-      .deindent().string("}").newline();
+      .nodes(this.body).deindent().string("}").newline();
   };
 
   FunctionDeclaration.prototype.accept = function (visitor) {
@@ -253,6 +274,10 @@
   function VariableStatement(decls) {
     this.decls = decls;
   }
+
+  VariableStatement.prototype.translate = function (out) {
+    return this;
+  };
 
   VariableStatement.prototype.unparse = function (out) {
     out.string("var ").nodes(this.decls, ", ").string(";").newline();
@@ -629,14 +654,14 @@
     return this.visitExpression(node);
   };
 
-  namespace.GetMemberExpression = GetMemberExpression;
-  inherits(GetMemberExpression, Expression);
-  function GetMemberExpression(base, member) {
+  namespace.GetPropertyExpression = GetPropertyExpression;
+  inherits(GetPropertyExpression, Expression);
+  function GetPropertyExpression(base, member) {
     this.base = base;
     this.member = member;
   }
 
-  GetMemberExpression.prototype.unparse = function (out) {
+  GetPropertyExpression.prototype.unparse = function (out) {
     out.string("(").node(this.base).string(")").string(".")
       .string(this.member);
   };
@@ -664,6 +689,39 @@
 
   Visitor.prototype.visitCallExpression = function (node) {
     this.visitExpression(node);
+  };
+
+  namespace.UnaryExpression = UnaryExpression;
+  inherits(UnaryExpression, Expression);
+  function UnaryExpression(base, op, isPrefix) {
+    this.base = base;
+    this.op = op;
+    this.isPrefix = isPrefix;
+  }
+
+  UnaryExpression.PREFIX = true;
+  UnaryExpression.POSTFIX = false;
+
+  UnaryExpression.prototype.unparse = function (out) {
+    if (this.isPrefix) {
+      out.string(this.op);
+    }
+    out.string("(").node(this.base).string(")");
+    if (!this.isPrefix) {
+      out.string(this.op);
+    }
+  };
+
+  namespace.NewExpression = NewExpression;
+  inherits(NewExpression, Expression);
+  function NewExpression(base, args) {
+    this.base = base;
+    this.args = args;
+  }
+
+  NewExpression.prototype.unparse = function (out) {
+    out.string("new (").node(this.base).string(")(")
+      .nodes(this.args, ", ").string(")");
   };
 
   namespace.Literal = Literal;

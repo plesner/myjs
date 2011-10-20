@@ -4,9 +4,28 @@
   <script src="../my.js"></script>
   <script src="../ast.js"></script>
   <script src="../mimetype.js"></script>
-  <script src="classes.my.js"></script>
+  <script type="text/myjs" src="classes.my.js"></script>
   <script type="text/myjs" dialect="harmony:classes">
-alert("foo");
+
+class Point {
+
+  constructor(x, y) {
+    this.x = x;
+    this.x = y;
+  }
+
+  getX() {
+    return this.x;
+  }
+
+  getY() {
+    return this.y;
+  }
+
+}
+
+alert(new Point(0, 0).getX());
+
   </script>
   <script src="framework.js"></script>
   <script src="test.js"></script>

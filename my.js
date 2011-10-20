@@ -136,6 +136,19 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return parser.parse(this.getStart(), tokens, origin, trace);
   };
 
+  Dialect.prototype.translate = function (source, origin, trace) {
+    var ast = this.parseSource(source, origin, trace);
+    if (trace) {
+      return ast;
+    }
+    console.log(ast);
+    var postAst = ast.translate();
+    console.log(postAst);
+    var text = unparse(postAst);
+    console.log(text);
+    return text;
+  };
+
   /**
    * Returns the set of keywords used by this dialect.
    */
@@ -609,9 +622,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return tokens.join("");
   };
 
-  var ASSIGNMENT_OPERATORS = ["=", "+="];
+  var ASSIGNMENT_OPERATORS = ["=", "+=", "-=", "*=", "&=", "|=", "^=", "%="];
   var INFIX_OPERATORS = ["<", "<<", ">", ">>", "|", "||", "==", "!=", "+",
-    "===", "&&", "&", "|", "-", "*", "%", "^"];
+    "===", "&&", "&", "|", "-", "*", "%", "^", "<=", ">="];
   var INFIX_KEYWORDS = ["instanceof"];
   var PREFIX_OPERATORS = ["++", "--", "+", "-", "~", "!"];
   var PREFIX_KEYWORDS = ["delete", "void", "typeof"];
@@ -633,6 +646,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var choice = f.choice;
     var custom = f.custom;
     var keyword = f.keyword;
+    var keywordValue = f.keywordValue;
     var nonterm = f.nonterm;
     var option = f.option;
     var plus = f.plus;
@@ -871,18 +885,27 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     });
     INFIX_KEYWORDS.forEach(function (word) {
       syntax.getRule("InfixToken")
-        .addProd(keyword(word));
+        .addProd(keywordValue(word));
     });
 
     // <UnaryExpression>
-    //   -> <PrefixToken>* <CallExpression> <PostfixOperator>*
+    //   -> <PrefixToken>* <LeftHandSideExpression> <PostfixOperator>*
     syntax.getRule("UnaryExpression")
-      .addProd(star(nonterm("PrefixToken")), nonterm("CallExpression"),
+      .addProd(star(nonterm("PrefixToken")), nonterm("LeftHandSideExpression"),
         star(nonterm("PostfixOperator")))
       .setHandler(buildUnary);
 
     function buildUnary(prefix, value, postfix) {
-      return value;
+      var i, current = value;
+      for (i = 0; i < postfix.length; i++) {
+        current = new ast.UnaryExpression(current, postfix[i],
+          ast.UnaryExpression.POSTFIX);
+      }
+      for (i = prefix.length - 1; i >= 0; i--) {
+        current = new ast.UnaryExpression(current, prefix[i],
+          ast.UnaryExpression.PREFIX);
+      }
+      return current;
     }
 
     // <PrefixToken>
@@ -890,42 +913,106 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> ... prefix keywords ...
     PREFIX_OPERATORS.forEach(function (op) {
       syntax.getRule("PrefixToken")
-        .addProd(token(op));
+        .addProd(value(op));
     });
     PREFIX_KEYWORDS.forEach(function (word) {
       syntax.getRule("PrefixToken")
-        .addProd(keyword(word));
+        .addProd(keywordValue(word));
     });
 
     // <PostfixOperator>
     //   -> ... postfix operators ...
     POSTFIX_OPERATORS.forEach(function (op) {
       syntax.getRule("PostfixOperator")
-        .addProd(token(op));
+        .addProd(value(op));
     });
 
-    // <MemberExpression>
-    //   -> <MemberAtom> <MemberSuffix>*
-    //   -> "new" <MemberExpression>
-    syntax.getRule("MemberExpression")
-      .addProd(nonterm("MemberAtom"), star(nonterm("MemberSuffix")))
-      .setHandler(applySuffixes)
-      .addProd(keyword("new"), nonterm("MemberExpression"));
+    // <LeftHandSideExpression>
+    //   -> "new"* <LeftHandSideAtom> <LeftHandSideSuffix>*
+    syntax.getRule("LeftHandSideExpression")
+      .addProd(star(keywordValue("new")), nonterm("LeftHandSideAtom"),
+        star(nonterm("LeftHandSideSuffix")))
+      .setHandler(buildLeftHandSideExpression);
 
-    function applySuffixes(atom, suffixes) {
-      var result = atom;
-      suffixes.forEach(function (suffix) {
-        result = suffix(result);
-      });
-      return result;
+    function buildLeftHandSideExpression(news, atom, suffixes) {
+      var i, current = atom;
+      var newCount = news.length;
+      // Scan through the suffixes from left to right and apply them
+      // appropriately.
+      for (i = 0; i < suffixes.length; i++) {
+        var suffix = suffixes[i];
+        if (suffix.isArguments() && newCount > 0) {
+          // If this is argument suffix we match it with a "new" if there is
+          // one.
+          current = suffix.wrapNew(current);
+          newCount--;
+        } else {
+          // Otherwise we just apply the suffix and keep going.
+          current = suffix.wrapPlain(current);
+        }
+      }
+      // Any news that weren't matched by arguments have implicit empty
+      // arguments.
+      for (i = 0; i < newCount; i++) {
+        current = new ArgumentsSuffix([]).wrapNew(current);
+      }
+      return current;
     }
 
-    // <MemberAtom>
+    // <LeftHandSideAtom>
     //   -> <FunctionExpression>
     //   -> <PrimaryExpression>
-    syntax.getRule("MemberAtom")
+    syntax.getRule("LeftHandSideAtom")
       .addProd(nonterm("PrimaryExpression"))
       .addProd(nonterm("FunctionExpression"));
+
+    // <LeftHandSideSuffix>
+    //   -> "[" <Expression> "]"
+    //   -> "." $Identifier
+    //   -> <Arguments>
+    syntax.getRule("LeftHandSideSuffix")
+      .addProd(token("["), nonterm("Expression"), token("]"))
+      .setConstructor(GetElementSuffix)
+      .addProd(token("."), value("Identifier"))
+      .setConstructor(GetPropertySuffix)
+      .addProd(nonterm("Arguments"))
+      .setConstructor(ArgumentsSuffix);
+
+    function GetElementSuffix(value) {
+      this.value = value;
+    }
+
+    GetElementSuffix.prototype.isArguments = function () {
+      return false;
+    };
+
+    function GetPropertySuffix(name) {
+      this.name = name;
+    }
+
+    GetPropertySuffix.prototype.isArguments = function () {
+      return false;
+    };
+
+    GetPropertySuffix.prototype.wrapPlain = function (atom) {
+      return new ast.GetPropertyExpression(atom, this.name);
+    };
+
+    function ArgumentsSuffix(args) {
+      this.args = args;
+    }
+
+    ArgumentsSuffix.prototype.isArguments = function () {
+      return true;
+    };
+
+    ArgumentsSuffix.prototype.wrapPlain = function (atom) {
+      return new ast.CallExpression(atom, this.args);
+    };
+
+    ArgumentsSuffix.prototype.wrapNew = function (atom) {
+      return new ast.NewExpression(atom, this.args);
+    };
 
     // <FunctionExpression>
     //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
@@ -934,57 +1021,6 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
         nonterm("FormalParameterList"), token(")"), token("{"),
         nonterm("FunctionBody"), token("}"))
       .setConstructor(ast.FunctionExpression);
-
-    // <MemberSuffix>
-    //   -> "[" <Expression> "]"
-    //   -> "." $Identifier
-    syntax.getRule("MemberSuffix")
-      .addProd(token("["), nonterm("Expression"), token("]"))
-      .setHandler(buildGetProperty)
-      .addProd(token("."), value("Identifier"))
-      .setHandler(buildGetMember);
-
-    function buildGetProperty(property) {
-      return function (base) {
-        return base;
-      };
-    }
-
-    function buildGetMember(member) {
-      return function (base) {
-        return new ast.GetMemberExpression(base, member);
-      };
-    }
-
-    // <CallSuffix>
-    //   -> <MemberSuffix>
-    //   -> <Arguments>
-    syntax.getRule("CallSuffix")
-      .addProd(nonterm("MemberSuffix"))
-      .addProd(nonterm("Arguments"))
-      .setHandler(buildCallSuffix);
-
-    function buildCallSuffix(args) {
-      return function (base) {
-        return new ast.CallExpression(base, args);
-      };
-    }
-
-    // <CallExpression>
-    //   -> <MemberExpression> (<Arguments> <CallSuffix>*)?
-    syntax.getRule("CallExpression")
-      .addProd(nonterm("MemberExpression"), option(nonterm("Arguments"),
-        star(nonterm("CallSuffix"))))
-      .setHandler(buildCall);
-
-    function buildCall(base, tail) {
-      if (tail) {
-        var argsSuffix = buildCallSuffix(tail[0]);
-        return applySuffixes(argsSuffix(base), tail[1]);
-      } else {
-        return base;
-      }
-    }
 
     // <Arguments>
     //   -> "(" <AssignmentExpression> *: "," ")"
@@ -1057,7 +1093,6 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return syntax;
   }
 
-  namespace.unparse = unparse;
   function unparse(node) {
     var settings = {
       newline: "\n",

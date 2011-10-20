@@ -77,12 +77,11 @@ myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset
    * Loads the given source code string using the given dialect.
    */
   function processSource(dialect, source, origin, traceTarget) {
-    var result = dialect.parseSource(source, origin, !!traceTarget);
+    var result = dialect.translate(source, origin, !!traceTarget);
     if (traceTarget) {
       (window[traceTarget])(result);
     } else {
-      var text = myjs.unparse(result);
-      myjs.nolint.execute(text);
+      myjs.nolint.execute(result);
     }
   }
 
