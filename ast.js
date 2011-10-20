@@ -9,10 +9,15 @@
 
 "use strict";
 
-(function defineMyJsAst(namespace) { // offset: 12
+(function () {
+
+function defineAst(namespace, env) { // offset: 12
+
+  var utils = env.utils;
+
+  var inherits = utils.inherits;
 
   namespace.internal = {};
-  var inherits = tedir.internal.inherits;
 
   function accept(parent, node, visitor, skipOpt) {
     if (node && node.accept) {
@@ -875,7 +880,19 @@
   };
 
   namespace.getSource = function () {
-    return String(defineMyJsAst);
+    return String(defineAst);
   };
 
-})(myjs.ast);
+  return namespace;
+
+}
+
+if (typeof module == "undefined") {
+  this.ast = this.ast || defineAst({}, this);
+} else {
+  defineAst(module.exports, {
+    utils: require('./utils')
+  });
+}
+
+}).call(this);

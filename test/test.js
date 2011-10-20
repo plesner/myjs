@@ -17,7 +17,7 @@ var seq = myjs.factory.seq;
 var star = myjs.factory.star;
 var token = myjs.factory.token;
 var value = myjs.factory.value;
-var toArray = tedir.internal.toArray;
+var toArray = utils.toArray;
 
 function testDefined() {
   assertTrue(tedir);
@@ -321,7 +321,7 @@ function testLint() {
     eqeq: true,
     plusplus: true
   };
-  [tedir, myjs, myjs.mimetype, myjs.ast].forEach(function (module) {
+  [tedir, myjs, mimetype, ast, utils].forEach(function (module) {
     var source = module.getSource();
     var offset = Number(/offset: (\d+)/.exec(source)[1]);
     if (!JSLINT(source, options)) {

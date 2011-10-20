@@ -10,12 +10,17 @@
 
 "use strict";
 
-var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
+(function () {
 
-  namespace.ast = namespace.ast || {};
+function defineMyJs(namespace, env) { // offset: 13
+
+  var tedir = env.tedir;
+  var utils = env.utils;
+  var ast = env.ast;
+
+  var inherits = utils.inherits;
+
   namespace.internal = {};
-  var ast = namespace.ast;
-  var inherits = tedir.internal.inherits;
 
   /**
    * Reexports from tedir.
@@ -1173,4 +1178,17 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
 
   registerBuiltInDialects();
   return namespace;
-})({});
+}
+
+if (typeof module == "undefined") {
+  this.myjs = this.myjs || defineMyJs({}, this);
+} else {
+  defineMyJs(module.exports, {
+    utils: require('./utils'),
+    ast: require('./ast'),
+    tedir: require('./tedir')
+  });
+}
+
+}).call(this);
+

@@ -19,7 +19,7 @@ myjs.nolint = myjs.nolint || (function (namespace) {
 
 })({});
 
-myjs.mimetype = myjs.mimetype || (function defineMimetype(namespace) { // offset: 20
+var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
 
   /**
    * Signals an error condition in myjs.

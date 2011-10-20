@@ -11,7 +11,13 @@
 
 "use strict";
 
-var tedir = tedir || (function defineTedir(namespace) { // offset: 14
+(function() {
+
+function defineTedir(namespace, env) { // offset: 16
+
+  var utils = env.utils;
+  var inherits = utils.inherits;
+  var toArray = utils.toArray;
 
   /**
    * Namespace for stuff that isn't really part of the public API but which
@@ -80,27 +86,6 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
     var loc = "(" + locList.join(":") + ")";
     return "tedir.SyntaxError" + loc + ": Unexpected token " + token;
   };
-
-  namespace.internal.toArray = toArray;
-  /**
-   * Converts any array-like object (including arguments objects) to a proper
-   * array.
-   */
-  function toArray(args) {
-    return Array.prototype.slice.call(args);
-  }
-
-  namespace.internal.inherits = inherits;
-  /**
-   * Simple prototype-based inheritance.
-   */
-  function inherits(sub, sup) {
-    function Inheriter() { }
-    Inheriter.prototype = sup.prototype;
-    sub.prototype = new Inheriter();
-    sub.prototype.constructor = sub;
-    sub.parent = sup;
-  }
 
   /**
    * Singleton factory object. In general, avoid making any assumptions about
@@ -1100,5 +1085,16 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
     return String(defineTedir);
   };
 
+  namespace.isLoaded = true;
   return namespace;
-})({});
+};
+
+if (typeof module == "undefined") {
+  this.tedir = this.tedir || defineTedir({}, this);
+} else {
+  defineTedir(module.exports, {
+    utils: require("./utils")
+  });
+}
+
+}).call(this);

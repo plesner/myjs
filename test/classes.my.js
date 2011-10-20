@@ -1,6 +1,5 @@
 (function () {
 
-  var ast = myjs.ast;
   var f = myjs.factory;
 
   function ClassDeclaration(name, parent, body) {
