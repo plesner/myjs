@@ -28,6 +28,14 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     factory[key] = tedir.factory[key];
   });
 
+  factory.punct = function (name) {
+    return factory.ignore(tedir.factory.token(name, PUNCTUATOR_MARKER));
+  };
+
+  factory.punctValue = function (name) {
+    return tedir.factory.token(name, PUNCTUATOR_MARKER);
+  };
+
   factory.token = function (name) {
     return factory.ignore(tedir.factory.token(name, null));
   };
@@ -45,6 +53,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   };
 
   var KEYWORD_MARKER = "keyword";
+  var PUNCTUATOR_MARKER = "punctuator";
 
   /**
    * Signals an error condition in tedir.
@@ -78,6 +87,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     this.grammar = null;
     this.start = "Program";
     this.keywords = null;
+    this.punctuators = null;
     this.settings = null;
   }
 
@@ -145,7 +155,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   Dialect.prototype.getSettings = function () {
     if (!this.settings) {
       var keywords = this.getKeywords();
-      this.settings = new TokenizerSettings(keywords, PUNCTUATION);
+      var punctuators = this.getPunctuators();
+      this.settings = new TokenizerSettings(keywords, punctuators);
     }
     return this.settings;
   };
@@ -165,11 +176,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     if (trace) {
       return ast;
     }
-    console.log(ast);
+    // console.log(ast);
     var postAst = ast.translate();
-    console.log(postAst);
+    // console.log(postAst);
     var text = unparse(postAst);
-    console.log(text);
+    // console.log(text);
     return text;
   };
 
@@ -178,20 +189,37 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
    */
   Dialect.prototype.getKeywords = function () {
     if (!this.keywords) {
-      this.keywords = this.calcKeywords();
+      this.calcTokenTypes();
     }
     return this.keywords;
   };
 
   /**
-   * Scans the grammar and extracts a sorted list of all keywords.
+   * Returns the set of punctuators used by this dialect.
    */
-  Dialect.prototype.calcKeywords = function () {
+  Dialect.prototype.getPunctuators = function () {
+    if (!this.punctuators) {
+      this.calcTokenTypes();
+    }
+    return this.punctuators;
+  };
+
+  /**
+   * Scans the grammar and extracts a sorted list of all keywords and
+   * punctuators, storing them in the appropriate fields.
+   */
+  Dialect.prototype.calcTokenTypes = function () {
     var keywordMap = {};
+    var punctuatorMap = {};
     function visitNode(node) {
       if (node.getType() == "TOKEN") {
-        if (node.getKind() == KEYWORD_MARKER) {
+        switch (node.getKind()) {
+        case KEYWORD_MARKER:
           keywordMap[node.value] = true;
+          break;
+        case PUNCTUATOR_MARKER:
+          punctuatorMap[node.value] = true;
+          break;
         }
       } else {
         node.forEachChild(visitNode);
@@ -200,7 +228,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     this.getSyntax().forEachRule(function (name, value) {
       visitNode(value);
     });
-    return Object.keys(keywordMap).sort();
+    this.keywords = Object.keys(keywordMap).sort();
+    this.punctuators = Object.keys(punctuatorMap).sort();
   };
 
   namespace.registerDialect = registerDialect;
@@ -383,14 +412,6 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   Scanner.prototype.getPart = function (start, end) {
     return this.source.substring(start, end);
   };
-
-  var PUNCTUATION = [
-    "(", ")", ",", ":", "?", "[", "]", "{", "}", "~", ".", ";", "=", "==",
-    "===", "!", "!=", "!==", ">", ">>", ">>>", "<", "<<", ">=", ">>=", ">>>=",
-    "<=", "<<=", "+", "++", "+=", "|", "||", "&", "&&", "|=", "&=", "-", "--",
-    "-=", "*", "*=", "%", "%=", "^", "^="
-  ];
-  namespace.internal.PUNCTUATION = PUNCTUATION;
 
   /**
    * Is the given string a single character of whitespace?
@@ -657,9 +678,11 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return tokens.join("");
   };
 
-  var ASSIGNMENT_OPERATORS = ["=", "+=", "-=", "*=", "&=", "|=", "^=", "%="];
+  var ASSIGNMENT_OPERATORS = ["=", "+=", "-=", "*=", "&=", "|=", "^=", "%=",
+    ">>=", ">>>=", "<<="];
   var INFIX_OPERATORS = ["<", "<<", ">", ">>", "|", "||", "==", "!=", "+",
-    "===", "&&", "&", "|", "-", "*", "%", "^", "<=", ">="];
+    "===", "&&", "&", "|", "-", "*", "%", "^", "<=", ">=", "!==", "!===",
+    ">>>", ">="];
   var INFIX_KEYWORDS = ["instanceof"];
   var PREFIX_OPERATORS = ["++", "--", "+", "-", "~", "!"];
   var PREFIX_KEYWORDS = ["delete", "void", "typeof"];
@@ -685,6 +708,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var nonterm = f.nonterm;
     var option = f.option;
     var plus = f.plus;
+    var punct = f.punct;
+    var punctValue = f.punctValue;
     var seq = f.seq;
     var star = f.star;
     var token = f.token;
@@ -708,15 +733,15 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <FunctionDeclaration>
     //   -> "function" $Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
     syntax.getRule("FunctionDeclaration")
-      .addProd(keyword("function"), value("Identifier"), token("("),
-        nonterm("FormalParameterList"), token(")"), token("{"),
-        nonterm("FunctionBody"), token("}"))
+      .addProd(keyword("function"), value("Identifier"), punct("("),
+        nonterm("FormalParameterList"), punct(")"), punct("{"),
+        nonterm("FunctionBody"), punct("}"))
       .setConstructor(ast.FunctionDeclaration);
 
     // <FormalParameterList>
     //   -> $Identifier *: ","
     syntax.getRule("FormalParameterList")
-      .addProd(star(value("Identifier"), token(",")));
+      .addProd(star(value("Identifier"), punct(",")));
 
     // <FunctionBody>
     //   -> <SourceElement>*
@@ -749,26 +774,26 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <Block>
     //   -> "{" <Statement>* "}"
     syntax.getRule("Block")
-      .addProd(token("{"), star(nonterm("Statement")), token("}"))
+      .addProd(punct("{"), star(nonterm("Statement")), punct("}"))
       .setConstructor(ast.Block);
 
     // <VariableStatement>
     //   -> "var" <VariableDeclaration> +: "," ";"
     syntax.getRule("VariableStatement")
-      .addProd(keyword("var"), plus(nonterm("VariableDeclaration"), token(",")),
-        token(";"))
+      .addProd(keyword("var"), plus(nonterm("VariableDeclaration"), punct(",")),
+        punct(";"))
       .setConstructor(ast.VariableStatement);
 
     // <ExpressionStatement>
     //   -> <Expression> ";"
     syntax.getRule("ExpressionStatement")
-      .addProd(nonterm("Expression"), token(";"))
+      .addProd(nonterm("Expression"), punct(";"))
       .setConstructor(ast.ExpressionStatement);
 
     // <IfStatement>
     //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
     syntax.getRule("IfStatement")
-      .addProd(keyword("if"), token("("), nonterm("Expression"), token(")"),
+      .addProd(keyword("if"), punct("("), nonterm("Expression"), punct(")"),
         nonterm("Statement"), option(keyword("else"), nonterm("Statement")))
       .setConstructor(ast.IfStatement);
 
@@ -780,54 +805,54 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")" <Statement>
     syntax.getRule("IterationStatement")
       .addProd(keyword("do"), nonterm("Statement"), keyword("while"),
-        token("("), nonterm("Expression"), token(")"), token(";"))
+        punct("("), nonterm("Expression"), punct(")"), punct(";"))
       .setConstructor(ast.DoStatement)
-      .addProd(keyword("while"), token("("), nonterm("Expression"), token(")"),
+      .addProd(keyword("while"), punct("("), nonterm("Expression"), punct(")"),
         nonterm("Statement"))
       .setConstructor(ast.WhileStatement)
-      .addProd(keyword("for"), token("("), keyword("var"),
-        nonterm("VariableDeclaration"), token(";"),
-        option(nonterm("Expression")), token(";"),
-        option(nonterm("Expression")), token(")"), nonterm("Statement"))
+      .addProd(keyword("for"), punct("("), keyword("var"),
+        nonterm("VariableDeclaration"), punct(";"),
+        option(nonterm("Expression")), punct(";"),
+        option(nonterm("Expression")), punct(")"), nonterm("Statement"))
       .setConstructor(ast.ForStatement)
-      .addProd(keyword("for"), token("("), option(nonterm("Expression")),
-        token(";"), option(nonterm("Expression")), token(";"),
-        option(nonterm("Expression")), token(")"), nonterm("Statement"))
+      .addProd(keyword("for"), punct("("), option(nonterm("Expression")),
+        punct(";"), option(nonterm("Expression")), punct(";"),
+        option(nonterm("Expression")), punct(")"), nonterm("Statement"))
       .setConstructor(ast.ForStatement)
-      .addProd(keyword("for"), token("("), keyword("var"),
+      .addProd(keyword("for"), punct("("), keyword("var"),
         nonterm("VariableDeclaration"), keyword("in"),
-        nonterm("Expression"), token(")"), nonterm("Statement"))
+        nonterm("Expression"), punct(")"), nonterm("Statement"))
       .setConstructor(ast.ForInStatement);
 
     // <ContinueStatement>
     //   -> "continue" $Identifier? ";"
     syntax.getRule("ContinueStatement")
-      .addProd(keyword("continue"), option(value("Identifier")), token(";"))
+      .addProd(keyword("continue"), option(value("Identifier")), punct(";"))
       .setConstructor(ast.ContinueStatement);
 
     // <SwitchStatement>
     //   -> "switch" "(" <Expression> ")" <CaseBlock>
     syntax.getRule("SwitchStatement")
-      .addProd(keyword("switch"), token("("), nonterm("Expression"),
-        token(")"), nonterm("CaseBlock"))
+      .addProd(keyword("switch"), punct("("), nonterm("Expression"),
+        punct(")"), nonterm("CaseBlock"))
       .setConstructor(ast.SwitchStatement);
 
     // <CaseBlock>
     //   -> "{" (<CaseClause>|<DefaultClause>)* "}"
     syntax.getRule("CaseBlock")
-      .addProd(token("{"), star(choice(nonterm("CaseClause"), nonterm("DefaultClause"))), token("}"));
+      .addProd(punct("{"), star(choice(nonterm("CaseClause"), nonterm("DefaultClause"))), punct("}"));
 
     // <CaseClause>
     //   -> "case" <Expression> ":" <Statement>*
     syntax.getRule("CaseClause")
-      .addProd(keyword("case"), nonterm("Expression"), token(":"),
+      .addProd(keyword("case"), nonterm("Expression"), punct(":"),
         star(nonterm("Statement")))
       .setConstructor(ast.SwitchCase);
 
     // <DefaultClause>
     //   // -> "default" ":" <Statement>*
     syntax.getRule("DefaultClause")
-      .addProd(keyword("default"), token(":"), star(nonterm("Statement")))
+      .addProd(keyword("default"), punct(":"), star(nonterm("Statement")))
       .setHandler(buildDefaultCase);
 
     function buildDefaultCase(body) {
@@ -837,7 +862,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <ThrowStatement>
     //   -> "throw" <Expression> ";"
     syntax.getRule("ThrowStatement")
-      .addProd(keyword("throw"), nonterm("Expression"), token(";"))
+      .addProd(keyword("throw"), nonterm("Expression"), punct(";"))
       .setConstructor(ast.ThrowStatement);
 
     // <TryStatement>
@@ -849,7 +874,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <Catch>
     //   -> "catch" "(" $Identifier ")" <Block>
     syntax.getRule("Catch")
-      .addProd(keyword("catch"), token("("), value("Identifier"), token(")"),
+      .addProd(keyword("catch"), punct("("), value("Identifier"), punct(")"),
         nonterm("Block"));
 
     // <Finally>
@@ -860,20 +885,20 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <VariableDeclaration>
     //   -> $Identifier ("=" <AssignmentExpression>)?
     syntax.getRule("VariableDeclaration")
-      .addProd(value("Identifier"), option(token("="),
+      .addProd(value("Identifier"), option(punct("="),
         nonterm("AssignmentExpression")))
       .setConstructor(ast.VariableDeclaration);
 
     // <ReturnStatement>
     //   -> "return" <Expression>? ";"
     syntax.getRule("ReturnStatement")
-      .addProd(keyword("return"), option(nonterm("Expression")), token(";"))
+      .addProd(keyword("return"), option(nonterm("Expression")), punct(";"))
       .setConstructor(ast.ReturnStatement);
 
     // <Expression>
     //   -> <AssignmentExpression> +: ","
     syntax.getRule("Expression")
-      .addProd(plus(nonterm("AssignmentExpression"), token(",")))
+      .addProd(plus(nonterm("AssignmentExpression"), punct(",")))
       .setHandler(groupRight(ast.SequenceExpression));
 
     // <AssignmentExpression>
@@ -885,8 +910,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <ConditionalExpression>
     //   -> <OperatorExpression> ("?" <OperatorExpression> ":" <OperatorExpression>)?
     syntax.getRule("ConditionalExpression")
-      .addProd(nonterm("OperatorExpression"), option(token("?"),
-        nonterm("OperatorExpression"), token(":"),
+      .addProd(nonterm("OperatorExpression"), option(punct("?"),
+        nonterm("OperatorExpression"), punct(":"),
         nonterm("OperatorExpression")))
       .setHandler(buildConditional);
 
@@ -902,7 +927,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> ... assignment operators ...
     ASSIGNMENT_OPERATORS.forEach(function (op) {
       syntax.getRule("AssignmentOperator")
-        .addProd(value(op));
+        .addProd(punctValue(op));
     });
 
     // <OperatorExpression>
@@ -916,7 +941,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> ... infix keywords ...
     INFIX_OPERATORS.forEach(function (op) {
       syntax.getRule("InfixToken")
-        .addProd(value(op));
+        .addProd(punctValue(op));
     });
     INFIX_KEYWORDS.forEach(function (word) {
       syntax.getRule("InfixToken")
@@ -948,7 +973,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> ... prefix keywords ...
     PREFIX_OPERATORS.forEach(function (op) {
       syntax.getRule("PrefixToken")
-        .addProd(value(op));
+        .addProd(punctValue(op));
     });
     PREFIX_KEYWORDS.forEach(function (word) {
       syntax.getRule("PrefixToken")
@@ -1006,9 +1031,9 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     //   -> "." $Identifier
     //   -> <Arguments>
     syntax.getRule("LeftHandSideSuffix")
-      .addProd(token("["), nonterm("Expression"), token("]"))
+      .addProd(punct("["), nonterm("Expression"), punct("]"))
       .setConstructor(GetElementSuffix)
-      .addProd(token("."), value("Identifier"))
+      .addProd(punct("."), value("Identifier"))
       .setConstructor(GetPropertySuffix)
       .addProd(nonterm("Arguments"))
       .setConstructor(ArgumentsSuffix);
@@ -1052,16 +1077,16 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <FunctionExpression>
     //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
     syntax.getRule("FunctionExpression")
-      .addProd(keyword("function"), option(value("Identifier")), token("("),
-        nonterm("FormalParameterList"), token(")"), token("{"),
-        nonterm("FunctionBody"), token("}"))
+      .addProd(keyword("function"), option(value("Identifier")), punct("("),
+        nonterm("FormalParameterList"), punct(")"), punct("{"),
+        nonterm("FunctionBody"), punct("}"))
       .setConstructor(ast.FunctionExpression);
 
     // <Arguments>
     //   -> "(" <AssignmentExpression> *: "," ")"
     syntax.getRule("Arguments")
-      .addProd(token("("), star(nonterm("AssignmentExpression"), token(",")),
-        token(")"));
+      .addProd(punct("("), star(nonterm("AssignmentExpression"), punct(",")),
+        punct(")"));
 
     // <PrimaryExpression>
     //   -> $Identifier
@@ -1077,19 +1102,19 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
       .addProd(nonterm("Literal"))
       .addProd(nonterm("ArrayLiteral"))
       .addProd(nonterm("ObjectLiteral"))
-      .addProd(token("("), nonterm("Expression"), token(")"));
+      .addProd(punct("("), nonterm("Expression"), punct(")"));
 
     // <ObjectLiteral>
     //   -> "{" <PropertyAssignment> *: "," "}"
     syntax.getRule("ObjectLiteral")
-      .addProd(token("{"), star(nonterm("PropertyAssignment"), token(",")),
-        token("}"))
+      .addProd(punct("{"), star(nonterm("PropertyAssignment"), punct(",")),
+        punct("}"))
       .setConstructor(ast.ObjectLiteral);
 
     // <PropertyAssignment>
     //   -> <PropertyName> ":" <AssignmentExpression>
     syntax.getRule("PropertyAssignment")
-      .addProd(nonterm("PropertyName"), token(":"),
+      .addProd(nonterm("PropertyName"), punct(":"),
         nonterm("AssignmentExpression"));
 
     // <PropertyName>
@@ -1104,8 +1129,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     // <ArrayLiteral>
     //   -> "[" <AssignmentExpression> *: "," "]"
     syntax.getRule("ArrayLiteral")
-      .addProd(token("["), star(nonterm("AssignmentExpression"), token(",")),
-        token("]"))
+      .addProd(punct("["), star(nonterm("AssignmentExpression"), punct(",")),
+        punct("]"))
       .setConstructor(ast.ArrayLiteral);
 
     // <Literal>

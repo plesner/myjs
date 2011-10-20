@@ -56,32 +56,35 @@
     return rule;
   };
 
+  var INFIX_OPERATORS = ["+:", "*:"];
+  var POSTFIX_OPERATORS = ["*", "+", "?"];
+
   function getExtensionSyntax() {
     var syntax = new myjs.Syntax();
 
     // <PrimaryExpression>
     //   -> "syntax" "{" <RuleDeclaration>* "}"
     syntax.getRule("PrimaryExpression")
-      .addProd(f.keyword("syntax"), f.token("{"),
-        f.star(f.nonterm("RuleDeclaration")), f.token("}"))
+      .addProd(f.keyword("syntax"), f.punct("{"),
+        f.star(f.nonterm("RuleDeclaration")), f.punct("}"))
       .setConstructor(SyntaxExpression);
 
     // <RuleDeclaration>
     //   -> "<" $Identifier ">" <Grammar.ProductionDeclaration>* ";"
     syntax.getRule("RuleDeclaration")
-      .addProd(f.token("<"), f.value("Identifier"), f.token(">"),
-        f.star(f.nonterm("Grammar.ProductionDeclaration")), f.token(";"))
+      .addProd(f.punct("<"), f.value("Identifier"), f.punct(">"),
+        f.star(f.nonterm("Grammar.ProductionDeclaration")), f.punct(";"))
       .setConstructor(RuleDeclaration);
 
     // <Grammar.ProductionDeclaration>
-    //   -> "--" <Grammar.Expression>
+    //   -> "->" <Grammar.Expression>
     syntax.getRule("Grammar.ProductionDeclaration")
-      .addProd(f.token("--"), f.nonterm("Grammar.Expression"));
+      .addProd(f.punct("->"), f.nonterm("Grammar.Expression"));
 
     // <Grammar.Expression>
     //   -> <Grammar.SequenceExpression> +: "|"
     syntax.getRule("Grammar.Expression")
-      .addProd(f.plus(f.nonterm("Grammar.SequenceExpression"), f.token("|")));
+      .addProd(f.plus(f.nonterm("Grammar.SequenceExpression"), f.punct("|")));
 
     // <Grammar.SequenceExpression>
     //   -> <Grammar.InfixExpression>+
@@ -89,10 +92,30 @@
       .addProd(f.plus(f.nonterm("Grammar.InfixExpression")));
 
     // <Grammar.InfixExpression>
-    //   -> <Grammar.AtomicExpression> +: <Grammar.InfixOperator>
+    //   -> <Grammar.UnaryExpression> +: <Grammar.InfixOperator>
     syntax.getRule("Grammar.InfixExpression")
-      .addProd(f.plus(f.nonterm("Grammar.AtomicExpression"),
+      .addProd(f.plus(f.nonterm("Grammar.UnaryExpression"),
         f.nonterm("Grammar.InfixOperator")));
+
+    // <Grammar.InfixOperator>
+    //   -> ... infix operators ...
+    INFIX_OPERATORS.forEach(function (op) {
+      syntax.getRule("Grammar.InfixOperator")
+        .addProd(f.punctValue(op));
+    });
+
+    // <Grammar.UnaryExpression>
+    //   -> <Grammar.AtomicExpression> <Grammar.PostfixOperator>*
+    syntax.getRule("Grammar.UnaryExpression")
+      .addProd(f.nonterm("Grammar.AtomicExpression"), f.star(
+        f.nonterm("Grammar.PostfixOperator")));
+
+    // <Grammar.PostfixOperator>
+    //   -> ... postfix operators ...
+    POSTFIX_OPERATORS.forEach(function (op) {
+      syntax.getRule("Grammar.PostfixOperator")
+        .addProd(f.punctValue(op));
+    });
 
     // <Grammar.AtomicExpression>
     //   -> "<" $Identifier ">"

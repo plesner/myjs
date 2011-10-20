@@ -61,7 +61,7 @@ function getExpressionSyntax() {
 }
 
 var DEFAULT_SETTINGS = new myjs.TokenizerSettings(["a", "b", "c", "for"],
-  myjs.internal.PUNCTUATION);
+  myjs.getDialect("default").getPunctuators());
 /**
  * Given a syntax and a start production, returns a function that can be
  * called with the expected output and a source and that will test that
@@ -279,7 +279,7 @@ function runTokenTest(expected, source) {
 
 function testTokenizing() {
   runTokenTest(["=", "==", "===", "===", "="], "= == === ====");
-  runTokenTest(["!", "!=", "!==", "!==", "="], "! != !== !===");
+  runTokenTest(["!", "!=", "!==", "!===", "!===", "="], "! != !== !=== !====");
   runTokenTest([">", ">>", ">>>", ">>>", ">"], "> >> >>> >>>>");
   runTokenTest(["<", "<<", "<<", "<", "<<", "<<"], "< << <<< <<<<");
   runTokenTest([">", ">=", ">>=", ">>>=", ">>>", ">="], "> >= >>= >>>= >>>>=");

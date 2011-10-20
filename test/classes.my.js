@@ -62,32 +62,30 @@
     return true;
   };
 
-  /*
   var s = syntax {
 
     <SourceElement>
-      -- "class" Identifier ("extends" <Expression>) "{" <ClassBody> "}"
+      -> "class" Identifier ("extends" <Expression>)? "{" <ClassBody> "}"
     ;
 
     <ClassBody>
-      -- <ClassElement>
+      -> <ClassElement>*
     ;
 
     <ClassElement>
-      -- <PrototypePropertyDefinition>
-      -- <Constructor>
+      -> <PrototypePropertyDefinition>
+      -> <Constructor>
     ;
 
     <PrototypePropertyDefinition>
-      -- Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
+      -> Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
     ;
 
     <Constructor>
-      -- "constructor" "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
+      -> "constructor" "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
     ;
 
   };
-  */
 
   function getExtensionSyntax() {
     var s = new myjs.Syntax();

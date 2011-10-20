@@ -234,7 +234,7 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
   };
 
   Token.prototype.normalize = function () {
-    return new Token(this.value, this.isKeyword);
+    return new Token(this.value, this.kind);
   };
 
   Token.prototype.parse = function (context) {
