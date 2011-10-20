@@ -21,7 +21,30 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
    * Reexports from tedir.
    */
   namespace.Syntax = tedir.Syntax;
-  namespace.factory = tedir.factory;
+
+  var factory = {};
+  namespace.factory = factory;
+  Object.keys(tedir.factory).forEach(function (key) {
+    factory[key] = tedir.factory[key];
+  });
+
+  factory.token = function (name) {
+    return factory.ignore(tedir.factory.token(name, null));
+  };
+
+  factory.keyword = function (name) {
+    return factory.ignore(tedir.factory.token(name, KEYWORD_MARKER));
+  };
+
+  factory.keywordValue = function (name) {
+    return tedir.factory.token(name, KEYWORD_MARKER);
+  };
+
+  factory.value = function (name) {
+    return tedir.factory.token(name, null);
+  };
+
+  var KEYWORD_MARKER = "keyword";
 
   /**
    * Signals an error condition in tedir.
@@ -167,7 +190,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var keywordMap = {};
     function visitNode(node) {
       if (node.getType() == "TOKEN") {
-        if (node.isKeyword) {
+        if (node.getKind() == KEYWORD_MARKER) {
           keywordMap[node.value] = true;
         }
       } else {
@@ -653,7 +676,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   }
 
   function buildStandardSyntax() {
-    var f = tedir.factory;
+    var f = factory;
 
     var choice = f.choice;
     var custom = f.custom;

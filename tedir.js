@@ -111,20 +111,8 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
   var factory = {};
   namespace.factory = factory;
 
-  factory.value = function (value) {
-    return new Token(value, false);
-  };
-
-  factory.keywordValue = function (name) {
-    return new Token(name, true);
-  };
-
-  factory.token = function (value) {
-    return factory.ignore(new Token(value, false));
-  };
-
-  factory.keyword = function (value) {
-    return factory.ignore(new Token(value, true));
+  factory.token = function (value, kindOpt) {
+    return new Token(value, kindOpt);
   };
 
   factory.nonterm = function (name) {
@@ -223,18 +211,22 @@ var tedir = tedir || (function defineTedir(namespace) { // offset: 14
    * An atomic terminal symbol.
    */
   inherits(Token, Expression);
-  function Token(value, isKeyword) {
+  function Token(value, kindOpt) {
     Token.parent.call(this);
 
     // What kind of input tokens does this grammar token match?
     this.value = value;
 
-    // Is this a keyword or a non-keyword delimiter?
-    this.isKeyword = isKeyword;
+    // If necessary, a value that specified the kind of this token.
+    this.kind = kindOpt;
   }
 
   Token.prototype.getType = function () {
     return "TOKEN";
+  };
+
+  Token.prototype.getKind = function () {
+    return this.kind;
   };
 
   Token.prototype.forEachChild = function (visitor) {

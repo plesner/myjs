@@ -9,13 +9,14 @@
 
 "use strict";
 
-var keyword = tedir.factory.keyword;
-var nonterm = tedir.factory.nonterm;
-var plus = tedir.factory.plus;
-var seq = tedir.factory.seq;
-var star = tedir.factory.star;
-var token = tedir.factory.token;
-var value = tedir.factory.value;
+var ignore = myjs.factory.ignore;
+var keyword = myjs.factory.keyword;
+var nonterm = myjs.factory.nonterm;
+var plus = myjs.factory.plus;
+var seq = myjs.factory.seq;
+var star = myjs.factory.star;
+var token = myjs.factory.token;
+var value = myjs.factory.value;
 var toArray = tedir.internal.toArray;
 
 function testDefined() {
@@ -98,12 +99,11 @@ function testSimpleExpressions() {
 
 function testTokenValues() {
   var syntax = new tedir.Syntax();
-  var f = tedir.factory;
 
   syntax.getRule("start")
-    .addProd(f.token("a"))
-    .addProd(f.value("b"))
-    .addProd(f.ignore(f.value("[")));
+    .addProd(token("a"))
+    .addProd(value("b"))
+    .addProd(ignore(value("[")));
 
   var run = getParserTestRunner(syntax);
   run(null, "a");
