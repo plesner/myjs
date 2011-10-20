@@ -31,6 +31,10 @@ function assertTrue(value) {
   }
 }
 
+function assertFalse(value) {
+  assertTrue(!value);
+}
+
 function failComparison(a, b) {
   throw "Error: " + a + " != " + b;
 }

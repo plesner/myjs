@@ -23,6 +23,24 @@ function testDefined() {
   assertTrue(myjs);
 }
 
+function testTrie() {
+  var Trie = myjs.internal.Trie;
+  var t = Trie.build(["a", "ab", "abc", "abe"]);
+  var first = t.get("a");
+  assertFalse(t.get("b"));
+  assertFalse(first.get("a"));
+  var second = first.get("b");
+  assertFalse(second.get("a"));
+  assertFalse(second.get("b"));
+  var third = second.get("c");
+  assertFalse(third.get("a"));
+  assertFalse(third.get("e"));
+  var fourth = second.get("e");
+  assertFalse(fourth.get("a"));
+  assertFalse(fourth.get("c"));
+  assertFalse(fourth.get("e"));
+}
+
 function getExpressionSyntax() {
   var syntax = new tedir.Syntax();
 
@@ -41,7 +59,8 @@ function getExpressionSyntax() {
   return syntax;
 }
 
-var DEFAULT_SETTINGS = new myjs.TokenizerSettings(["a", "b", "c", "for"]);
+var DEFAULT_SETTINGS = new myjs.TokenizerSettings(["a", "b", "c", "for"],
+  myjs.internal.PUNCTUATION);
 /**
  * Given a syntax and a start production, returns a function that can be
  * called with the expected output and a source and that will test that

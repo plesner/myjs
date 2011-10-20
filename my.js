@@ -13,6 +13,7 @@
 var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
 
   namespace.ast = namespace.ast || {};
+  namespace.internal = {};
   var ast = namespace.ast;
   var inherits = tedir.internal.inherits;
 
@@ -121,7 +122,7 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   Dialect.prototype.getSettings = function () {
     if (!this.settings) {
       var keywords = this.getKeywords();
-      this.settings = new TokenizerSettings(keywords);
+      this.settings = new TokenizerSettings(keywords, PUNCTUATION);
     }
     return this.settings;
   };
@@ -235,15 +236,63 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
   };
 
   namespace.TokenizerSettings = TokenizerSettings;
-  function TokenizerSettings(keywords) {
+  function TokenizerSettings(keywords, punctuation) {
     this.keywords = {};
     keywords.forEach(function (word) {
       this.keywords[word] = true;
     }.bind(this));
+    this.punctuation = Trie.build(punctuation);
   }
 
   TokenizerSettings.prototype.isKeyword = function (word) {
     return this.keywords.hasOwnProperty(word);
+  };
+
+  TokenizerSettings.prototype.isPunctuation = function (chr) {
+    return this.punctuation.get(chr);
+  };
+
+  TokenizerSettings.prototype.getPunctuation = function () {
+    return this.punctuation;
+  };
+
+  namespace.internal.Trie = Trie;
+  function Trie(map) {
+    this.map = map;
+  }
+
+  /**
+   * A singleton empty trie.
+   */
+  Trie.EMPTY = new Trie({});
+
+  /**
+   * Returns a trie that matches on the given set of strings.
+   */
+  Trie.build = function (strings) {
+    if (strings.length == 0) {
+      return Trie.EMPTY;
+    }
+    var firstToRest = {};
+    strings.forEach(function (string) {
+      var first = string[0];
+      var rest = string.substring(1);
+      if (!firstToRest.hasOwnProperty(first)) {
+        firstToRest[first] = [];
+      }
+      if (rest.length > 0) {
+        firstToRest[first].push(rest);
+      }
+    });
+    var subTries = {};
+    Object.keys(firstToRest).forEach(function (chr) {
+      subTries[chr] = Trie.build(firstToRest[chr]);
+    });
+    return new Trie(subTries);
+  };
+
+  Trie.prototype.get = function (chr) {
+    return this.map[chr];
   };
 
   /**
@@ -312,12 +361,13 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     return this.source.substring(start, end);
   };
 
-  var SHORT_DELIMITERS = "(),:;?[]{}~.";
-  var SHORT_DELIMITER_MAP = {};
-  var i;
-  for (i = 0; i < SHORT_DELIMITERS.length; i++) {
-    SHORT_DELIMITER_MAP[SHORT_DELIMITERS[i]] = true;
-  }
+  var PUNCTUATION = [
+    "(", ")", ",", ":", "?", "[", "]", "{", "}", "~", ".", ";", "=", "==",
+    "===", "!", "!=", "!==", ">", ">>", ">>>", "<", "<<", ">=", ">>=", ">>>=",
+    "<=", "<<=", "+", "++", "+=", "|", "||", "&", "&&", "|=", "&=", "-", "--",
+    "-=", "*", "*=", "%", "%=", "^", "^="
+  ];
+  namespace.internal.PUNCTUATION = PUNCTUATION;
 
   /**
    * Is the given string a single character of whitespace?
@@ -351,8 +401,8 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     var c = this.getCurrent();
     if (isWhiteSpace(c)) {
       return this.scanWhiteSpace();
-    } else if (SHORT_DELIMITER_MAP[c]) {
-      return this.advanceAndYield(c);
+    } else if (this.settings.isPunctuation(c)) {
+      return this.scanPunctuation();
     } else if (isDigit(c)) {
       return this.scanNumber(c);
     } else if (isIdentifierStart(c)) {
@@ -362,59 +412,6 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     case "\"":
     case "'":
       return this.scanString();
-    case "=":
-      switch (this.advanceAndGet()) {
-      case "=":
-        return this.checkAndYield("=", "===", "==");
-      default:
-        return this.justYield("=");
-      }
-    case "!":
-      switch (this.advanceAndGet()) {
-      case "=":
-        return this.checkAndYield("=", "!==", "!=");
-      default:
-        return this.justYield("!");
-      }
-    case ">":
-      switch (this.advanceAndGet()) {
-      case ">":
-        switch (this.advanceAndGet()) {
-        case ">":
-          return this.checkAndYield("=", ">>>=", ">>>");
-        case "=":
-          return this.advanceAndYield(">>=");
-        default:
-          return this.justYield(">>");
-        }
-      case "=":
-        return this.advanceAndYield(">=");
-      default:
-        return this.justYield(">");
-      }
-    case "<":
-      switch (this.advanceAndGet()) {
-      case "<":
-        return this.checkAndYield("=", "<<=", "<<");
-      case "=":
-        return this.advanceAndYield("<=");
-      default:
-        return this.justYield("<");
-      }
-    case "|":
-      return this.doubleOrAssignment("|", "||", "|=");
-    case "&":
-      return this.doubleOrAssignment("&", "&&", "&=");
-    case "+":
-      return this.doubleOrAssignment("+", "++", "+=");
-    case "-":
-      return this.doubleOrAssignment("-", "--", "-=");
-    case "*":
-      return this.checkAndYield("=", "*=", "*");
-    case "%":
-      return this.checkAndYield("=", "%=", "%");
-    case "^":
-      return this.checkAndYield("=", "^=", "^");
     case "/":
       switch (this.getLookahead()) {
       case "/":
@@ -502,6 +499,21 @@ var myjs = myjs || (function defineMyJs(namespace) { // offset: 13
     } else {
       return new HardToken(value, "Identifier");
     }
+  };
+
+  Scanner.prototype.scanPunctuation = function () {
+    var start = this.getCursor();
+    var chr = this.getCurrent();
+    var current = this.settings.getPunctuation();
+    do {
+      current = current.get(this.getCurrent());
+      if (current) {
+        this.advance();
+      }
+    } while (current && this.hasMore());
+    var end = this.getCursor();
+    var value = this.getPart(start, end);
+    return new HardToken(value);
   };
 
   Scanner.prototype.scanNumber = function () {
