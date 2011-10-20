@@ -4,8 +4,9 @@
   <script src="../my.js"></script>
   <script src="../ast.js"></script>
   <script src="../mimetype.js"></script>
-  <script type="text/myjs" src="classes.my.js"></script>
-  <script type="text/myjs" dialect="harmony:classes">
+  <script type="text/myjs" src="tedir.my.js"></script>
+  <script type="text/myjs" dialect="tedir/grammar" src="classes.my.js"></script>
+  <script type="text/myjs" dialect="harmony/classes">
 
 class Point {
 
@@ -24,7 +25,7 @@ class Point {
 
 }
 
-alert(new Point(0, 0).getX());
+new Point(0, 0).getX();
 
   </script>
   <script src="framework.js"></script>

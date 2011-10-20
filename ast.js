@@ -121,9 +121,11 @@
     out.string("#<" + this.constructor.name + ">");
   };
 
+  /*
   Node.prototype.translate = function () {
     return this;
   };
+  */
 
   Visitor.prototype.visitNode = function (node) {
     return node.traverse(this);
@@ -178,6 +180,11 @@
     this.body = body;
   }
 
+  FunctionDeclaration.prototype.translate = function () {
+    return new FunctionDeclaration(this.name, this.params,
+      translateAll(this.body));
+  };
+
   FunctionDeclaration.prototype.unparse = function (out) {
     out.string("function ").string(this.name).string("(")
       .strings(this.params, ", ").string(") {").indent().newline()
@@ -201,6 +208,14 @@
   function ReturnStatement(valueOpt) {
     this.value = valueOpt;
   }
+
+  ReturnStatement.prototype.translate = function () {
+    if (this.value) {
+      return new ReturnStatement(this.value.translate());
+    } else {
+      return this;
+    }
+  };
 
   ReturnStatement.prototype.unparse = function (out) {
     if (this.value) {
@@ -252,6 +267,10 @@
     this.stmts = stmts;
   }
 
+  Block.prototype.translate = function () {
+    return new Block(translateAll(this.stmts));
+  };
+
   Block.prototype.unparse = function (out) {
     out.string("{").indent().newline().nodes(this.stmts).deindent()
       .string("}");
@@ -275,8 +294,8 @@
     this.decls = decls;
   }
 
-  VariableStatement.prototype.translate = function (out) {
-    return this;
+  VariableStatement.prototype.translate = function () {
+    return new VariableStatement(translateAll(this.decls));
   };
 
   VariableStatement.prototype.unparse = function (out) {
@@ -301,6 +320,10 @@
     this.name = name;
     this.value = value;
   }
+
+  VariableDeclaration.prototype.translate = function () {
+    return new VariableDeclaration(this.name, this.value.translate());
+  };
 
   VariableDeclaration.prototype.unparse = function (out) {
     out.string(this.name);
@@ -339,6 +362,13 @@
     this.thenPart = thenPart;
     this.elsePart = elsePart;
   }
+
+  IfStatement.prototype.translate = function () {
+    var newCond = this.cond.translate();
+    var newThen = this.thenPart.translate();
+    var newElse = this.elsePart ? this.elsePart.translate() : null;
+    return new IfStatement(newCond, newThen, newElse);
+  };
 
   IfStatement.prototype.unparse = function (out) {
     out.string("if (").node(this.cond).string(") ").node(this.thenPart);
@@ -527,6 +557,10 @@
     out.node(this.expr).string(";").newline();
   };
 
+  ExpressionStatement.prototype.translate = function () {
+    return new ExpressionStatement(this.expr.translate());
+  };
+
   ExpressionStatement.prototype.accept = function (visitor) {
     return visitor.visitExpressionStatement(this);
   };
@@ -556,6 +590,11 @@
     this.source = source;
   }
 
+  AssignmentExpression.prototype.translate = function () {
+    return new AssignmentExpression(this.target.translate(), this.op,
+      this.source.translate());
+  };
+
   AssignmentExpression.prototype.unparse = function (out) {
     out.node(this.target).string(" " + this.op + " (")
       .node(this.source).string(")");
@@ -582,6 +621,11 @@
     this.right = right;
   }
 
+  InfixExpression.prototype.translate = function () {
+    return new InfixExpression(this.left.translate(), this.op,
+      this.right.translate());
+  };
+
   InfixExpression.prototype.unparse = function (out) {
     out.string("(").node(this.left).string(") " + this.op + " (")
       .node(this.right).string(")");
@@ -607,6 +651,13 @@
     this.thenPart = thenPart;
     this.elsePart = elsePart;
   }
+
+  ConditionalExpression.prototype.translate = function () {
+    var newCond = this.cond.translate();
+    var newThen = this.thenPart.translate();
+    var newElse = this.elsePart ? this.elsePart.translate() : null;
+    return new ConditionalExpression(newCond, newThen, newElse);
+  };
 
   ConditionalExpression.prototype.unparse = function (out) {
     out.string("(").node(this.cond).string(") ? (")
@@ -636,6 +687,11 @@
     this.body = body;
   }
 
+  FunctionExpression.prototype.translate = function () {
+    return new FunctionExpression(this.name, this.params,
+      translateAll(this.body));
+  };
+
   FunctionExpression.prototype.unparse = function (out) {
     out.string("function ").string(this.name).string("(")
       .strings(this.params, ", ").string(") {").indent().newline()
@@ -661,6 +717,11 @@
     this.member = member;
   }
 
+  GetPropertyExpression.prototype.translate = function () {
+    return new GetPropertyExpression(this.base.translate(),
+      this.member);
+  };
+
   GetPropertyExpression.prototype.unparse = function (out) {
     out.string("(").node(this.base).string(")").string(".")
       .string(this.member);
@@ -672,6 +733,11 @@
     this.base = base;
     this.args = args;
   }
+
+  CallExpression.prototype.translate = function () {
+    return new CallExpression(this.base.translate(),
+      translateAll(this.args));
+  };
 
   CallExpression.prototype.unparse = function (out) {
     out.string("(").node(this.base).string(")(")
@@ -702,6 +768,10 @@
   UnaryExpression.PREFIX = true;
   UnaryExpression.POSTFIX = false;
 
+  UnaryExpression.prototype.translate = function () {
+    return new UnaryExpression(this.base.translate(), this.op, this.isPrefix);
+  };
+
   UnaryExpression.prototype.unparse = function (out) {
     if (this.isPrefix) {
       out.string(this.op);
@@ -719,6 +789,10 @@
     this.args = args;
   }
 
+  NewExpression.prototype.translate = function () {
+    return new NewExpression(this.base.translate(), translateAll(this.args));
+  };
+
   NewExpression.prototype.unparse = function (out) {
     out.string("new (").node(this.base).string(")(")
       .nodes(this.args, ", ").string(")");
@@ -729,6 +803,10 @@
   function Literal(value) {
     this.value = value;
   }
+
+  Literal.prototype.translate = function () {
+    return this;
+  };
 
   Literal.prototype.unparse = function (out) {
     out.string(this.value);
@@ -752,6 +830,10 @@
     this.name = name;
   }
 
+  Identifier.prototype.translate = function () {
+    return this;
+  };
+
   Identifier.prototype.unparse = function (out) {
     out.string(this.name);
   };
@@ -759,6 +841,10 @@
   namespace.This = This;
   inherits(This, Expression);
   function This() { }
+
+  This.prototype.translate = function () {
+    return this;
+  };
 
   This.prototype.unparse = function (out) {
     out.string("this");
@@ -779,6 +865,10 @@
   function ArrayLiteral(elms) {
     this.elms = elms;
   }
+
+  ArrayLiteral.prototype.translate = function () {
+    return new ArrayLiteral(translateAll(this.elms));
+  };
 
   ArrayLiteral.prototype.unparse = function (out) {
     out.string("[").nodes(this.elms, ", ").string("]");

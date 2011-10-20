@@ -62,12 +62,39 @@
     return true;
   };
 
+  /*
+  var s = syntax {
+
+    <SourceElement>
+      -- "class" Identifier ("extends" <Expression>) "{" <ClassBody> "}"
+    ;
+
+    <ClassBody>
+      -- <ClassElement>
+    ;
+
+    <ClassElement>
+      -- <PrototypePropertyDefinition>
+      -- <Constructor>
+    ;
+
+    <PrototypePropertyDefinition>
+      -- Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
+    ;
+
+    <Constructor>
+      -- "constructor" "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
+    ;
+
+  };
+  */
+
   function getExtensionSyntax() {
-    var syntax = new myjs.Syntax();
+    var s = new myjs.Syntax();
 
     // <SourceElement>
     //   -> "class" $Identifier ("extends" <Expression>)? "{" <ClassBody> "}"
-    syntax.getRule("SourceElement")
+    s.getRule("SourceElement")
       .addProd(f.keyword("class"), f.value("Identifier"), f.option(
         f.keyword("extends"), f.nonterm("Expression")), f.token("{"),
         f.nonterm("ClassBody"), f.token("}"))
@@ -75,34 +102,34 @@
 
     // <ClassBody>
     //   -> <ClassElement>*
-    syntax.getRule("ClassBody")
+    s.getRule("ClassBody")
       .addProd(f.star(f.nonterm("ClassElement")));
 
     // <ClassElement>
     //   -> <PrototypePropertyDefinition>
     //   -> <Constructor>
-    syntax.getRule("ClassElement")
+    s.getRule("ClassElement")
       .addProd(f.nonterm("PrototypePropertyDefinition"))
       .addProd(f.nonterm("Constructor"));
 
     // <PrototypePropertyDefinition>
     //   -> $Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
-    syntax.getRule("PrototypePropertyDefinition")
+    s.getRule("PrototypePropertyDefinition")
       .addProd(f.value("Identifier"), f.token("("),
         f.nonterm("FormalParameterList"), f.token(")"), f.token("{"),
         f.nonterm("FunctionBody"), f.token("}"))
       .setConstructor(PrototypePropertyDefinition);
 
-    syntax.getRule("Constructor")
+    s.getRule("Constructor")
       .addProd(f.keyword("constructor"), f.token("("),
         f.nonterm("FormalParameterList"), f.token(")"), f.token("{"),
         f.nonterm("FunctionBody"), f.token("}"))
       .setConstructor(Constructor);
 
-    return syntax;
+    return s;
   }
 
-  myjs.registerDialect(new myjs.Dialect("harmony:classes")
+  myjs.registerDialect(new myjs.Dialect("harmony/classes")
     .addExtensionSyntaxProvider(getExtensionSyntax));
 
 })();
