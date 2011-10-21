@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var myjs = require('./my');
-require('./test/tedir.my.js');
+require('./dialects/tedir.my.js');
 
 /**
  * All the files to test the parser on.
@@ -16,8 +16,8 @@ var FILES = [
   ["test/test.js"],
   ["test/framework.js"],
   ["main.js"],
-  ["test/tedir.my.js"],
-  ["test/classes.my.js", "tedir/grammar"]
+  ["dialects/tedir.my.js"],
+  ["dialects/classes.my.js", "tedir/syntax"]
 ];
 
 /**

@@ -133,7 +133,7 @@
     return syntax;
   }
 
-  myjs.registerDialect(new myjs.Dialect("tedir/grammar")
+  myjs.registerDialect(new myjs.Dialect("tedir/syntax")
     .addExtensionSyntaxProvider(getExtensionSyntax));
 
 }).call(this);

@@ -81,6 +81,7 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
     if (traceTarget) {
       (window[traceTarget])(result);
     } else {
+      console.log(result);
       myjs.nolint.execute(result);
     }
   }

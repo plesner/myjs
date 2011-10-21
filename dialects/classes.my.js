@@ -1,4 +1,4 @@
-"use dialect tedir/grammar";
+"use strict";
 
 (function () {
 
@@ -132,4 +132,4 @@
   myjs.registerDialect(new myjs.Dialect("harmony/classes")
     .addExtensionSyntaxProvider(getExtensionSyntax));
 
-})();
+}).call(this);
