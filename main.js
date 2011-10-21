@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var myjs = require('./my');
+var utils = require('./utils');
 require('./dialects/tedir.my.js');
 
 /**
@@ -69,8 +70,31 @@ Runner.prototype.start = function () {
   this[this.args[0] + "Handler"].apply(this, this.args.slice(1));
 };
 
+/**
+ * Runs all the node-based tests.
+ */
 Runner.prototype.testHandler = function () {
   parseAllFiles();
+};
+
+function strip(text) {
+  return text;
+}
+
+/**
+ * Compiles a list of source files into a single file.
+ */
+Runner.prototype.compileHandler = function () {
+  var files = utils.toArray(arguments);
+  var joined = "";
+  forEachAsync(files, function (file, doNext) {
+    fs.readFile(file, "utf8", function (error, source) {
+      joined += source;
+      doNext();
+    });
+  }, function () {
+    console.log(strip(joined));
+  });
 };
 
 (new Runner(process.argv.slice(2))).start();

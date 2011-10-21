@@ -678,10 +678,14 @@ function defineMyJs(namespace, env) { // offset: 13
     }
     if (input.hasMore()) {
       input.advance();
+      if (input.hasMore() && input.getCurrent().type == "Identifier") {
+        tokens += input.getCurrent().value;
+        input.advance();
+      }
     } else {
       return context.getErrorMarker();
     }
-    return tokens.join("");
+    return tokens;
   };
 
   var ASSIGNMENT_OPERATORS = ["=", "+=", "-=", "*=", "&=", "|=", "^=", "%=",
