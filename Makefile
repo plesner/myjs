@@ -1,2 +1,4 @@
-main:
-	node main.js
+test:
+	node main.js test
+
+.PHONY: test
