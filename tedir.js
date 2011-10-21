@@ -1085,9 +1085,8 @@ function defineTedir(namespace, env) { // offset: 16
     return String(defineTedir);
   };
 
-  namespace.isLoaded = true;
   return namespace;
-};
+}
 
 if (typeof module == "undefined") {
   this.tedir = this.tedir || defineTedir({}, this);

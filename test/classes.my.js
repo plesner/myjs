@@ -1,5 +1,8 @@
+"use dialect tedir/grammar";
+
 (function () {
 
+  var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
 
   function ClassDeclaration(name, parent, body) {

@@ -1,5 +1,6 @@
 (function () {
 
+  var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
 
   function SyntaxExpression(rules) {
@@ -135,4 +136,4 @@
   myjs.registerDialect(new myjs.Dialect("tedir/grammar")
     .addExtensionSyntaxProvider(getExtensionSyntax));
 
-})();
+}).call(this);

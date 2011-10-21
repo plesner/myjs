@@ -26,6 +26,7 @@ function defineMyJs(namespace, env) { // offset: 13
    * Reexports from tedir.
    */
   namespace.Syntax = tedir.Syntax;
+  namespace.SourceOrigin = tedir.SourceOrigin;
 
   var factory = {};
   namespace.factory = factory;
@@ -1049,6 +1050,10 @@ function defineMyJs(namespace, env) { // offset: 13
 
     GetElementSuffix.prototype.isArguments = function () {
       return false;
+    };
+
+    GetElementSuffix.prototype.wrapPlain = function (atom) {
+      return new ast.GetElementExpression(atom, this.value);
     };
 
     function GetPropertySuffix(name) {

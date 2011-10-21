@@ -732,6 +732,23 @@ function defineAst(namespace, env) { // offset: 12
       .string(this.member);
   };
 
+  namespace.GetElementExpression = GetElementExpression;
+  inherits(GetElementExpression, Expression);
+  function GetElementExpression(base, key) {
+    this.base = base;
+    this.key = key;
+  }
+
+  GetElementExpression.prototype.translate = function () {
+    return new GetElementExpression(this.base.translate(),
+      this.key.translate());
+  };
+
+  GetElementExpression.prototype.unparse = function (out) {
+    out.string("(").node(this.base).string(")[").string(".")
+      .node(this.key).string("]");
+  };
+
   namespace.CallExpression = CallExpression;
   inherits(CallExpression, Expression);
   function CallExpression(base, args) {
