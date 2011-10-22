@@ -50,3 +50,17 @@ clean:
 		rm -f $(LIB) closure
 
 .PHONY: 	test lint clean
+
+docs:		$(LIB_FILES) tools/jsdoc
+		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
+		  -t=$(JSDOC_ROOT)/templates/jsdoc                         \
+		  -d=doc                                                   \
+		  $(LIB_FILES)
+
+JSDOC_ZIP=http://jsdoc-toolkit.googlecode.com/files/jsdoc_toolkit-2.4.0.zip
+JSDOC_ROOT=tools/jsdoc/jsdoc_toolkit-2.4.0/jsdoc-toolkit/
+tools/jsdoc:
+		curl -o jsdoc.zip $(JSDOC_ZIP)
+		mkdir -p tools/jsdoc
+		unzip -d tools/jsdoc jsdoc.zip
+		rm jsdoc.zip
