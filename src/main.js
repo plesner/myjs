@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-"use strict";
+'use strict';
 
 var fs = require('fs');
 var myjs = require('./my');
@@ -23,16 +23,16 @@ require('./dialects/tedir.my.js');
  * All the files to test the parser on.
  */
 var FILES = [
-  ["src/utils.js"],
-  ["src/ast.js"],
-  ["src/tedir.js"],
-  ["src/my.js"],
-  ["src/mimetype.js"],
-  ["test/test.js"],
-  ["test/framework.js"],
-  ["src/main.js"],
-  ["src/dialects/tedir.my.js"],
-  ["src/dialects/classes.my.js", "tedir/syntax"]
+  ['src/utils.js'],
+  ['src/ast.js'],
+  ['src/tedir.js'],
+  ['src/my.js'],
+  ['src/mimetype.js'],
+  ['test/test.js'],
+  ['test/framework.js'],
+  ['src/main.js'],
+  ['src/dialects/tedir.my.js'],
+  ['src/dialects/classes.my.js', 'tedir/syntax']
 ];
 
 /**
@@ -57,15 +57,15 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
 function parseAllFiles() {
   forEachAsync(FILES, function(pair, doNext) {
     var name = pair[0];
-    var dialect = myjs.getDialect(pair[1] || "default");
-    fs.readFile(name, "utf8", function(error, source) {
+    var dialect = myjs.getDialect(pair[1] || 'default');
+    fs.readFile(name, 'utf8', function(error, source) {
       var origin = new myjs.SourceOrigin(name);
       dialect.parseSource(source, origin);
-      console.log("Successfully parsed " + name);
+      console.log('Successfully parsed ' + name);
       doNext();
     });
   }, function() {
-    console.log("All tests completed successfully.");
+    console.log('All tests completed successfully.');
   });
 }
 
@@ -74,14 +74,14 @@ function Runner(args) {
 }
 
 Runner.prototype.printUsage = function() {
-  console.log("Usage: main.js test");
+  console.log('Usage: main.js test');
 };
 
 Runner.prototype.start = function() {
   if (this.args.length == 0) {
     return this.printUsage();
   }
-  this[this.args[0] + "Handler"].apply(this, this.args.slice(1));
+  this[this.args[0] + 'Handler'].apply(this, this.args.slice(1));
 };
 
 /**
@@ -100,9 +100,9 @@ function strip(text) {
  */
 Runner.prototype.compileHandler = function() {
   var files = utils.toArray(arguments);
-  var joined = "";
+  var joined = '';
   forEachAsync(files, function(file, doNext) {
-    fs.readFile(file, "utf8", function(error, source) {
+    fs.readFile(file, 'utf8', function(error, source) {
       joined += source;
       doNext();
     });
