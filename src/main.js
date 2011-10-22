@@ -23,16 +23,16 @@ require('./dialects/tedir.my.js');
  * All the files to test the parser on.
  */
 var FILES = [
-  ["utils.js"],
-  ["ast.js"],
-  ["tedir.js"],
-  ["my.js"],
-  ["mimetype.js"],
+  ["src/utils.js"],
+  ["src/ast.js"],
+  ["src/tedir.js"],
+  ["src/my.js"],
+  ["src/mimetype.js"],
   ["test/test.js"],
   ["test/framework.js"],
-  ["main.js"],
-  ["dialects/tedir.my.js"],
-  ["dialects/classes.my.js", "tedir/syntax"]
+  ["src/main.js"],
+  ["src/dialects/tedir.my.js"],
+  ["src/dialects/classes.my.js", "tedir/syntax"]
 ];
 
 /**
