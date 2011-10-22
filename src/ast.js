@@ -16,11 +16,11 @@
  * Syntax tree definitions and utilities for working with them.
  */
 
-"use strict";
+'use strict';
 
-(function () {
+(function() {
 
-function defineAst(namespace, env) { // offset: 12
+function defineAst(namespace, env) { // offset: 23
 
   var utils = env.utils;
 
@@ -36,17 +36,17 @@ function defineAst(namespace, env) { // offset: 12
     this.newlineScheduled = false;
   }
 
-  TextFormatter.prototype.indent = function () {
+  TextFormatter.prototype.indent = function() {
     this.indentLevel++;
     return this;
   };
 
-  TextFormatter.prototype.deindent = function () {
+  TextFormatter.prototype.deindent = function() {
     this.indentLevel--;
     return this;
   };
 
-  TextFormatter.prototype.strings = function (elms, sepOpt) {
+  TextFormatter.prototype.strings = function(elms, sepOpt) {
     var i;
     for (i = 0; i < elms.length; i++) {
       if (sepOpt && i > 0) {
@@ -57,7 +57,7 @@ function defineAst(namespace, env) { // offset: 12
     return this;
   };
 
-  TextFormatter.prototype.string = function (format) {
+  TextFormatter.prototype.string = function(format) {
     var i;
     if (this.newlineScheduled) {
       this.newlineScheduled = false;
@@ -70,7 +70,7 @@ function defineAst(namespace, env) { // offset: 12
     return this;
   };
 
-  TextFormatter.prototype.nodes = function (elms, sepOpt) {
+  TextFormatter.prototype.nodes = function(elms, sepOpt) {
     var i;
     for (i = 0; i < elms.length; i++) {
       if (sepOpt && i > 0) {
@@ -81,25 +81,25 @@ function defineAst(namespace, env) { // offset: 12
     return this;
   };
 
-  TextFormatter.prototype.node = function (elm) {
+  TextFormatter.prototype.node = function(elm) {
     elm.unparse(this);
     return this;
   };
 
-  TextFormatter.prototype.addOptNode = function (elm) {
+  TextFormatter.prototype.addOptNode = function(elm) {
     if (elm) {
       elm.unparse(this);
     }
     return this;
   };
 
-  TextFormatter.prototype.newline = function () {
+  TextFormatter.prototype.newline = function() {
     this.newlineScheduled = true;
     return this;
   };
 
-  TextFormatter.prototype.flush = function () {
-    return this.tokens.join("");
+  TextFormatter.prototype.flush = function() {
+    return this.tokens.join('');
   };
 
   namespace.Node = Node;
@@ -113,13 +113,13 @@ function defineAst(namespace, env) { // offset: 12
   namespace.Expression = Expression;
   function Expression() { }
 
-  Node.prototype.unparse = function (out) {
-    out.string("#<" + this.constructor.name + ">");
+  Node.prototype.unparse = function(out) {
+    out.string('#<' + this.constructor.name + '>');
   };
 
   function translateAll(elms) {
     var result = [];
-    elms.forEach(function (elm) {
+    elms.forEach(function(elm) {
       var newElm = elm.translate();
       if (Array.isArray(newElm)) {
         result = result.concat(newElm);
@@ -136,12 +136,12 @@ function defineAst(namespace, env) { // offset: 12
     this.elements = elements;
   }
 
-  Program.prototype.translate = function () {
+  Program.prototype.translate = function() {
     return new Program(translateAll(this.elements));
   };
 
-  Program.prototype.unparse = function (out) {
-    this.elements.forEach(function (element) {
+  Program.prototype.unparse = function(out) {
+    this.elements.forEach(function(element) {
       element.unparse(out);
     });
   };
@@ -154,15 +154,15 @@ function defineAst(namespace, env) { // offset: 12
     this.body = body;
   }
 
-  FunctionDeclaration.prototype.translate = function () {
+  FunctionDeclaration.prototype.translate = function() {
     return new FunctionDeclaration(this.name, this.params,
       translateAll(this.body));
   };
 
-  FunctionDeclaration.prototype.unparse = function (out) {
-    out.string("function ").string(this.name).string("(")
-      .strings(this.params, ", ").string(") {").indent().newline()
-      .nodes(this.body).deindent().string("}").newline();
+  FunctionDeclaration.prototype.unparse = function(out) {
+    out.string('function ').string(this.name).string('(')
+      .strings(this.params, ', ').string(') {').indent().newline()
+      .nodes(this.body).deindent().string('}').newline();
   };
 
   namespace.ReturnStatement = ReturnStatement;
@@ -171,7 +171,7 @@ function defineAst(namespace, env) { // offset: 12
     this.value = valueOpt;
   }
 
-  ReturnStatement.prototype.translate = function () {
+  ReturnStatement.prototype.translate = function() {
     if (this.value) {
       return new ReturnStatement(this.value.translate());
     } else {
@@ -179,11 +179,11 @@ function defineAst(namespace, env) { // offset: 12
     }
   };
 
-  ReturnStatement.prototype.unparse = function (out) {
+  ReturnStatement.prototype.unparse = function(out) {
     if (this.value) {
-      out.string("return ").node(this.value).string(";").newline();
+      out.string('return ').node(this.value).string(';').newline();
     } else {
-      out.string("return;").newline();
+      out.string('return;').newline();
     }
   };
 
@@ -193,8 +193,8 @@ function defineAst(namespace, env) { // offset: 12
     this.value = value;
   }
 
-  ThrowStatement.prototype.unparse = function (out) {
-    out.string("throw ").node(this.value).string(";").newline();
+  ThrowStatement.prototype.unparse = function(out) {
+    out.string('throw ').node(this.value).string(';').newline();
   };
 
   namespace.Block = Block;
@@ -203,13 +203,13 @@ function defineAst(namespace, env) { // offset: 12
     this.stmts = stmts;
   }
 
-  Block.prototype.translate = function () {
+  Block.prototype.translate = function() {
     return new Block(translateAll(this.stmts));
   };
 
-  Block.prototype.unparse = function (out) {
-    out.string("{").indent().newline().nodes(this.stmts).deindent()
-      .string("}");
+  Block.prototype.unparse = function(out) {
+    out.string('{').indent().newline().nodes(this.stmts).deindent()
+      .string('}');
   };
 
   namespace.VariableStatement = VariableStatement;
@@ -218,12 +218,12 @@ function defineAst(namespace, env) { // offset: 12
     this.decls = decls;
   }
 
-  VariableStatement.prototype.translate = function () {
+  VariableStatement.prototype.translate = function() {
     return new VariableStatement(translateAll(this.decls));
   };
 
-  VariableStatement.prototype.unparse = function (out) {
-    out.string("var ").nodes(this.decls, ", ").string(";").newline();
+  VariableStatement.prototype.unparse = function(out) {
+    out.string('var ').nodes(this.decls, ', ').string(';').newline();
   };
 
   namespace.VariableDeclaration = VariableDeclaration;
@@ -233,14 +233,14 @@ function defineAst(namespace, env) { // offset: 12
     this.value = value;
   }
 
-  VariableDeclaration.prototype.translate = function () {
+  VariableDeclaration.prototype.translate = function() {
     return new VariableDeclaration(this.name, this.value.translate());
   };
 
-  VariableDeclaration.prototype.unparse = function (out) {
+  VariableDeclaration.prototype.unparse = function(out) {
     out.string(this.name);
     if (this.value) {
-      out.string(" = (").node(this.value).string(")");
+      out.string(' = (').node(this.value).string(')');
     }
   };
 
@@ -252,17 +252,17 @@ function defineAst(namespace, env) { // offset: 12
     this.elsePart = elsePart;
   }
 
-  IfStatement.prototype.translate = function () {
+  IfStatement.prototype.translate = function() {
     var newCond = this.cond.translate();
     var newThen = this.thenPart.translate();
     var newElse = this.elsePart ? this.elsePart.translate() : null;
     return new IfStatement(newCond, newThen, newElse);
   };
 
-  IfStatement.prototype.unparse = function (out) {
-    out.string("if (").node(this.cond).string(") ").node(this.thenPart);
+  IfStatement.prototype.unparse = function(out) {
+    out.string('if (').node(this.cond).string(') ').node(this.thenPart);
     if (this.elsePart) {
-      out.string(" else ").node(this.elsePart);
+      out.string(' else ').node(this.elsePart);
     }
     out.newline();
   };
@@ -274,10 +274,10 @@ function defineAst(namespace, env) { // offset: 12
     this.cases = cases;
   }
 
-  SwitchStatement.prototype.unparse = function (out) {
-    out.string("switch (").node(this.value).string(") {")
+  SwitchStatement.prototype.unparse = function(out) {
+    out.string('switch (').node(this.value).string(') {')
       .indent().newline().nodes(this.cases).deindent()
-      .string("}").newline();
+      .string('}').newline();
   };
 
   namespace.SwitchCase = SwitchCase;
@@ -287,11 +287,11 @@ function defineAst(namespace, env) { // offset: 12
     this.body = body;
   }
 
-  SwitchCase.prototype.unparse = function (out) {
+  SwitchCase.prototype.unparse = function(out) {
     if (this.test) {
-      out.string("case ").node(this.test).string(": ");
+      out.string('case ').node(this.test).string(': ');
     } else {
-      out.string("default: ");
+      out.string('default: ');
     }
     out.indent().newline().nodes(this.body).deindent().newline();
   };
@@ -310,8 +310,8 @@ function defineAst(namespace, env) { // offset: 12
     this.body = body;
   }
 
-  WhileStatement.prototype.unparse = function (out) {
-    out.string("while (").node(this.cond).string(") ")
+  WhileStatement.prototype.unparse = function(out) {
+    out.string('while (').node(this.cond).string(') ')
       .node(this.body).newline();
   };
 
@@ -324,10 +324,10 @@ function defineAst(namespace, env) { // offset: 12
     this.body = body;
   }
 
-  ForStatement.prototype.unparse = function (out) {
-    out.string("for (").addOptNode(this.init).string(";")
-      .addOptNode(this.test).string(";").addOptNode(this.update)
-      .string(") ").node(this.body).newline();
+  ForStatement.prototype.unparse = function(out) {
+    out.string('for (').addOptNode(this.init).string(';')
+      .addOptNode(this.test).string(';').addOptNode(this.update)
+      .string(') ').node(this.body).newline();
   };
 
   namespace.ForInStatement = ForInStatement;
@@ -350,11 +350,11 @@ function defineAst(namespace, env) { // offset: 12
     this.expr = expr;
   }
 
-  ExpressionStatement.prototype.unparse = function (out) {
-    out.node(this.expr).string(";").newline();
+  ExpressionStatement.prototype.unparse = function(out) {
+    out.node(this.expr).string(';').newline();
   };
 
-  ExpressionStatement.prototype.translate = function () {
+  ExpressionStatement.prototype.translate = function() {
     return new ExpressionStatement(this.expr.translate());
   };
 
@@ -366,14 +366,14 @@ function defineAst(namespace, env) { // offset: 12
     this.source = source;
   }
 
-  AssignmentExpression.prototype.translate = function () {
+  AssignmentExpression.prototype.translate = function() {
     return new AssignmentExpression(this.target.translate(), this.op,
       this.source.translate());
   };
 
-  AssignmentExpression.prototype.unparse = function (out) {
-    out.node(this.target).string(" " + this.op + " (")
-      .node(this.source).string(")");
+  AssignmentExpression.prototype.unparse = function(out) {
+    out.node(this.target).string(' ' + this.op + ' (')
+      .node(this.source).string(')');
   };
 
   namespace.InfixExpression = InfixExpression;
@@ -384,14 +384,14 @@ function defineAst(namespace, env) { // offset: 12
     this.right = right;
   }
 
-  InfixExpression.prototype.translate = function () {
+  InfixExpression.prototype.translate = function() {
     return new InfixExpression(this.left.translate(), this.op,
       this.right.translate());
   };
 
-  InfixExpression.prototype.unparse = function (out) {
-    out.string("(").node(this.left).string(") " + this.op + " (")
-      .node(this.right).string(")");
+  InfixExpression.prototype.unparse = function(out) {
+    out.string('(').node(this.left).string(') ' + this.op + ' (')
+      .node(this.right).string(')');
   };
 
   namespace.ConditionalExpression = ConditionalExpression;
@@ -402,17 +402,17 @@ function defineAst(namespace, env) { // offset: 12
     this.elsePart = elsePart;
   }
 
-  ConditionalExpression.prototype.translate = function () {
+  ConditionalExpression.prototype.translate = function() {
     var newCond = this.cond.translate();
     var newThen = this.thenPart.translate();
     var newElse = this.elsePart ? this.elsePart.translate() : null;
     return new ConditionalExpression(newCond, newThen, newElse);
   };
 
-  ConditionalExpression.prototype.unparse = function (out) {
-    out.string("(").node(this.cond).string(") ? (")
-      .node(this.thenPart).string(") : (").node(this.elsePart)
-      .string(")");
+  ConditionalExpression.prototype.unparse = function(out) {
+    out.string('(').node(this.cond).string(') ? (')
+      .node(this.thenPart).string(') : (').node(this.elsePart)
+      .string(')');
   };
 
   namespace.FunctionExpression = FunctionExpression;
@@ -423,15 +423,15 @@ function defineAst(namespace, env) { // offset: 12
     this.body = body;
   }
 
-  FunctionExpression.prototype.translate = function () {
+  FunctionExpression.prototype.translate = function() {
     return new FunctionExpression(this.name, this.params,
       translateAll(this.body));
   };
 
-  FunctionExpression.prototype.unparse = function (out) {
-    out.string("function ").string(this.name).string("(")
-      .strings(this.params, ", ").string(") {").indent().newline()
-      .nodes(this.body).deindent().string("}");
+  FunctionExpression.prototype.unparse = function(out) {
+    out.string('function ').string(this.name).string('(')
+      .strings(this.params, ', ').string(') {').indent().newline()
+      .nodes(this.body).deindent().string('}');
   };
 
   namespace.GetPropertyExpression = GetPropertyExpression;
@@ -441,13 +441,13 @@ function defineAst(namespace, env) { // offset: 12
     this.member = member;
   }
 
-  GetPropertyExpression.prototype.translate = function () {
+  GetPropertyExpression.prototype.translate = function() {
     return new GetPropertyExpression(this.base.translate(),
       this.member);
   };
 
-  GetPropertyExpression.prototype.unparse = function (out) {
-    out.string("(").node(this.base).string(")").string(".")
+  GetPropertyExpression.prototype.unparse = function(out) {
+    out.string('(').node(this.base).string(')').string('.')
       .string(this.member);
   };
 
@@ -458,14 +458,14 @@ function defineAst(namespace, env) { // offset: 12
     this.key = key;
   }
 
-  GetElementExpression.prototype.translate = function () {
+  GetElementExpression.prototype.translate = function() {
     return new GetElementExpression(this.base.translate(),
       this.key.translate());
   };
 
-  GetElementExpression.prototype.unparse = function (out) {
-    out.string("(").node(this.base).string(")[").string(".")
-      .node(this.key).string("]");
+  GetElementExpression.prototype.unparse = function(out) {
+    out.string('(').node(this.base).string(')[').string('.')
+      .node(this.key).string(']');
   };
 
   namespace.CallExpression = CallExpression;
@@ -475,14 +475,14 @@ function defineAst(namespace, env) { // offset: 12
     this.args = args;
   }
 
-  CallExpression.prototype.translate = function () {
+  CallExpression.prototype.translate = function() {
     return new CallExpression(this.base.translate(),
       translateAll(this.args));
   };
 
-  CallExpression.prototype.unparse = function (out) {
-    out.string("(").node(this.base).string(")(")
-      .nodes(this.args, ", ").string(")");
+  CallExpression.prototype.unparse = function(out) {
+    out.string('(').node(this.base).string(')(')
+      .nodes(this.args, ', ').string(')');
   };
 
   namespace.UnaryExpression = UnaryExpression;
@@ -496,15 +496,15 @@ function defineAst(namespace, env) { // offset: 12
   UnaryExpression.PREFIX = true;
   UnaryExpression.POSTFIX = false;
 
-  UnaryExpression.prototype.translate = function () {
+  UnaryExpression.prototype.translate = function() {
     return new UnaryExpression(this.base.translate(), this.op, this.isPrefix);
   };
 
-  UnaryExpression.prototype.unparse = function (out) {
+  UnaryExpression.prototype.unparse = function(out) {
     if (this.isPrefix) {
       out.string(this.op);
     }
-    out.string("(").node(this.base).string(")");
+    out.string('(').node(this.base).string(')');
     if (!this.isPrefix) {
       out.string(this.op);
     }
@@ -517,13 +517,13 @@ function defineAst(namespace, env) { // offset: 12
     this.args = args;
   }
 
-  NewExpression.prototype.translate = function () {
+  NewExpression.prototype.translate = function() {
     return new NewExpression(this.base.translate(), translateAll(this.args));
   };
 
-  NewExpression.prototype.unparse = function (out) {
-    out.string("new (").node(this.base).string(")(")
-      .nodes(this.args, ", ").string(")");
+  NewExpression.prototype.unparse = function(out) {
+    out.string('new (').node(this.base).string(')(')
+      .nodes(this.args, ', ').string(')');
   };
 
   namespace.Literal = Literal;
@@ -532,11 +532,11 @@ function defineAst(namespace, env) { // offset: 12
     this.value = value;
   }
 
-  Literal.prototype.translate = function () {
+  Literal.prototype.translate = function() {
     return this;
   };
 
-  Literal.prototype.unparse = function (out) {
+  Literal.prototype.unparse = function(out) {
     out.string(this.value);
   };
 
@@ -546,11 +546,11 @@ function defineAst(namespace, env) { // offset: 12
     this.name = name;
   }
 
-  Identifier.prototype.translate = function () {
+  Identifier.prototype.translate = function() {
     return this;
   };
 
-  Identifier.prototype.unparse = function (out) {
+  Identifier.prototype.unparse = function(out) {
     out.string(this.name);
   };
 
@@ -558,12 +558,12 @@ function defineAst(namespace, env) { // offset: 12
   inherits(This, Expression);
   function This() { }
 
-  This.prototype.translate = function () {
+  This.prototype.translate = function() {
     return this;
   };
 
-  This.prototype.unparse = function (out) {
-    out.string("this");
+  This.prototype.unparse = function(out) {
+    out.string('this');
   };
 
   namespace.ObjectLiteral = ObjectLiteral;
@@ -572,8 +572,8 @@ function defineAst(namespace, env) { // offset: 12
     this.elms = elms;
   }
 
-  ObjectLiteral.prototype.unparse = function (out) {
-    out.string("{").string(this.elms, ", ").string("}");
+  ObjectLiteral.prototype.unparse = function(out) {
+    out.string('{').string(this.elms, ', ').string('}');
   };
 
   namespace.ArrayLiteral = ArrayLiteral;
@@ -582,15 +582,15 @@ function defineAst(namespace, env) { // offset: 12
     this.elms = elms;
   }
 
-  ArrayLiteral.prototype.translate = function () {
+  ArrayLiteral.prototype.translate = function() {
     return new ArrayLiteral(translateAll(this.elms));
   };
 
-  ArrayLiteral.prototype.unparse = function (out) {
-    out.string("[").nodes(this.elms, ", ").string("]");
+  ArrayLiteral.prototype.unparse = function(out) {
+    out.string('[').nodes(this.elms, ', ').string(']');
   };
 
-  namespace.getSource = function () {
+  namespace.getSource = function() {
     return String(defineAst);
   };
 
@@ -598,7 +598,7 @@ function defineAst(namespace, env) { // offset: 12
 
 }
 
-if (typeof module == "undefined") {
+if (typeof module == 'undefined') {
   this.ast = this.ast || defineAst({}, this);
 } else {
   defineAst(module.exports, {

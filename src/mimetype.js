@@ -16,11 +16,14 @@
  * Implementation of the "text/myjs" script type.
  */
 
-"use strict";
+'use strict';
 
-myjs.nolint = myjs.nolint || (function (namespace) {
+/**
+ * Stuff that lint disapproves of.
+ */
+myjs.nolint = myjs.nolint || (function(namespace) {
 
-  namespace.execute = function (text) {
+  namespace.execute = function(text) {
     window.eval(text);
   };
 
@@ -40,11 +43,11 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
     this.message = message;
   }
 
-  MyJsException.prototype.toString = function () {
-    return "MyJsException: " + this.message;
+  MyJsException.prototype.toString = function() {
+    return 'MyJsException: ' + this.message;
   };
 
-  var DEFAULT_DIALECT = "default";
+  var DEFAULT_DIALECT = 'default';
 
   /**
    * Fetches a file using XHR, invoking the callback with the result when
@@ -52,17 +55,17 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
    */
   function fetch(url, callback) {
     var Constructor = window.ActiveXObject || XMLHttpRequest;
-    var request = new Constructor("Microsoft.XMLHTTP");
-    request.onreadystatechange = function () {
+    var request = new Constructor('Microsoft.XMLHTTP');
+    request.onreadystatechange = function() {
       if (request.readyState == 4) {
         if (request.status == 0 || request.status == 200) {
           callback(request.responseText);
         } else {
-          throw new Error("Could not load " + url);
+          throw new Error('Could not load ' + url);
         }
       }
     };
-    request.open("GET", url, false);
+    request.open('GET', url, false);
     request.send();
   }
 
@@ -75,7 +78,7 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
     if (fileCache.hasOwnProperty(url)) {
       callback(fileCache[url]);
     } else {
-      fetch(url, function (value) {
+      fetch(url, function(value) {
         fileCache[url] = value;
         callback(value);
       });
@@ -100,7 +103,7 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
    * dialect.
    */
   function processScriptWithDialect(dialect, script) {
-    var traceTarget = script.getAttribute("onTrace");
+    var traceTarget = script.getAttribute('onTrace');
     function processInnerText() {
       if (script.innerText) {
         processSource(dialect, script.innerText.trim(), null, traceTarget);
@@ -108,7 +111,7 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
     }
     if (script.src) {
       // Load a remote src if there is one.
-      getFile(script.src, function (source) {
+      getFile(script.src, function(source) {
         var origin = new tedir.SourceOrigin(script.src);
         processSource(dialect, source, origin, traceTarget);
         processInnerText();
@@ -123,7 +126,7 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
    * Process the script tag as appropriate.
    */
   function processScript(script) {
-    var name = script.getAttribute("dialect") || DEFAULT_DIALECT;
+    var name = script.getAttribute('dialect') || DEFAULT_DIALECT;
     var dialect = myjs.getDialect(name);
     if (!dialect) {
       throw new MyJsException("Unknown dialect '" + name + "'.");
@@ -131,17 +134,17 @@ var mimetype = mimetype || (function defineMimetype(namespace) { // offset: 20
     processScriptWithDialect(dialect, script);
   }
 
-  addEventListener("DOMContentLoaded", function () {
-    var i, scripts = document.getElementsByTagName("script");
+  addEventListener('DOMContentLoaded', function() {
+    var i, scripts = document.getElementsByTagName('script');
     for (i = 0; i < scripts.length; i++) {
       var script = scripts[i];
-      if (script.type == "text/myjs") {
+      if (script.type == 'text/myjs') {
         processScript(script);
       }
     }
   });
 
-  namespace.getSource = function () {
+  namespace.getSource = function() {
     return String(defineMimetype);
   };
 

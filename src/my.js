@@ -17,9 +17,9 @@
  * parsing to the tedir library.
  */
 
-"use strict";
+'use strict';
 
-(function () {
+(function() {
 
 function defineMyJs(namespace, env) { // offset: 13
 
@@ -39,36 +39,36 @@ function defineMyJs(namespace, env) { // offset: 13
 
   var factory = {};
   namespace.factory = factory;
-  Object.keys(tedir.factory).forEach(function (key) {
+  Object.keys(tedir.factory).forEach(function(key) {
     factory[key] = tedir.factory[key];
   });
 
-  factory.punct = function (name) {
+  factory.punct = function(name) {
     return factory.ignore(tedir.factory.token(name, PUNCTUATOR_MARKER));
   };
 
-  factory.punctValue = function (name) {
+  factory.punctValue = function(name) {
     return tedir.factory.token(name, PUNCTUATOR_MARKER);
   };
 
-  factory.token = function (name) {
+  factory.token = function(name) {
     return factory.ignore(tedir.factory.token(name, null));
   };
 
-  factory.keyword = function (name) {
+  factory.keyword = function(name) {
     return factory.ignore(tedir.factory.token(name, KEYWORD_MARKER));
   };
 
-  factory.keywordValue = function (name) {
+  factory.keywordValue = function(name) {
     return tedir.factory.token(name, KEYWORD_MARKER);
   };
 
-  factory.value = function (name) {
+  factory.value = function(name) {
     return tedir.factory.token(name, null);
   };
 
-  var KEYWORD_MARKER = "keyword";
-  var PUNCTUATOR_MARKER = "punctuator";
+  var KEYWORD_MARKER = 'keyword';
+  var PUNCTUATOR_MARKER = 'punctuator';
 
   /**
    * Signals an error condition in tedir.
@@ -81,8 +81,8 @@ function defineMyJs(namespace, env) { // offset: 13
     this.message = message;
   }
 
-  MyJsError.prototype.toString = function () {
-    return "myjs.Error: " + this.message;
+  MyJsError.prototype.toString = function() {
+    return 'myjs.Error: ' + this.message;
   };
 
   /**
@@ -100,7 +100,7 @@ function defineMyJs(namespace, env) { // offset: 13
     this.extensionSyntaxProviders = [];
     this.syntax = null;
     this.grammar = null;
-    this.start = "Program";
+    this.start = 'Program';
     this.keywords = null;
     this.punctuators = null;
     this.settings = null;
@@ -109,7 +109,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns the name that identifies this dialect.
    */
-  Dialect.prototype.getName = function () {
+  Dialect.prototype.getName = function() {
     return this.name;
   };
 
@@ -118,12 +118,12 @@ function defineMyJs(namespace, env) { // offset: 13
    * The reason for not setting the syntax directly is that constructing a
    * syntax for every dialect object up front is unnecessarily expensive.
    */
-  Dialect.prototype.setBaseSyntaxProvider = function (value) {
+  Dialect.prototype.setBaseSyntaxProvider = function(value) {
     this.baseSyntaxProvider = value;
     return this;
   };
 
-  Dialect.prototype.addExtensionSyntaxProvider = function (value) {
+  Dialect.prototype.addExtensionSyntaxProvider = function(value) {
     this.extensionSyntaxProviders.push(value);
     return this;
   };
@@ -131,22 +131,22 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Sets the start production to use.
    */
-  Dialect.prototype.setStart = function (value) {
+  Dialect.prototype.setStart = function(value) {
     this.start = value;
     return this;
   };
 
-  Dialect.prototype.getStart = function () {
+  Dialect.prototype.getStart = function() {
     return this.start;
   };
 
   /**
    * Returns this dialect's syntax, building it if necessary.
    */
-  Dialect.prototype.getSyntax = function () {
+  Dialect.prototype.getSyntax = function() {
     if (!this.syntax) {
       var syntax = (this.baseSyntaxProvider)();
-      var extensions = this.extensionSyntaxProviders.map(function (ext) {
+      var extensions = this.extensionSyntaxProviders.map(function(ext) {
         return ext();
       });
       if (extensions.length > 0) {
@@ -160,14 +160,14 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns this dialect's grammar.
    */
-  Dialect.prototype.getGrammar = function () {
+  Dialect.prototype.getGrammar = function() {
     if (!this.grammar) {
       this.grammar = this.getSyntax().asGrammar();
     }
     return this.grammar;
   };
 
-  Dialect.prototype.getSettings = function () {
+  Dialect.prototype.getSettings = function() {
     if (!this.settings) {
       var keywords = this.getKeywords();
       var punctuators = this.getPunctuators();
@@ -179,14 +179,14 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Parses the given source, returning a syntax tree.
    */
-  Dialect.prototype.parseSource = function (source, origin, trace) {
+  Dialect.prototype.parseSource = function(source, origin, trace) {
     var grammar = this.getGrammar();
     var parser = new tedir.Parser(grammar);
     var tokens = tokenize(source, this.getSettings());
     return parser.parse(this.getStart(), tokens, origin, trace);
   };
 
-  Dialect.prototype.translate = function (source, origin, trace) {
+  Dialect.prototype.translate = function(source, origin, trace) {
     var ast = this.parseSource(source, origin, trace);
     if (trace) {
       return ast;
@@ -202,7 +202,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns the set of keywords used by this dialect.
    */
-  Dialect.prototype.getKeywords = function () {
+  Dialect.prototype.getKeywords = function() {
     if (!this.keywords) {
       this.calcTokenTypes();
     }
@@ -212,7 +212,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns the set of punctuators used by this dialect.
    */
-  Dialect.prototype.getPunctuators = function () {
+  Dialect.prototype.getPunctuators = function() {
     if (!this.punctuators) {
       this.calcTokenTypes();
     }
@@ -223,11 +223,11 @@ function defineMyJs(namespace, env) { // offset: 13
    * Scans the grammar and extracts a sorted list of all keywords and
    * punctuators, storing them in the appropriate fields.
    */
-  Dialect.prototype.calcTokenTypes = function () {
+  Dialect.prototype.calcTokenTypes = function() {
     var keywordMap = {};
     var punctuatorMap = {};
     function visitNode(node) {
-      if (node.getType() == "TOKEN") {
+      if (node.getType() == 'TOKEN') {
         switch (node.getKind()) {
         case KEYWORD_MARKER:
           keywordMap[node.value] = true;
@@ -240,7 +240,7 @@ function defineMyJs(namespace, env) { // offset: 13
         node.forEachChild(visitNode);
       }
     }
-    this.getSyntax().forEachRule(function (name, value) {
+    this.getSyntax().forEachRule(function(name, value) {
       visitNode(value);
     });
     this.keywords = Object.keys(keywordMap).sort();
@@ -274,15 +274,15 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Is this a soft non-semantic token?
    */
-  HardToken.prototype.isSoft = function () {
+  HardToken.prototype.isSoft = function() {
     return false;
   };
 
-  HardToken.prototype.toString = function () {
+  HardToken.prototype.toString = function() {
     if (this.value != this.type) {
-      return "[" + this.type + ":" + this.value + "]";
+      return '[' + this.type + ':' + this.value + ']';
     } else {
-      return "[" + this.value + "]";
+      return '[' + this.value + ']';
     }
   };
 
@@ -294,32 +294,32 @@ function defineMyJs(namespace, env) { // offset: 13
     this.value = value;
   }
 
-  SoftToken.prototype.toString = function () {
-    return "(" + this.value + ")";
+  SoftToken.prototype.toString = function() {
+    return '(' + this.value + ')';
   };
 
-  SoftToken.prototype.isSoft = function () {
+  SoftToken.prototype.isSoft = function() {
     return true;
   };
 
   namespace.TokenizerSettings = TokenizerSettings;
   function TokenizerSettings(keywords, punctuation) {
     this.keywords = {};
-    keywords.forEach(function (word) {
+    keywords.forEach(function(word) {
       this.keywords[word] = true;
     }.bind(this));
     this.punctuation = Trie.build(punctuation);
   }
 
-  TokenizerSettings.prototype.isKeyword = function (word) {
+  TokenizerSettings.prototype.isKeyword = function(word) {
     return this.keywords.hasOwnProperty(word);
   };
 
-  TokenizerSettings.prototype.isPunctuation = function (chr) {
+  TokenizerSettings.prototype.isPunctuation = function(chr) {
     return this.punctuation.get(chr);
   };
 
-  TokenizerSettings.prototype.getPunctuation = function () {
+  TokenizerSettings.prototype.getPunctuation = function() {
     return this.punctuation;
   };
 
@@ -336,12 +336,12 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns a trie that matches on the given set of strings.
    */
-  Trie.build = function (strings) {
+  Trie.build = function(strings) {
     if (strings.length == 0) {
       return Trie.EMPTY;
     }
     var firstToRest = {};
-    strings.forEach(function (string) {
+    strings.forEach(function(string) {
       var first = string[0];
       var rest = string.substring(1);
       if (!firstToRest.hasOwnProperty(first)) {
@@ -352,13 +352,13 @@ function defineMyJs(namespace, env) { // offset: 13
       }
     });
     var subTries = {};
-    Object.keys(firstToRest).forEach(function (chr) {
+    Object.keys(firstToRest).forEach(function(chr) {
       subTries[chr] = Trie.build(firstToRest[chr]);
     });
     return new Trie(subTries);
   };
 
-  Trie.prototype.get = function (chr) {
+  Trie.prototype.get = function(chr) {
     return this.map[chr];
   };
 
@@ -372,29 +372,29 @@ function defineMyJs(namespace, env) { // offset: 13
     this.cursor = 0;
   }
 
-  Scanner.prototype.getCurrent = function () {
+  Scanner.prototype.getCurrent = function() {
     return this.source[this.cursor];
   };
 
-  Scanner.prototype.getLookahead = function () {
+  Scanner.prototype.getLookahead = function() {
     return this.source[this.cursor + 1];
   };
 
   /**
    * Does this character stream have more characters?
    */
-  Scanner.prototype.hasMore = function () {
+  Scanner.prototype.hasMore = function() {
     return this.cursor < this.source.length;
   };
 
-  Scanner.prototype.hasLookahead = function () {
+  Scanner.prototype.hasLookahead = function() {
     return (this.cursor + 1) < this.source.length;
   };
 
   /**
    * Advances the stream to the next character.
    */
-  Scanner.prototype.advance = function () {
+  Scanner.prototype.advance = function() {
     this.cursor++;
   };
 
@@ -402,14 +402,14 @@ function defineMyJs(namespace, env) { // offset: 13
    * Advance the specified amount if possible but not past the end of the
    * input.
    */
-  Scanner.prototype.advanceIfPossible = function (amount) {
+  Scanner.prototype.advanceIfPossible = function(amount) {
     this.cursor = Math.min(this.cursor + amount, this.source.length);
   };
 
   /**
    * Advances the stream to the next character and returns it.
    */
-  Scanner.prototype.advanceAndGet = function () {
+  Scanner.prototype.advanceAndGet = function() {
     this.cursor++;
     return this.getCurrent();
   };
@@ -417,14 +417,14 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Returns the current character offset.
    */
-  Scanner.prototype.getCursor = function () {
+  Scanner.prototype.getCursor = function() {
     return this.cursor;
   };
 
   /**
    * Returns the part of the input between 'start' and 'end'.
    */
-  Scanner.prototype.getPart = function (start, end) {
+  Scanner.prototype.getPart = function(start, end) {
     return this.source.substring(start, end);
   };
 
@@ -456,7 +456,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Extracts the next JavaScript token from the given stream.
    */
-  Scanner.prototype.scanToken = function () {
+  Scanner.prototype.scanToken = function() {
     var c = this.getCurrent();
     if (isWhiteSpace(c)) {
       return this.scanWhiteSpace();
@@ -468,20 +468,20 @@ function defineMyJs(namespace, env) { // offset: 13
       return this.scanIdentifier(c);
     }
     switch (c) {
-    case "\"":
+    case '\"':
     case "'":
       return this.scanString();
-    case "/":
+    case '/':
       switch (this.getLookahead()) {
-      case "/":
+      case '/':
         return this.scanEndOfLineComment();
-      case "*":
+      case '*':
         return this.scanBlockComment();
-      case "=":
+      case '=':
         this.advance();
-        return this.advanceAndYield("/=");
+        return this.advanceAndYield('/=');
       default:
-        return this.advanceAndYield("/");
+        return this.advanceAndYield('/');
       }
     default:
       this.advance();
@@ -492,7 +492,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Doesn't advance but just returns a token with the given contents.
    */
-  Scanner.prototype.justYield = function (value, typeOpt) {
+  Scanner.prototype.justYield = function(value, typeOpt) {
     return new HardToken(value, typeOpt);
   };
 
@@ -500,7 +500,7 @@ function defineMyJs(namespace, env) { // offset: 13
    * Skips over the current character and returns a token with the given
    * contents.
    */
-  Scanner.prototype.advanceAndYield = function (value, typeOpt) {
+  Scanner.prototype.advanceAndYield = function(value, typeOpt) {
     this.advance();
     return new HardToken(value, typeOpt);
   };
@@ -510,7 +510,7 @@ function defineMyJs(namespace, env) { // offset: 13
    * the given 'match' skips another and return 'ifMatch', otherwise
    * doesn't skip but just returns 'ifNoMatch'.
    */
-  Scanner.prototype.checkAndYield = function (match, ifMatch, ifNoMatch) {
+  Scanner.prototype.checkAndYield = function(match, ifMatch, ifNoMatch) {
     if (this.advanceAndGet() == match) {
       this.advance();
       return new HardToken(ifMatch);
@@ -523,11 +523,12 @@ function defineMyJs(namespace, env) { // offset: 13
    * If the next character is 'single', returns onDouble, otherwise if the
    * next is equality returns onAssignment, otherwise returns single.
    */
-  Scanner.prototype.doubleOrAssignment = function (single, onDouble, onAssignment) {
+  Scanner.prototype.doubleOrAssignment = function(single, onDouble,
+      onAssignment) {
     switch (this.advanceAndGet()) {
     case single:
       return this.advanceAndYield(onDouble);
-    case "=":
+    case '=':
       return this.advanceAndYield(onAssignment);
     default:
       return this.justYield(single);
@@ -537,7 +538,7 @@ function defineMyJs(namespace, env) { // offset: 13
   /**
    * Scans a single block of whitespace.
    */
-  Scanner.prototype.scanWhiteSpace = function () {
+  Scanner.prototype.scanWhiteSpace = function() {
     var start = this.getCursor();
     while (this.hasMore() && isWhiteSpace(this.getCurrent())) {
       this.advance();
@@ -546,7 +547,7 @@ function defineMyJs(namespace, env) { // offset: 13
     return new SoftToken(this.getPart(start, end));
   };
 
-  Scanner.prototype.scanIdentifier = function () {
+  Scanner.prototype.scanIdentifier = function() {
     var start = this.getCursor();
     while (this.hasMore() && isIdentifierPart(this.getCurrent())) {
       this.advance();
@@ -556,11 +557,11 @@ function defineMyJs(namespace, env) { // offset: 13
     if (this.settings.isKeyword(value)) {
       return new HardToken(value);
     } else {
-      return new HardToken(value, "Identifier");
+      return new HardToken(value, 'Identifier');
     }
   };
 
-  Scanner.prototype.scanPunctuation = function () {
+  Scanner.prototype.scanPunctuation = function() {
     var start = this.getCursor();
     var chr = this.getCurrent();
     var current = this.settings.getPunctuation();
@@ -575,23 +576,23 @@ function defineMyJs(namespace, env) { // offset: 13
     return new HardToken(value);
   };
 
-  Scanner.prototype.scanNumber = function () {
+  Scanner.prototype.scanNumber = function() {
     var start = this.getCursor();
     while (this.hasMore() && isDigit(this.getCurrent())) {
       this.advance();
     }
     var end = this.getCursor();
     var value = this.getPart(start, end);
-    return new HardToken(value, "NumericLiteral");
+    return new HardToken(value, 'NumericLiteral');
   };
 
-  Scanner.prototype.scanString = function () {
+  Scanner.prototype.scanString = function() {
     var start = this.getCursor();
     var first = this.getCurrent();
     this.advance();
     while (this.hasMore() && this.getCurrent() != first) {
       // Skip over escaped characters
-      if (this.getCurrent() == "\\") {
+      if (this.getCurrent() == '\\') {
         this.advance();
       }
       this.advance();
@@ -599,12 +600,12 @@ function defineMyJs(namespace, env) { // offset: 13
     this.advanceIfPossible(1);
     var end = this.getCursor();
     var value = this.getPart(start, end);
-    return new HardToken(value, "StringLiteral");
+    return new HardToken(value, 'StringLiteral');
   };
 
-  Scanner.prototype.scanEndOfLineComment = function () {
+  Scanner.prototype.scanEndOfLineComment = function() {
     var start = this.getCursor();
-    while (this.hasMore() && (this.getCurrent() != "\n")) {
+    while (this.hasMore() && (this.getCurrent() != '\n')) {
       this.advance();
     }
     this.advanceIfPossible(1);
@@ -613,9 +614,10 @@ function defineMyJs(namespace, env) { // offset: 13
     return new SoftToken(value);
   };
 
-  Scanner.prototype.scanBlockComment = function () {
+  Scanner.prototype.scanBlockComment = function() {
     var start = this.getCursor();
-    while (this.hasLookahead() && (this.getCurrent() != "*" || this.getLookahead() != "/")) {
+    while (this.hasLookahead() &&
+      (this.getCurrent() != '*' || this.getLookahead() != '/')) {
       this.advance();
     }
     this.advanceIfPossible(2);
@@ -643,7 +645,7 @@ function defineMyJs(namespace, env) { // offset: 13
    * returns Cons(x0, Cons(x1, Cons(..., xn))).
    */
   function groupRight(Constructor) {
-    return function (items) {
+    return function(items) {
       var i, current = items[items.length - 1];
       for (i = items.length - 2; i >= 0; i--) {
         current = new Constructor(items[i], current);
@@ -658,7 +660,7 @@ function defineMyJs(namespace, env) { // offset: 13
    * Cons(x0, o0, Cons(x1, o1, Cons(..., o_n-1, xn))).
    */
   function groupInfixRight(Constructor) {
-    return function (items) {
+    return function(items) {
       var i, result = items[items.length - 1];
       for (i = items.length - 3; i >= 0; i -= 2) {
         var next = items[i];
@@ -675,19 +677,19 @@ function defineMyJs(namespace, env) { // offset: 13
    */
   function RegExpHandler() { }
 
-  RegExpHandler.prototype.parse = function (context) {
+  RegExpHandler.prototype.parse = function(context) {
     var input = context.getTokenStream();
     var tokens = [];
     var current = input.getCurrent().value;
     // Scan forward until we meet the end of the input or a "/".
-    while (input.hasMore() && (current != "/")) {
+    while (input.hasMore() && (current != '/')) {
       tokens.push(current);
       input.advance();
       current = input.getCurrent().value;
     }
     if (input.hasMore()) {
       input.advance();
-      if (input.hasMore() && input.getCurrent().type == "Identifier") {
+      if (input.hasMore() && input.getCurrent().type == 'Identifier') {
         tokens += input.getCurrent().value;
         input.advance();
       }
@@ -697,15 +699,15 @@ function defineMyJs(namespace, env) { // offset: 13
     return tokens;
   };
 
-  var ASSIGNMENT_OPERATORS = ["=", "+=", "-=", "*=", "&=", "|=", "^=", "%=",
-    ">>=", ">>>=", "<<="];
-  var INFIX_OPERATORS = ["<", "<<", ">", ">>", "|", "||", "==", "!=", "+",
-    "===", "&&", "&", "|", "-", "*", "%", "^", "<=", ">=", "!==", "!===",
-    ">>>", ">="];
-  var INFIX_KEYWORDS = ["instanceof"];
-  var PREFIX_OPERATORS = ["++", "--", "+", "-", "~", "!"];
-  var PREFIX_KEYWORDS = ["delete", "void", "typeof"];
-  var POSTFIX_OPERATORS = ["++", "--"];
+  var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
+    '>>=', '>>>=', '<<='];
+  var INFIX_OPERATORS = ['<', '<<', '>', '>>', '|', '||', '==', '!=', '+',
+    '===', '&&', '&', '|', '-', '*', '%', '^', '<=', '>=', '!==', '!===',
+    '>>>', '>='];
+  var INFIX_KEYWORDS = ['instanceof'];
+  var PREFIX_OPERATORS = ['++', '--', '+', '-', '~', '!'];
+  var PREFIX_KEYWORDS = ['delete', 'void', 'typeof'];
+  var POSTFIX_OPERATORS = ['++', '--'];
 
   var standardSyntaxCache = null;
 
@@ -738,34 +740,35 @@ function defineMyJs(namespace, env) { // offset: 13
 
     // <Program>
     //   -> <SourceElement>*
-    syntax.getRule("Program")
-      .addProd(star(nonterm("SourceElement")))
+    syntax.getRule('Program')
+      .addProd(star(nonterm('SourceElement')))
       .setConstructor(ast.Program);
 
     // <SourceElement>
     //   -> <FunctionDeclaration>
     //   -> <Statement>
-    syntax.getRule("SourceElement")
-      .addProd(nonterm("FunctionDeclaration"))
-      .addProd(nonterm("Statement"));
+    syntax.getRule('SourceElement')
+      .addProd(nonterm('FunctionDeclaration'))
+      .addProd(nonterm('Statement'));
 
     // <FunctionDeclaration>
-    //   -> "function" $Identifier "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
-    syntax.getRule("FunctionDeclaration")
-      .addProd(keyword("function"), value("Identifier"), punct("("),
-        nonterm("FormalParameterList"), punct(")"), punct("{"),
-        nonterm("FunctionBody"), punct("}"))
+    //   -> "function" $Identifier "(" <FormalParameterList> ")" "{"
+    //      <FunctionBody> "}"
+    syntax.getRule('FunctionDeclaration')
+      .addProd(keyword('function'), value('Identifier'), punct('('),
+        nonterm('FormalParameterList'), punct(')'), punct('{'),
+        nonterm('FunctionBody'), punct('}'))
       .setConstructor(ast.FunctionDeclaration);
 
     // <FormalParameterList>
     //   -> $Identifier *: ","
-    syntax.getRule("FormalParameterList")
-      .addProd(star(value("Identifier"), punct(",")));
+    syntax.getRule('FormalParameterList')
+      .addProd(star(value('Identifier'), punct(',')));
 
     // <FunctionBody>
     //   -> <SourceElement>*
-    syntax.getRule("FunctionBody")
-      .addProd(star(nonterm("SourceElement")));
+    syntax.getRule('FunctionBody')
+      .addProd(star(nonterm('SourceElement')));
 
     // <Statement>
     //   -> <Block>
@@ -778,100 +781,104 @@ function defineMyJs(namespace, env) { // offset: 13
     //   -> <SwitchStatement>
     //   -> <ThrowStatement>
     //   -> <TryStatement>
-    syntax.getRule("Statement")
-      .addProd(nonterm("Block"))
-      .addProd(nonterm("VariableStatement"))
-      .addProd(nonterm("ExpressionStatement"))
-      .addProd(nonterm("IfStatement"))
-      .addProd(nonterm("IterationStatement"))
-      .addProd(nonterm("ReturnStatement"))
-      .addProd(nonterm("ContinueStatement"))
-      .addProd(nonterm("SwitchStatement"))
-      .addProd(nonterm("ThrowStatement"))
-      .addProd(nonterm("TryStatement"));
+    syntax.getRule('Statement')
+      .addProd(nonterm('Block'))
+      .addProd(nonterm('VariableStatement'))
+      .addProd(nonterm('ExpressionStatement'))
+      .addProd(nonterm('IfStatement'))
+      .addProd(nonterm('IterationStatement'))
+      .addProd(nonterm('ReturnStatement'))
+      .addProd(nonterm('ContinueStatement'))
+      .addProd(nonterm('SwitchStatement'))
+      .addProd(nonterm('ThrowStatement'))
+      .addProd(nonterm('TryStatement'));
 
     // <Block>
     //   -> "{" <Statement>* "}"
-    syntax.getRule("Block")
-      .addProd(punct("{"), star(nonterm("Statement")), punct("}"))
+    syntax.getRule('Block')
+      .addProd(punct('{'), star(nonterm('Statement')), punct('}'))
       .setConstructor(ast.Block);
 
     // <VariableStatement>
     //   -> "var" <VariableDeclaration> +: "," ";"
-    syntax.getRule("VariableStatement")
-      .addProd(keyword("var"), plus(nonterm("VariableDeclaration"), punct(",")),
-        punct(";"))
+    syntax.getRule('VariableStatement')
+      .addProd(keyword('var'), plus(nonterm('VariableDeclaration'), punct(',')),
+        punct(';'))
       .setConstructor(ast.VariableStatement);
 
     // <ExpressionStatement>
     //   -> <Expression> ";"
-    syntax.getRule("ExpressionStatement")
-      .addProd(nonterm("Expression"), punct(";"))
+    syntax.getRule('ExpressionStatement')
+      .addProd(nonterm('Expression'), punct(';'))
       .setConstructor(ast.ExpressionStatement);
 
     // <IfStatement>
     //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
-    syntax.getRule("IfStatement")
-      .addProd(keyword("if"), punct("("), nonterm("Expression"), punct(")"),
-        nonterm("Statement"), option(keyword("else"), nonterm("Statement")))
+    syntax.getRule('IfStatement')
+      .addProd(keyword('if'), punct('('), nonterm('Expression'), punct(')'),
+        nonterm('Statement'), option(keyword('else'), nonterm('Statement')))
       .setConstructor(ast.IfStatement);
 
     // <IterationStatement>
     //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
     //   -> "while" "(" <Expression> ")" <Statement>
-    //   -> "for" "(" "var" <VariableDeclaration> ";" <Expression>? ";" <Expression>? ")" <Statement>
-    //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")" <Statement>
-    //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")" <Statement>
-    syntax.getRule("IterationStatement")
-      .addProd(keyword("do"), nonterm("Statement"), keyword("while"),
-        punct("("), nonterm("Expression"), punct(")"), punct(";"))
+    //   -> "for" "(" "var" <VariableDeclaration> ";" <Expression>? ";"
+    //      <Expression>? ")" <Statement>
+    //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")"
+    //      <Statement>
+    //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")"
+    //      <Statement>
+    syntax.getRule('IterationStatement')
+      .addProd(keyword('do'), nonterm('Statement'), keyword('while'),
+        punct('('), nonterm('Expression'), punct(')'), punct(';'))
       .setConstructor(ast.DoStatement)
-      .addProd(keyword("while"), punct("("), nonterm("Expression"), punct(")"),
-        nonterm("Statement"))
+      .addProd(keyword('while'), punct('('), nonterm('Expression'), punct(')'),
+        nonterm('Statement'))
       .setConstructor(ast.WhileStatement)
-      .addProd(keyword("for"), punct("("), keyword("var"),
-        nonterm("VariableDeclaration"), punct(";"),
-        option(nonterm("Expression")), punct(";"),
-        option(nonterm("Expression")), punct(")"), nonterm("Statement"))
+      .addProd(keyword('for'), punct('('), keyword('var'),
+        nonterm('VariableDeclaration'), punct(';'),
+        option(nonterm('Expression')), punct(';'),
+        option(nonterm('Expression')), punct(')'), nonterm('Statement'))
       .setConstructor(ast.ForStatement)
-      .addProd(keyword("for"), punct("("), option(nonterm("Expression")),
-        punct(";"), option(nonterm("Expression")), punct(";"),
-        option(nonterm("Expression")), punct(")"), nonterm("Statement"))
+      .addProd(keyword('for'), punct('('), option(nonterm('Expression')),
+        punct(';'), option(nonterm('Expression')), punct(';'),
+        option(nonterm('Expression')), punct(')'), nonterm('Statement'))
       .setConstructor(ast.ForStatement)
-      .addProd(keyword("for"), punct("("), keyword("var"),
-        nonterm("VariableDeclaration"), keyword("in"),
-        nonterm("Expression"), punct(")"), nonterm("Statement"))
+      .addProd(keyword('for'), punct('('), keyword('var'),
+        nonterm('VariableDeclaration'), keyword('in'),
+        nonterm('Expression'), punct(')'), nonterm('Statement'))
       .setConstructor(ast.ForInStatement);
 
     // <ContinueStatement>
     //   -> "continue" $Identifier? ";"
-    syntax.getRule("ContinueStatement")
-      .addProd(keyword("continue"), option(value("Identifier")), punct(";"))
+    syntax.getRule('ContinueStatement')
+      .addProd(keyword('continue'), option(value('Identifier')), punct(';'))
       .setConstructor(ast.ContinueStatement);
 
     // <SwitchStatement>
     //   -> "switch" "(" <Expression> ")" <CaseBlock>
-    syntax.getRule("SwitchStatement")
-      .addProd(keyword("switch"), punct("("), nonterm("Expression"),
-        punct(")"), nonterm("CaseBlock"))
+    syntax.getRule('SwitchStatement')
+      .addProd(keyword('switch'), punct('('), nonterm('Expression'),
+        punct(')'), nonterm('CaseBlock'))
       .setConstructor(ast.SwitchStatement);
 
     // <CaseBlock>
     //   -> "{" (<CaseClause>|<DefaultClause>)* "}"
-    syntax.getRule("CaseBlock")
-      .addProd(punct("{"), star(choice(nonterm("CaseClause"), nonterm("DefaultClause"))), punct("}"));
+    syntax.getRule('CaseBlock')
+      .addProd(punct('{'), star(choice(nonterm('CaseClause'),
+        nonterm('DefaultClause'))), punct('}'));
 
     // <CaseClause>
     //   -> "case" <Expression> ":" <Statement>*
-    syntax.getRule("CaseClause")
-      .addProd(keyword("case"), nonterm("Expression"), punct(":"),
-        star(nonterm("Statement")))
+    syntax.getRule('CaseClause')
+      .addProd(keyword('case'), nonterm('Expression'), punct(':'),
+        star(nonterm('Statement')))
       .setConstructor(ast.SwitchCase);
 
     // <DefaultClause>
     //   // -> "default" ":" <Statement>*
-    syntax.getRule("DefaultClause")
-      .addProd(keyword("default"), punct(":"), star(nonterm("Statement")))
+    syntax.getRule('DefaultClause')
+      .addProd(keyword('default'), punct(':'), star(nonterm('Statement')))
       .setHandler(buildDefaultCase);
 
     function buildDefaultCase(body) {
@@ -880,58 +887,60 @@ function defineMyJs(namespace, env) { // offset: 13
 
     // <ThrowStatement>
     //   -> "throw" <Expression> ";"
-    syntax.getRule("ThrowStatement")
-      .addProd(keyword("throw"), nonterm("Expression"), punct(";"))
+    syntax.getRule('ThrowStatement')
+      .addProd(keyword('throw'), nonterm('Expression'), punct(';'))
       .setConstructor(ast.ThrowStatement);
 
     // <TryStatement>
     //   -> "try" <Block> <Catch>? <Finally>?
-    syntax.getRule("TryStatement")
-      .addProd(keyword("try"), nonterm("Block"), option(nonterm("Catch")),
-        option(nonterm("Finally")));
+    syntax.getRule('TryStatement')
+      .addProd(keyword('try'), nonterm('Block'), option(nonterm('Catch')),
+        option(nonterm('Finally')));
 
     // <Catch>
     //   -> "catch" "(" $Identifier ")" <Block>
-    syntax.getRule("Catch")
-      .addProd(keyword("catch"), punct("("), value("Identifier"), punct(")"),
-        nonterm("Block"));
+    syntax.getRule('Catch')
+      .addProd(keyword('catch'), punct('('), value('Identifier'), punct(')'),
+        nonterm('Block'));
 
     // <Finally>
     //   -> "finally" <Block>
-    syntax.getRule("Finally")
-      .addProd(keyword("finally"), nonterm("Block"));
+    syntax.getRule('Finally')
+      .addProd(keyword('finally'), nonterm('Block'));
 
     // <VariableDeclaration>
     //   -> $Identifier ("=" <AssignmentExpression>)?
-    syntax.getRule("VariableDeclaration")
-      .addProd(value("Identifier"), option(punct("="),
-        nonterm("AssignmentExpression")))
+    syntax.getRule('VariableDeclaration')
+      .addProd(value('Identifier'), option(punct('='),
+        nonterm('AssignmentExpression')))
       .setConstructor(ast.VariableDeclaration);
 
     // <ReturnStatement>
     //   -> "return" <Expression>? ";"
-    syntax.getRule("ReturnStatement")
-      .addProd(keyword("return"), option(nonterm("Expression")), punct(";"))
+    syntax.getRule('ReturnStatement')
+      .addProd(keyword('return'), option(nonterm('Expression')), punct(';'))
       .setConstructor(ast.ReturnStatement);
 
     // <Expression>
     //   -> <AssignmentExpression> +: ","
-    syntax.getRule("Expression")
-      .addProd(plus(nonterm("AssignmentExpression"), punct(",")))
+    syntax.getRule('Expression')
+      .addProd(plus(nonterm('AssignmentExpression'), punct(',')))
       .setHandler(groupRight(ast.SequenceExpression));
 
     // <AssignmentExpression>
     //   -> <OperatorExpression> +: <AssignmentOperator>
-    syntax.getRule("AssignmentExpression")
-      .addProd(plus(nonterm("ConditionalExpression"), nonterm("AssignmentOperator")))
+    syntax.getRule('AssignmentExpression')
+      .addProd(plus(nonterm('ConditionalExpression'),
+        nonterm('AssignmentOperator')))
       .setHandler(groupInfixRight(ast.AssignmentExpression));
 
     // <ConditionalExpression>
-    //   -> <OperatorExpression> ("?" <OperatorExpression> ":" <OperatorExpression>)?
-    syntax.getRule("ConditionalExpression")
-      .addProd(nonterm("OperatorExpression"), option(punct("?"),
-        nonterm("OperatorExpression"), punct(":"),
-        nonterm("OperatorExpression")))
+    //   -> <OperatorExpression> ("?" <OperatorExpression> ":"
+    //      <OperatorExpression>)?
+    syntax.getRule('ConditionalExpression')
+      .addProd(nonterm('OperatorExpression'), option(punct('?'),
+        nonterm('OperatorExpression'), punct(':'),
+        nonterm('OperatorExpression')))
       .setHandler(buildConditional);
 
     function buildConditional(cond, rest) {
@@ -944,34 +953,34 @@ function defineMyJs(namespace, env) { // offset: 13
 
     // <AssignmentOperator>
     //   -> ... assignment operators ...
-    ASSIGNMENT_OPERATORS.forEach(function (op) {
-      syntax.getRule("AssignmentOperator")
+    ASSIGNMENT_OPERATORS.forEach(function(op) {
+      syntax.getRule('AssignmentOperator')
         .addProd(punctValue(op));
     });
 
     // <OperatorExpression>
     //   <UnaryExpression> +: <InfixToken>
-    syntax.getRule("OperatorExpression")
-      .addProd(plus(nonterm("UnaryExpression"), nonterm("InfixToken")))
+    syntax.getRule('OperatorExpression')
+      .addProd(plus(nonterm('UnaryExpression'), nonterm('InfixToken')))
       .setHandler(groupInfixRight(ast.InfixExpression));
 
     // <InfixToken>
     //   -> ... infix operators ...
     //   -> ... infix keywords ...
-    INFIX_OPERATORS.forEach(function (op) {
-      syntax.getRule("InfixToken")
+    INFIX_OPERATORS.forEach(function(op) {
+      syntax.getRule('InfixToken')
         .addProd(punctValue(op));
     });
-    INFIX_KEYWORDS.forEach(function (word) {
-      syntax.getRule("InfixToken")
+    INFIX_KEYWORDS.forEach(function(word) {
+      syntax.getRule('InfixToken')
         .addProd(keywordValue(word));
     });
 
     // <UnaryExpression>
     //   -> <PrefixToken>* <LeftHandSideExpression> <PostfixOperator>*
-    syntax.getRule("UnaryExpression")
-      .addProd(star(nonterm("PrefixToken")), nonterm("LeftHandSideExpression"),
-        star(nonterm("PostfixOperator")))
+    syntax.getRule('UnaryExpression')
+      .addProd(star(nonterm('PrefixToken')), nonterm('LeftHandSideExpression'),
+        star(nonterm('PostfixOperator')))
       .setHandler(buildUnary);
 
     function buildUnary(prefix, value, postfix) {
@@ -990,27 +999,27 @@ function defineMyJs(namespace, env) { // offset: 13
     // <PrefixToken>
     //   -> ... prefix operators ...
     //   -> ... prefix keywords ...
-    PREFIX_OPERATORS.forEach(function (op) {
-      syntax.getRule("PrefixToken")
+    PREFIX_OPERATORS.forEach(function(op) {
+      syntax.getRule('PrefixToken')
         .addProd(punctValue(op));
     });
-    PREFIX_KEYWORDS.forEach(function (word) {
-      syntax.getRule("PrefixToken")
+    PREFIX_KEYWORDS.forEach(function(word) {
+      syntax.getRule('PrefixToken')
         .addProd(keywordValue(word));
     });
 
     // <PostfixOperator>
     //   -> ... postfix operators ...
-    POSTFIX_OPERATORS.forEach(function (op) {
-      syntax.getRule("PostfixOperator")
+    POSTFIX_OPERATORS.forEach(function(op) {
+      syntax.getRule('PostfixOperator')
         .addProd(value(op));
     });
 
     // <LeftHandSideExpression>
     //   -> "new"* <LeftHandSideAtom> <LeftHandSideSuffix>*
-    syntax.getRule("LeftHandSideExpression")
-      .addProd(star(keywordValue("new")), nonterm("LeftHandSideAtom"),
-        star(nonterm("LeftHandSideSuffix")))
+    syntax.getRule('LeftHandSideExpression')
+      .addProd(star(keywordValue('new')), nonterm('LeftHandSideAtom'),
+        star(nonterm('LeftHandSideSuffix')))
       .setHandler(buildLeftHandSideExpression);
 
     function buildLeftHandSideExpression(news, atom, suffixes) {
@@ -1041,31 +1050,31 @@ function defineMyJs(namespace, env) { // offset: 13
     // <LeftHandSideAtom>
     //   -> <FunctionExpression>
     //   -> <PrimaryExpression>
-    syntax.getRule("LeftHandSideAtom")
-      .addProd(nonterm("PrimaryExpression"))
-      .addProd(nonterm("FunctionExpression"));
+    syntax.getRule('LeftHandSideAtom')
+      .addProd(nonterm('PrimaryExpression'))
+      .addProd(nonterm('FunctionExpression'));
 
     // <LeftHandSideSuffix>
     //   -> "[" <Expression> "]"
     //   -> "." $Identifier
     //   -> <Arguments>
-    syntax.getRule("LeftHandSideSuffix")
-      .addProd(punct("["), nonterm("Expression"), punct("]"))
+    syntax.getRule('LeftHandSideSuffix')
+      .addProd(punct('['), nonterm('Expression'), punct(']'))
       .setConstructor(GetElementSuffix)
-      .addProd(punct("."), value("Identifier"))
+      .addProd(punct('.'), value('Identifier'))
       .setConstructor(GetPropertySuffix)
-      .addProd(nonterm("Arguments"))
+      .addProd(nonterm('Arguments'))
       .setConstructor(ArgumentsSuffix);
 
     function GetElementSuffix(value) {
       this.value = value;
     }
 
-    GetElementSuffix.prototype.isArguments = function () {
+    GetElementSuffix.prototype.isArguments = function() {
       return false;
     };
 
-    GetElementSuffix.prototype.wrapPlain = function (atom) {
+    GetElementSuffix.prototype.wrapPlain = function(atom) {
       return new ast.GetElementExpression(atom, this.value);
     };
 
@@ -1073,11 +1082,11 @@ function defineMyJs(namespace, env) { // offset: 13
       this.name = name;
     }
 
-    GetPropertySuffix.prototype.isArguments = function () {
+    GetPropertySuffix.prototype.isArguments = function() {
       return false;
     };
 
-    GetPropertySuffix.prototype.wrapPlain = function (atom) {
+    GetPropertySuffix.prototype.wrapPlain = function(atom) {
       return new ast.GetPropertyExpression(atom, this.name);
     };
 
@@ -1085,31 +1094,32 @@ function defineMyJs(namespace, env) { // offset: 13
       this.args = args;
     }
 
-    ArgumentsSuffix.prototype.isArguments = function () {
+    ArgumentsSuffix.prototype.isArguments = function() {
       return true;
     };
 
-    ArgumentsSuffix.prototype.wrapPlain = function (atom) {
+    ArgumentsSuffix.prototype.wrapPlain = function(atom) {
       return new ast.CallExpression(atom, this.args);
     };
 
-    ArgumentsSuffix.prototype.wrapNew = function (atom) {
+    ArgumentsSuffix.prototype.wrapNew = function(atom) {
       return new ast.NewExpression(atom, this.args);
     };
 
     // <FunctionExpression>
-    //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{" <FunctionBody> "}"
-    syntax.getRule("FunctionExpression")
-      .addProd(keyword("function"), option(value("Identifier")), punct("("),
-        nonterm("FormalParameterList"), punct(")"), punct("{"),
-        nonterm("FunctionBody"), punct("}"))
+    //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{"
+    //      <FunctionBody> "}"
+    syntax.getRule('FunctionExpression')
+      .addProd(keyword('function'), option(value('Identifier')), punct('('),
+        nonterm('FormalParameterList'), punct(')'), punct('{'),
+        nonterm('FunctionBody'), punct('}'))
       .setConstructor(ast.FunctionExpression);
 
     // <Arguments>
     //   -> "(" <AssignmentExpression> *: "," ")"
-    syntax.getRule("Arguments")
-      .addProd(punct("("), star(nonterm("AssignmentExpression"), punct(",")),
-        punct(")"));
+    syntax.getRule('Arguments')
+      .addProd(punct('('), star(nonterm('AssignmentExpression'), punct(',')),
+        punct(')'));
 
     // <PrimaryExpression>
     //   -> $Identifier
@@ -1117,69 +1127,69 @@ function defineMyJs(namespace, env) { // offset: 13
     //   -> <ArrayLiteral>
     //   -> <ObjectLiteral>
     //   -> "(" <Expression> ")"
-    syntax.getRule("PrimaryExpression")
-      .addProd(keyword("this"))
+    syntax.getRule('PrimaryExpression')
+      .addProd(keyword('this'))
       .setConstructor(ast.This)
-      .addProd(value("Identifier"))
+      .addProd(value('Identifier'))
       .setConstructor(ast.Identifier)
-      .addProd(nonterm("Literal"))
-      .addProd(nonterm("ArrayLiteral"))
-      .addProd(nonterm("ObjectLiteral"))
-      .addProd(punct("("), nonterm("Expression"), punct(")"));
+      .addProd(nonterm('Literal'))
+      .addProd(nonterm('ArrayLiteral'))
+      .addProd(nonterm('ObjectLiteral'))
+      .addProd(punct('('), nonterm('Expression'), punct(')'));
 
     // <ObjectLiteral>
     //   -> "{" <PropertyAssignment> *: "," "}"
-    syntax.getRule("ObjectLiteral")
-      .addProd(punct("{"), star(nonterm("PropertyAssignment"), punct(",")),
-        punct("}"))
+    syntax.getRule('ObjectLiteral')
+      .addProd(punct('{'), star(nonterm('PropertyAssignment'), punct(',')),
+        punct('}'))
       .setConstructor(ast.ObjectLiteral);
 
     // <PropertyAssignment>
     //   -> <PropertyName> ":" <AssignmentExpression>
-    syntax.getRule("PropertyAssignment")
-      .addProd(nonterm("PropertyName"), punct(":"),
-        nonterm("AssignmentExpression"));
+    syntax.getRule('PropertyAssignment')
+      .addProd(nonterm('PropertyName'), punct(':'),
+        nonterm('AssignmentExpression'));
 
     // <PropertyName>
     //   -> $Identifier
     //   -> $StringLiteral
     //   -> $NumericLiteral
-    syntax.getRule("PropertyName")
-      .addProd(value("Identifier"))
-      .addProd(value("StringLiteral"))
-      .addProd(value("NumericLiteral"));
+    syntax.getRule('PropertyName')
+      .addProd(value('Identifier'))
+      .addProd(value('StringLiteral'))
+      .addProd(value('NumericLiteral'));
 
     // <ArrayLiteral>
     //   -> "[" <AssignmentExpression> *: "," "]"
-    syntax.getRule("ArrayLiteral")
-      .addProd(punct("["), star(nonterm("AssignmentExpression"), punct(",")),
-        punct("]"))
+    syntax.getRule('ArrayLiteral')
+      .addProd(punct('['), star(nonterm('AssignmentExpression'), punct(',')),
+        punct(']'))
       .setConstructor(ast.ArrayLiteral);
 
     // <Literal>
     //   -> $NumericLiteral
     //   -> $StringLiteral
     //   -> <RegularExpressionLiteral>
-    syntax.getRule("Literal")
-      .addProd(value("NumericLiteral"))
+    syntax.getRule('Literal')
+      .addProd(value('NumericLiteral'))
       .setConstructor(ast.Literal)
-      .addProd(value("StringLiteral"))
+      .addProd(value('StringLiteral'))
       .setConstructor(ast.Literal)
-      .addProd(nonterm("RegularExpressionLiteral"))
+      .addProd(nonterm('RegularExpressionLiteral'))
       .setConstructor(ast.Literal);
 
     // <RegularExpressionLiteral>
     //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
-    syntax.getRule("RegularExpressionLiteral")
-      .addProd(token("/"), custom(new RegExpHandler()));
+    syntax.getRule('RegularExpressionLiteral')
+      .addProd(token('/'), custom(new RegExpHandler()));
 
     return syntax;
   }
 
   function unparse(node) {
     var settings = {
-      newline: "\n",
-      indent: "  "
+      newline: '\n',
+      indent: '  '
     };
     var out = new ast.internal.TextFormatter(settings);
     node.unparse(out);
@@ -1187,10 +1197,10 @@ function defineMyJs(namespace, env) { // offset: 13
   }
 
   function registerBuiltInDialects() {
-    registerDialect(new Dialect("default"));
+    registerDialect(new Dialect('default'));
   }
 
-  namespace.getSource = function () {
+  namespace.getSource = function() {
     return String(defineMyJs);
   };
 
@@ -1198,7 +1208,7 @@ function defineMyJs(namespace, env) { // offset: 13
   return namespace;
 }
 
-if (typeof module == "undefined") {
+if (typeof module == 'undefined') {
   this.myjs = this.myjs || defineMyJs({}, this);
 } else {
   defineMyJs(module.exports, {

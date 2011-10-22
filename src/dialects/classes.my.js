@@ -14,7 +14,7 @@
 
 "use strict";
 
-(function () {
+(function() {
 
   var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
@@ -25,12 +25,12 @@
     this.body = body;
   }
 
-  ClassDeclaration.prototype.translate = function () {
+  ClassDeclaration.prototype.translate = function() {
     var newParent = this.parent ? this.parent.translate() : null;
     var elements = [];
     var params = [];
     var body = [];
-    this.body.forEach(function (part) {
+    this.body.forEach(function(part) {
       if (part.isConstructor()) {
         params = part.params;
         body = part.body;
@@ -38,7 +38,7 @@
     });
     elements.push(new ast.FunctionDeclaration(this.name, params,
       body));
-    this.body.forEach(function (part) {
+    this.body.forEach(function(part) {
       if (!part.isConstructor()) {
         elements.push(part.translate(this));
       }
@@ -52,7 +52,7 @@
     this.body = body;
   }
 
-  PrototypePropertyDefinition.prototype.translate = function (klass) {
+  PrototypePropertyDefinition.prototype.translate = function(klass) {
     var fun = new ast.FunctionDeclaration(this.name, this.params, this.body);
     return new ast.ExpressionStatement(
       new ast.AssignmentExpression(
@@ -65,7 +65,7 @@
         fun));
   };
 
-  PrototypePropertyDefinition.prototype.isConstructor = function () {
+  PrototypePropertyDefinition.prototype.isConstructor = function() {
     return false;
   };
 
@@ -74,7 +74,7 @@
     this.body = body;
   }
 
-  Constructor.prototype.isConstructor = function () {
+  Constructor.prototype.isConstructor = function() {
     return true;
   };
 

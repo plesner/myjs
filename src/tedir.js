@@ -18,7 +18,7 @@
  * is somewhat different.
  */
 
-"use strict";
+'use strict';
 
 (function() {
 
@@ -45,8 +45,8 @@ function defineTedir(namespace, env) { // offset: 16
     this.message = message;
   }
 
-  TedirError.prototype.toString = function () {
-    return "tedir.Error: " + this.message;
+  TedirError.prototype.toString = function() {
+    return 'tedir.Error: ' + this.message;
   };
 
   /**
@@ -62,28 +62,28 @@ function defineTedir(namespace, env) { // offset: 16
     this.tokenIndex = tokenIndex;
   }
 
-  TedirSyntaxError.prototype.getToken = function (index) {
+  TedirSyntaxError.prototype.getToken = function(index) {
     return this.input.tokens[index].value;
   };
 
-  TedirSyntaxError.prototype.getOffendingToken = function () {
+  TedirSyntaxError.prototype.getOffendingToken = function() {
     return this.getToken(this.tokenIndex);
   };
 
-  TedirSyntaxError.prototype.getLineIndex = function () {
+  TedirSyntaxError.prototype.getLineIndex = function() {
     var i, lines = 0;
     for (i = 0; i < this.tokenIndex; i++) {
       var token = this.getToken(i);
-      var offset = token.indexOf("\n");
+      var offset = token.indexOf('\n');
       while (offset != -1) {
         lines++;
-        offset = token.indexOf("\n", offset + 1);
+        offset = token.indexOf('\n', offset + 1);
       }
     }
     return lines;
   };
 
-  TedirSyntaxError.prototype.toString = function () {
+  TedirSyntaxError.prototype.toString = function() {
     var token = this.getOffendingToken();
     var locList = [];
     var fileName = this.origin.getFileName();
@@ -92,8 +92,8 @@ function defineTedir(namespace, env) { // offset: 16
     }
     var lineNumber = this.getLineIndex() + 1;
     locList.push(lineNumber);
-    var loc = "(" + locList.join(":") + ")";
-    return "tedir.SyntaxError" + loc + ": Unexpected token " + token;
+    var loc = '(' + locList.join(':') + ')';
+    return 'tedir.SyntaxError' + loc + ': Unexpected token ' + token;
   };
 
   /**
@@ -105,47 +105,47 @@ function defineTedir(namespace, env) { // offset: 16
   var factory = {};
   namespace.factory = factory;
 
-  factory.token = function (value, kindOpt) {
+  factory.token = function(value, kindOpt) {
     return new Token(value, kindOpt);
   };
 
-  factory.nonterm = function (name) {
+  factory.nonterm = function(name) {
     return new Nonterm(name);
   };
 
-  factory.custom = function (handler) {
+  factory.custom = function(handler) {
     return new Custom(handler);
   };
 
-  factory.seq = function () {
+  factory.seq = function() {
     return new Sequence(toArray(arguments));
   };
 
-  factory.choice = function () {
+  factory.choice = function() {
     return new Choice(toArray(arguments));
   };
 
-  factory.option = function () {
+  factory.option = function() {
     return factory.choice(new Sequence(toArray(arguments)), EMPTY);
   };
 
-  factory.star = function (value, sepOpt) {
+  factory.star = function(value, sepOpt) {
     return new Repeat(value, sepOpt, true);
   };
 
-  factory.plus = function (value, sepOpt) {
+  factory.plus = function(value, sepOpt) {
     return new Repeat(value, sepOpt, false);
   };
 
-  factory.empty = function () {
+  factory.empty = function() {
     return EMPTY;
   };
 
-  factory.ignore = function (value) {
+  factory.ignore = function(value) {
     return new Ignore(value);
   };
 
-  factory.filter = function (body, filter, isConstructor) {
+  factory.filter = function(body, filter, isConstructor) {
     return new Filter(body, filter, isConstructor);
   };
 
@@ -162,7 +162,7 @@ function defineTedir(namespace, env) { // offset: 16
     this.useValueCache = null;
   }
 
-  Expression.prototype.accept = function (visitor) {
+  Expression.prototype.accept = function(visitor) {
     return visitor(this, this.getType());
   };
 
@@ -170,7 +170,7 @@ function defineTedir(namespace, env) { // offset: 16
    * If the value of this expression is passed through a filter, how many
    * filter arguments does it correspond to?
    */
-  Expression.prototype.getArity = function () {
+  Expression.prototype.getArity = function() {
     return 1;
   };
 
@@ -178,7 +178,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Should the value of this expression be ignored in the result?  Caches
    * its result so calls are O(1).
    */
-  Expression.prototype.useValue = function () {
+  Expression.prototype.useValue = function() {
     if (this.useValueCache === null) {
       this.useValueCache = this.calcUseValue();
     }
@@ -189,7 +189,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Calculates whether the value of this expression should be ignored.
    * Generally, don't call this directly, use useValue so you get caching.
    */
-  Expression.prototype.calcUseValue = function () {
+  Expression.prototype.calcUseValue = function() {
     return true;
   };
 
@@ -197,7 +197,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Is this the empty expression?  Note that non-normalized expressions may
    * return false but effectively be the empty expression.
    */
-  Expression.prototype.isEmpty = function () {
+  Expression.prototype.isEmpty = function() {
     return false;
   };
 
@@ -215,23 +215,23 @@ function defineTedir(namespace, env) { // offset: 16
     this.kind = kindOpt;
   }
 
-  Token.prototype.getType = function () {
-    return "TOKEN";
+  Token.prototype.getType = function() {
+    return 'TOKEN';
   };
 
-  Token.prototype.getKind = function () {
+  Token.prototype.getKind = function() {
     return this.kind;
   };
 
-  Token.prototype.forEachChild = function (visitor) {
+  Token.prototype.forEachChild = function(visitor) {
     // ignore
   };
 
-  Token.prototype.normalize = function () {
+  Token.prototype.normalize = function() {
     return new Token(this.value, this.kind);
   };
 
-  Token.prototype.parse = function (context) {
+  Token.prototype.parse = function(context) {
     var input = context.input;
     var current = input.getCurrent();
     if (current.type == this.value) {
@@ -242,8 +242,8 @@ function defineTedir(namespace, env) { // offset: 16
     }
   };
 
-  Token.prototype.toString = function () {
-    return "\"" + this.value + "\"";
+  Token.prototype.toString = function() {
+    return '"' + this.value + '"';
   };
 
   /**
@@ -255,25 +255,25 @@ function defineTedir(namespace, env) { // offset: 16
     this.name = name;
   }
 
-  Nonterm.prototype.getType = function () {
-    return "NONTERM";
+  Nonterm.prototype.getType = function() {
+    return 'NONTERM';
   };
 
-  Nonterm.prototype.forEachChild = function (visitor) {
+  Nonterm.prototype.forEachChild = function(visitor) {
     // ignore
   };
 
-  Nonterm.prototype.normalize = function () {
+  Nonterm.prototype.normalize = function() {
     return new Nonterm(this.name);
   };
 
-  Nonterm.prototype.parse = function (context) {
+  Nonterm.prototype.parse = function(context) {
     var grammar = context.parser.grammar;
     return grammar.getNonterm(this.name).parse(context);
   };
 
-  Nonterm.prototype.toString = function () {
-    return "<" + this.name + ">";
+  Nonterm.prototype.toString = function() {
+    return '<' + this.name + '>';
   };
 
   namespace.CustomHandler = CustomHandler;
@@ -286,7 +286,7 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Invokes the given callback for each child element under this expression.
    */
-  CustomHandler.prototype.forEachChild = function (callback) {
+  CustomHandler.prototype.forEachChild = function(callback) {
     // no children by default
   };
 
@@ -295,7 +295,7 @@ function defineTedir(namespace, env) { // offset: 16
    * subexpression t replaced by t.normalize(). Otherwise this handler should
    * be returned.
    */
-  CustomHandler.prototype.normalize = function () {
+  CustomHandler.prototype.normalize = function() {
     // No normalization
     return this;
   };
@@ -303,8 +303,8 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Subtypes must implement this method to parse input from the given context.
    */
-  CustomHandler.prototype.parse = function (context) {
-    throw new Error("Abstract method called");
+  CustomHandler.prototype.parse = function(context) {
+    throw new Error('Abstract method called');
   };
 
   /**
@@ -315,19 +315,19 @@ function defineTedir(namespace, env) { // offset: 16
     this.handler = handler;
   }
 
-  Custom.prototype.getType = function () {
-    return "CUSTOM";
+  Custom.prototype.getType = function() {
+    return 'CUSTOM';
   };
 
-  Custom.prototype.forEachChild = function (callback) {
+  Custom.prototype.forEachChild = function(callback) {
     this.handler.forEachChild(callback);
   };
 
-  Custom.prototype.normalize = function () {
+  Custom.prototype.normalize = function() {
     return new Custom(this.handler.normalize());
   };
 
-  Custom.prototype.parse = function (context) {
+  Custom.prototype.parse = function(context) {
     return this.handler.parse(context);
   };
 
@@ -340,19 +340,19 @@ function defineTedir(namespace, env) { // offset: 16
     this.terms = terms;
   }
 
-  Sequence.prototype.getType = function () {
-    return "SEQUENCE";
+  Sequence.prototype.getType = function() {
+    return 'SEQUENCE';
   };
 
-  Sequence.prototype.forEachChild = function (visitor) {
+  Sequence.prototype.forEachChild = function(visitor) {
     this.terms.forEach(visitor);
   };
 
-  Sequence.prototype.toString = function () {
-    return "(: " + this.terms.join(" ") + ")";
+  Sequence.prototype.toString = function() {
+    return '(: ' + this.terms.join(' ') + ')';
   };
 
-  Sequence.prototype.parse = function (context) {
+  Sequence.prototype.parse = function(context) {
     var i, values = [];
     for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
@@ -373,9 +373,9 @@ function defineTedir(namespace, env) { // offset: 16
     }
   };
 
-  Sequence.prototype.getArity = function () {
+  Sequence.prototype.getArity = function() {
     var result = 0;
-    this.terms.forEach(function (term) {
+    this.terms.forEach(function(term) {
       if (term.useValue()) {
         result++;
       }
@@ -383,7 +383,7 @@ function defineTedir(namespace, env) { // offset: 16
     return result;
   };
 
-  Sequence.prototype.calcUseValue = function () {
+  Sequence.prototype.calcUseValue = function() {
     var i, result = false;
     for (i = 0; i < this.terms.length; i++) {
       if (this.terms[i].useValue()) {
@@ -393,9 +393,9 @@ function defineTedir(namespace, env) { // offset: 16
     return false;
   };
 
-  Sequence.prototype.normalize = function () {
+  Sequence.prototype.normalize = function() {
     var normalTerms = [];
-    this.terms.forEach(function (term) {
+    this.terms.forEach(function(term) {
       var normalTerm = term.normalize();
       // Ignore the empty terminal.
       if (!normalTerm.isEmpty()) {
@@ -420,19 +420,19 @@ function defineTedir(namespace, env) { // offset: 16
     this.terms = terms;
   }
 
-  Choice.prototype.getType = function () {
-    return "CHOICE";
+  Choice.prototype.getType = function() {
+    return 'CHOICE';
   };
 
-  Choice.prototype.addOption = function (term) {
+  Choice.prototype.addOption = function(term) {
     this.terms.push(term);
   };
 
-  Choice.prototype.toString = function () {
-    return "(| " + this.terms.join(" ") + ")";
+  Choice.prototype.toString = function() {
+    return '(| ' + this.terms.join(' ') + ')';
   };
 
-  Choice.prototype.parse = function (context) {
+  Choice.prototype.parse = function(context) {
     var i, start = context.input.getCursor();
     for (i = 0; i < this.terms.length; i++) {
       var term = this.terms[i];
@@ -446,15 +446,15 @@ function defineTedir(namespace, env) { // offset: 16
     return ERROR_MARKER;
   };
 
-  Choice.prototype.forEachChild = function (visitor) {
+  Choice.prototype.forEachChild = function(visitor) {
     this.terms.forEach(visitor);
   };
 
   function normalizeAll(terms) {
-    return terms.map(function (t) { return t.normalize(); });
+    return terms.map(function(t) { return t.normalize(); });
   }
 
-  Choice.prototype.normalize = function () {
+  Choice.prototype.normalize = function() {
     if (this.terms.length == 1) {
       return this.terms[0].normalize();
     } else {
@@ -472,32 +472,32 @@ function defineTedir(namespace, env) { // offset: 16
 
   var EMPTY = new Empty();
 
-  Empty.prototype.getType = function () {
-    return "EMPTY";
+  Empty.prototype.getType = function() {
+    return 'EMPTY';
   };
 
-  Empty.prototype.forEachChild = function (visitor) {
+  Empty.prototype.forEachChild = function(visitor) {
     // ignore
   };
 
-  Empty.prototype.isEmpty = function () {
+  Empty.prototype.isEmpty = function() {
     return true;
   };
 
-  Empty.prototype.normalize = function () {
+  Empty.prototype.normalize = function() {
     return this;
   };
 
-  Empty.prototype.parse = function (context) {
+  Empty.prototype.parse = function(context) {
     return null;
   };
 
-  Empty.prototype.calcUseValue = function () {
+  Empty.prototype.calcUseValue = function() {
     return false;
   };
 
-  Empty.prototype.toString = function () {
-    return ".";
+  Empty.prototype.toString = function() {
+    return '.';
   };
 
   /**
@@ -510,29 +510,29 @@ function defineTedir(namespace, env) { // offset: 16
     this.term = term;
   }
 
-  Ignore.prototype.getType = function () {
-    return "IGNORE";
+  Ignore.prototype.getType = function() {
+    return 'IGNORE';
   };
 
-  Ignore.prototype.forEachChild = function (visitor) {
+  Ignore.prototype.forEachChild = function(visitor) {
     visitor(this.term);
   };
 
-  Ignore.prototype.parse = function (context) {
+  Ignore.prototype.parse = function(context) {
     var value = this.term.parse(context);
     return isError(value) ? value : null;
   };
 
-  Ignore.prototype.normalize = function () {
+  Ignore.prototype.normalize = function() {
     return new Ignore(this.term.normalize());
   };
 
-  Ignore.prototype.calcUseValue = function () {
+  Ignore.prototype.calcUseValue = function() {
     return false;
   };
 
-  Ignore.prototype.toString = function () {
-    return "(_ " + this.term + ")";
+  Ignore.prototype.toString = function() {
+    return '(_ ' + this.term + ')';
   };
 
   inherits(Filter, Expression);
@@ -545,23 +545,24 @@ function defineTedir(namespace, env) { // offset: 16
     this.invoker = Invoker.forArity(arity, this.isConstructor, this.filter);
   }
 
-  Filter.prototype.getType = function () {
-    return "FILTER";
+  Filter.prototype.getType = function() {
+    return 'FILTER';
   };
 
-  Filter.prototype.forEachChild = function (visitor) {
+  Filter.prototype.forEachChild = function(visitor) {
     visitor(this.term);
   };
 
-  Filter.prototype.parse = function (context) {
+  Filter.prototype.parse = function(context) {
     var value = this.term.parse(context);
     return isError(value) ? value : (this.invoker)(value);
   };
 
-  Filter.prototype.normalize = function () {
+  Filter.prototype.normalize = function() {
     var term = this.term.normalize();
     var arity = (this.arity === -1) ? term.getArity() : this.arity;
-    return new Filter(this.term.normalize(), this.filter, this.isConstructor, arity);
+    return new Filter(this.term.normalize(), this.filter, this.isConstructor,
+      arity);
   };
 
   namespace.internal.Invoker = Invoker;
@@ -570,7 +571,7 @@ function defineTedir(namespace, env) { // offset: 16
    */
   function Invoker() { }
 
-  Invoker.forArity = function (arity, isConstructor, fun) {
+  Invoker.forArity = function(arity, isConstructor, fun) {
     if (arity == -1) {
       return null;
     } else if (isConstructor) {
@@ -585,19 +586,19 @@ function defineTedir(namespace, env) { // offset: 16
    * a real array of arguments not an arguments object) calls the given
    * function in the appropriate way for passing it 'arity' arguments.
    */
-  Invoker.callerForArity = function (fun, arity) {
+  Invoker.callerForArity = function(fun, arity) {
     switch (arity) {
     case 1:
-      return function (args) { return fun(args); };
+      return function(args) { return fun(args); };
     default:
-      return function (args) { return fun.apply(null, args); };
+      return function(args) { return fun.apply(null, args); };
     }
   };
 
   Invoker.constructorBridges = [];
-  Invoker.constructorForArity = function (Cons, arity) {
+  Invoker.constructorForArity = function(Cons, arity) {
     if (arity == 1) {
-      return function (args) { return new Cons(args); };
+      return function(args) { return new Cons(args); };
     } else {
       var bridgeBuilder = Invoker.constructorBridges[arity];
       if (!bridgeBuilder) {
@@ -612,18 +613,18 @@ function defineTedir(namespace, env) { // offset: 16
    * Constructs a function that calls a function with a specified number
    * of arguments, taken from a list.
    */
-  Invoker.buildConstructorBridge = function (arity) {
+  Invoker.buildConstructorBridge = function(arity) {
     var i, params = [];
     for (i = 0; i < arity; i++) {
-      params.push("args[" + i + "]");
+      params.push('args[' + i + ']');
     }
-    var source = "return new Cons(" + params.join(", ") + ");";
+    var source = 'return new Cons(' + params.join(', ') + ');';
     var FunctionConstructor = Function;
     // Apparently jslint doesn't support suppressing individual warnings to
     // we have to trick it instead.
-    var bridge = new FunctionConstructor("Cons", "args", source);
-    return function (Cons) {
-      return function (args) {
+    var bridge = new FunctionConstructor('Cons', 'args', source);
+    return function(Cons) {
+      return function(args) {
         return bridge(Cons, args);
       };
     };
@@ -640,21 +641,21 @@ function defineTedir(namespace, env) { // offset: 16
     this.allowEmpty = allowEmpty;
   }
 
-  Repeat.prototype.getType = function () {
-    return "REPEAT";
+  Repeat.prototype.getType = function() {
+    return 'REPEAT';
   };
 
-  Repeat.prototype.forEachChild = function (visitor) {
+  Repeat.prototype.forEachChild = function(visitor) {
     visitor(this.body);
     visitor(this.sep);
   };
 
-  Repeat.prototype.normalize = function () {
+  Repeat.prototype.normalize = function() {
     return new Repeat(this.body.normalize(), this.sep.normalize(),
         this.allowEmpty);
   };
 
-  Repeat.prototype.parse = function (context) {
+  Repeat.prototype.parse = function(context) {
     var input = context.input;
     var start = input.getCursor();
     var body = this.body;
@@ -697,8 +698,9 @@ function defineTedir(namespace, env) { // offset: 16
     }
   };
 
-  Repeat.prototype.toString = function () {
-    return "(" + (this.allowEmpty ? "* " : "+ ") + this.body + " " + this.sep + ")";
+  Repeat.prototype.toString = function() {
+    return '(' + (this.allowEmpty ? '* ' : '+ ') + this.body + ' ' + this.sep +
+      ')';
   };
 
   function Operator(value) {
@@ -732,15 +734,15 @@ function defineTedir(namespace, env) { // offset: 16
    * Returns a syntax that contains the same rules as this syntax
    * and the one passed as the argument.
    */
-  AbstractSyntax.prototype.compose = function (members) {
+  AbstractSyntax.prototype.compose = function(members) {
     return new CompositeSyntax([this].concat(members));
   };
 
   /**
    * Invokes the callback for each rule defined in this grammar.
    */
-  AbstractSyntax.prototype.forEachRule = function (callback) {
-    this.getRuleNames().forEach(function (name) {
+  AbstractSyntax.prototype.forEachRule = function(callback) {
+    this.getRuleNames().forEach(function(name) {
       callback(name, this.getRule(name).asExpression());
     }.bind(this));
   };
@@ -748,7 +750,7 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Returns a new grammar that represents this syntax.
    */
-  AbstractSyntax.prototype.asGrammar = function () {
+  AbstractSyntax.prototype.asGrammar = function() {
     return new Grammar(this);
   };
 
@@ -762,24 +764,24 @@ function defineTedir(namespace, env) { // offset: 16
     this.rules = {};
   }
 
-  LiteralSyntax.prototype.toString = function () {
-    var getPair = function (k) {
-      return k + ": " + this.rules[k];
+  LiteralSyntax.prototype.toString = function() {
+    var getPair = function(k) {
+      return k + ': ' + this.rules[k];
     }.bind(this);
-    return "grammar { " + this.getRuleNames().map(getPair).join(", ") + " } ";
+    return 'grammar { ' + this.getRuleNames().map(getPair).join(', ') + ' } ';
   };
 
-  LiteralSyntax.prototype.getRuleNames = function () {
+  LiteralSyntax.prototype.getRuleNames = function() {
     return Object.keys(this.rules);
   };
 
   /**
    * Adds the given expression as a possible production for the given name.
    */
-  LiteralSyntax.prototype.getRule = function (name, failIfMissingOpt) {
+  LiteralSyntax.prototype.getRule = function(name, failIfMissingOpt) {
     if (!(this.rules.hasOwnProperty(name))) {
       if (failIfMissingOpt) {
-        throw new TedirError("Undefined nonterminal <" + name + ">");
+        throw new TedirError('Undefined nonterminal <' + name + '>');
       } else {
         this.rules[name] = new Rule([]);
       }
@@ -793,23 +795,23 @@ function defineTedir(namespace, env) { // offset: 16
     this.ruleCache = null;
   }
 
-  CompositeSyntax.prototype.getRuleNames = function () {
+  CompositeSyntax.prototype.getRuleNames = function() {
     return Object.keys(this.getRules());
   };
 
-  CompositeSyntax.prototype.getRule = function (name, failIfMissingOpt) {
+  CompositeSyntax.prototype.getRule = function(name, failIfMissingOpt) {
     var rules = this.getRules();
     if (!(rules.hasOwnProperty(name))) {
-      throw new TedirError("Undefined nonterminal <" + name + ">");
+      throw new TedirError('Undefined nonterminal <' + name + '>');
     }
     return rules[name];
   };
 
-  CompositeSyntax.prototype.getRules = function () {
+  CompositeSyntax.prototype.getRules = function() {
     if (!this.ruleCache) {
       var ruleLists = {};
-      this.members.forEach(function (member) {
-        member.getRuleNames().forEach(function (name) {
+      this.members.forEach(function(member) {
+        member.getRuleNames().forEach(function(name) {
           if (!ruleLists.hasOwnProperty(name)) {
             ruleLists[name] = [];
           }
@@ -817,7 +819,7 @@ function defineTedir(namespace, env) { // offset: 16
         });
       });
       this.ruleCache = {};
-      Object.keys(ruleLists).forEach(function (name) {
+      Object.keys(ruleLists).forEach(function(name) {
         this.ruleCache[name] = Rule.merge(ruleLists[name]);
       }.bind(this));
     }
@@ -832,9 +834,10 @@ function defineTedir(namespace, env) { // offset: 16
     this.filter = null;
   }
 
-  Production.prototype.asExpression = function () {
+  Production.prototype.asExpression = function() {
     if (this.filter) {
-      return factory.filter(this.value, this.filter.fun, this.filter.isConstructor);
+      return factory.filter(this.value, this.filter.fun,
+        this.filter.isConstructor);
     } else {
       return this.value;
     }
@@ -852,12 +855,12 @@ function defineTedir(namespace, env) { // offset: 16
    * Merges the given rules into a single rule with the union of all the
    * productions.
    */
-  Rule.merge = function (rules) {
+  Rule.merge = function(rules) {
     if (rules.length == 1) {
       return rules[0];
     } else {
       var prods = [];
-      rules.forEach(function (rule) {
+      rules.forEach(function(rule) {
         prods = prods.concat(rule.prods);
       });
       return new Rule(prods);
@@ -867,14 +870,14 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Returns the last production that was added.
    */
-  Rule.prototype.getLastProd = function () {
+  Rule.prototype.getLastProd = function() {
     return this.prods[this.prods.length - 1];
   };
 
   /**
    * Adds a new production to this rule.
    */
-  Rule.prototype.addProd = function () {
+  Rule.prototype.addProd = function() {
     this.prods.push(new Production(new Sequence(toArray(arguments))));
     return this;
   };
@@ -883,7 +886,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Sets the constructor function that should be instantiated when the last
    * production that was added succeeds during parsing.
    */
-  Rule.prototype.setConstructor = function (Constructor) {
+  Rule.prototype.setConstructor = function(Constructor) {
     return this.setHandler(Constructor, true);
   };
 
@@ -891,14 +894,15 @@ function defineTedir(namespace, env) { // offset: 16
    * Sets the function that should be called when the last production that
    * was added succeeds during parsing.
    */
-  Rule.prototype.setHandler = function (handler, isConstructor) {
+  Rule.prototype.setHandler = function(handler, isConstructor) {
     this.getLastProd().filter = {fun: handler, isConstructor: isConstructor};
     return this;
   };
 
-  Rule.prototype.asExpression = function () {
+  Rule.prototype.asExpression = function() {
     if (!this.exprCache) {
-      this.exprCache = new Choice(this.prods.map(function (p) { return p.asExpression(); }));
+      var prodExprs = this.prods.map(function(p) {return p.asExpression(); });
+      this.exprCache = new Choice(prodExprs);
     }
     return this.exprCache;
   };
@@ -916,7 +920,7 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Returns true if this grammar is valid.
    */
-  Grammar.prototype.isValid = function () {
+  Grammar.prototype.isValid = function() {
     return true;
   };
 
@@ -924,7 +928,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Convenience method that allows syntaxes and grammars to be treated
    * uniformly.
    */
-  Grammar.prototype.asGrammar = function () {
+  Grammar.prototype.asGrammar = function() {
     return this;
   };
 
@@ -932,7 +936,7 @@ function defineTedir(namespace, env) { // offset: 16
    * Returns the local nonterminal with the given name, building it the
    * first time the method is called.
    */
-  Grammar.prototype.getNonterm = function (name) {
+  Grammar.prototype.getNonterm = function(name) {
     var value = this.nonterms[name];
     if (!value) {
       value = this.buildNonterm(name);
@@ -945,12 +949,12 @@ function defineTedir(namespace, env) { // offset: 16
    * Returns a normalized local expression for the given that only this grammar
    * will use.
    */
-  Grammar.prototype.buildNonterm = function (name) {
+  Grammar.prototype.buildNonterm = function(name) {
     var rule = this.syntax.getRule(name, true);
     return rule.asExpression().normalize();
   };
 
-  var EOF_TOKEN = new Token("eof");
+  var EOF_TOKEN = new Token('eof');
 
   /**
    * A stream of tokens with information about the current position.
@@ -966,7 +970,7 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Returns the current token.
    */
-  TokenStream.prototype.getCurrent = function () {
+  TokenStream.prototype.getCurrent = function() {
     if (this.hasMore()) {
       return this.tokens[this.cursor];
     } else {
@@ -977,11 +981,11 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Does this stream have more tokens?
    */
-  TokenStream.prototype.hasMore = function () {
+  TokenStream.prototype.hasMore = function() {
     return this.cursor < this.tokens.length;
   };
 
-  TokenStream.prototype.skipEther = function () {
+  TokenStream.prototype.skipEther = function() {
     while (this.hasMore() && this.getCurrent().isSoft()) {
       this.cursor++;
     }
@@ -993,16 +997,16 @@ function defineTedir(namespace, env) { // offset: 16
     }
   };
 
-  TokenStream.prototype.advance = function () {
+  TokenStream.prototype.advance = function() {
     this.cursor++;
     this.skipEther();
   };
 
-  TokenStream.prototype.getCursor = function () {
+  TokenStream.prototype.getCursor = function() {
     return this.cursor;
   };
 
-  TokenStream.prototype.rewind = function (value) {
+  TokenStream.prototype.rewind = function(value) {
     this.cursor = value;
   };
 
@@ -1017,21 +1021,21 @@ function defineTedir(namespace, env) { // offset: 16
   /**
    * Returns the token stream currently being parsed.
    */
-  ParseContext.prototype.getTokenStream = function () {
+  ParseContext.prototype.getTokenStream = function() {
     return this.input;
   };
 
   /**
    * Returns the token stream of input.
    */
-  ParseContext.prototype.getInput = function () {
+  ParseContext.prototype.getInput = function() {
     return this.input;
   };
 
   /**
    * Returns the sentinel object used to signal that parsing failed.
    */
-  ParseContext.prototype.getErrorMarker = function () {
+  ParseContext.prototype.getErrorMarker = function() {
     return ERROR_MARKER;
   };
 
@@ -1040,7 +1044,7 @@ function defineTedir(namespace, env) { // offset: 16
     this.fileName = fileNameOpt;
   }
 
-  SourceOrigin.prototype.getFileName = function () {
+  SourceOrigin.prototype.getFileName = function() {
     return this.fileName;
   };
 
@@ -1063,7 +1067,7 @@ function defineTedir(namespace, env) { // offset: 16
     this.result = result;
   }
 
-  ParseTrace.prototype.isError = function () {
+  ParseTrace.prototype.isError = function() {
     return this.result instanceof TedirSyntaxError;
   };
 
@@ -1071,16 +1075,15 @@ function defineTedir(namespace, env) { // offset: 16
    * Parses the given tokens according to this parser's grammar. If traceOpt
    * is set a trace of the parsing is returned, otherwise just the result.
    */
-  Parser.prototype.parse = function (nonterm, tokens, originOpt, traceOpt) {
+  Parser.prototype.parse = function(nonterm, tokens, originOpt, traceOpt) {
     var origin = originOpt || new SourceOrigin();
     var start = this.grammar.getNonterm(nonterm);
     var steps = traceOpt ? [] : null;
     var stream = new TokenStream(tokens, steps);
     var context = new ParseContext(this, stream);
     var result = start.parse(context);
-    var error = (isError(result) || stream.hasMore())
-        ? new TedirSyntaxError(origin, stream, stream.highWaterMark)
-        : null;
+    var error = (isError(result) || stream.hasMore()) ?
+        new TedirSyntaxError(origin, stream, stream.highWaterMark) : null;
     if (traceOpt) {
       return new ParseTrace(steps, tokens, error || result);
     } else if (isError(result) || stream.hasMore()) {
@@ -1090,18 +1093,18 @@ function defineTedir(namespace, env) { // offset: 16
     }
   };
 
-  namespace.getSource = function () {
+  namespace.getSource = function() {
     return String(defineTedir);
   };
 
   return namespace;
 }
 
-if (typeof module == "undefined") {
+if (typeof module == 'undefined') {
   this.tedir = this.tedir || defineTedir({}, this);
 } else {
   defineTedir(module.exports, {
-    utils: require("./utils")
+    utils: require('./utils')
   });
 }
 

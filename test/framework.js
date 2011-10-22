@@ -16,9 +16,15 @@
  * Test utilities.
  */
 
-"use strict";
+'use strict';
 
-String.prototype.startsWith = function (substr) {
+/**
+ * Returns true if this string starts with the given substring.
+ *
+ * @param {String} substr the string to compare with.
+ * @return {boolean} Does this string start with the given substr?
+ */
+String.prototype.startsWith = function(substr) {
   if (this.length < substr.length) {
     return false;
   } else {
@@ -36,7 +42,7 @@ function assertTrue(value) {
   if (value) {
     return;
   } else {
-    throw "assertTrue failed";
+    throw 'assertTrue failed';
   }
 }
 
@@ -45,7 +51,7 @@ function assertFalse(value) {
 }
 
 function failComparison(a, b) {
-  throw "Error: " + a + " != " + b;
+  throw 'Error: ' + a + ' != ' + b;
 }
 
 function defer(thunk) {
@@ -57,7 +63,7 @@ function deferredFor(from, to, thunk, onDone) {
     if (onDone != null)
       onDone();
   } else {
-    defer(function () {
+    defer(function() {
       thunk(from);
       deferredFor(from + 1, to, thunk, onDone);
     });
@@ -69,16 +75,16 @@ var CATCH_ERRORS = true;
 function runSingleTest(fun, name) {
   var div = document.createElement('div');
   div.innerText = name;
-  div.style.color = "grey";
+  div.style.color = 'grey';
   document.body.appendChild(div);
-  defer(function () {
+  defer(function() {
     if (CATCH_ERRORS) {
       try {
         fun();
-        div.style.color = "green";
+        div.style.color = 'green';
       } catch (e) {
-        div.style.color = "red";
-        div.innerText += " (" + e + ")";
+        div.style.color = 'red';
+        div.innerText += ' (' + e + ')';
       }
     } else {
       fun();
@@ -123,7 +129,7 @@ function assertListEquals(one, two) {
 
 function listToString(obj) {
   if (Array.isArray(obj)) {
-    return "[" + obj.map(listToString).join(", ") + "]";
+    return '[' + obj.map(listToString).join(', ') + ']';
   } else {
     return String(obj);
   }
@@ -132,11 +138,11 @@ function listToString(obj) {
 function runTedirTests() {
   var tests = [];
   for (var prop in this) {
-    if (String(prop).startsWith("test")) {
+    if (String(prop).startsWith('test')) {
       tests.push(prop);
     }
   }
-  deferredFor(0, tests.length, function (i) {
+  deferredFor(0, tests.length, function(i) {
     var prop = tests[i];
     runSingleTest(window[prop], prop);
   });

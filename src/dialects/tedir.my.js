@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-(function () {
+(function() {
 
   var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
@@ -21,7 +21,7 @@
     this.rules = rules;
   }
 
-  SyntaxExpression.prototype.translate = function () {
+  SyntaxExpression.prototype.translate = function() {
     var stmts = [];
     stmts.push(new ast.VariableStatement([
       new ast.VariableDeclaration(
@@ -35,7 +35,7 @@
         )
       )]
     ));
-    this.rules.forEach(function (rule) {
+    this.rules.forEach(function(rule) {
       stmts.push(rule.translate());
     });
     stmts.push(new ast.ReturnStatement(
@@ -56,7 +56,7 @@
     this.prods = prods;
   }
 
-  RuleDeclaration.prototype.translate = function () {
+  RuleDeclaration.prototype.translate = function() {
     var rule = new ast.ExpressionStatement(
       new ast.CallExpression(
         new ast.GetPropertyExpression(
@@ -113,7 +113,7 @@
 
     // <Grammar.InfixOperator>
     //   -> ... infix operators ...
-    INFIX_OPERATORS.forEach(function (op) {
+    INFIX_OPERATORS.forEach(function(op) {
       syntax.getRule("Grammar.InfixOperator")
         .addProd(f.punctValue(op));
     });
@@ -126,7 +126,7 @@
 
     // <Grammar.PostfixOperator>
     //   -> ... postfix operators ...
-    POSTFIX_OPERATORS.forEach(function (op) {
+    POSTFIX_OPERATORS.forEach(function(op) {
       syntax.getRule("Grammar.PostfixOperator")
         .addProd(f.punctValue(op));
     });

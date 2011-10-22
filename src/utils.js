@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-(function () {
+(function() {
 
 function defineUtils(namespace) { // offset: 3
 
@@ -37,7 +37,7 @@ function defineUtils(namespace) { // offset: 3
     sub.parent = sup;
   }
 
-  namespace.getSource = function () {
+  namespace.getSource = function() {
     return String(defineUtils);
   };
 
@@ -45,7 +45,7 @@ function defineUtils(namespace) { // offset: 3
 
 }
 
-if (typeof module == "undefined") {
+if (typeof module == 'undefined') {
   this.utils = this.utils || defineUtils({});
 } else {
   defineUtils(module.exports);

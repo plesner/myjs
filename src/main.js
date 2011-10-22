@@ -45,7 +45,7 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
   if (index == values.length) {
     return finallyOpt ? finallyOpt() : null;
   } else {
-    callback(values[index], function () {
+    callback(values[index], function() {
       forEachAsync(values, callback, finallyOpt, index + 1);
     });
   }
@@ -55,16 +55,16 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
  * Parses all the source files.
  */
 function parseAllFiles() {
-  forEachAsync(FILES, function (pair, doNext) {
+  forEachAsync(FILES, function(pair, doNext) {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || "default");
-    fs.readFile(name, "utf8", function (error, source) {
+    fs.readFile(name, "utf8", function(error, source) {
       var origin = new myjs.SourceOrigin(name);
       dialect.parseSource(source, origin);
       console.log("Successfully parsed " + name);
       doNext();
     });
-  }, function () {
+  }, function() {
     console.log("All tests completed successfully.");
   });
 }
@@ -73,11 +73,11 @@ function Runner(args) {
   this.args = args;
 }
 
-Runner.prototype.printUsage = function () {
+Runner.prototype.printUsage = function() {
   console.log("Usage: main.js test");
 };
 
-Runner.prototype.start = function () {
+Runner.prototype.start = function() {
   if (this.args.length == 0) {
     return this.printUsage();
   }
@@ -87,7 +87,7 @@ Runner.prototype.start = function () {
 /**
  * Runs all the node-based tests.
  */
-Runner.prototype.testHandler = function () {
+Runner.prototype.testHandler = function() {
   parseAllFiles();
 };
 
@@ -98,15 +98,15 @@ function strip(text) {
 /**
  * Compiles a list of source files into a single file.
  */
-Runner.prototype.compileHandler = function () {
+Runner.prototype.compileHandler = function() {
   var files = utils.toArray(arguments);
   var joined = "";
-  forEachAsync(files, function (file, doNext) {
-    fs.readFile(file, "utf8", function (error, source) {
+  forEachAsync(files, function(file, doNext) {
+    fs.readFile(file, "utf8", function(error, source) {
       joined += source;
       doNext();
     });
-  }, function () {
+  }, function() {
     console.log(strip(joined));
   });
 };
