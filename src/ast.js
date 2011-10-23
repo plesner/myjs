@@ -95,12 +95,12 @@ myjs.ast.TextFormatter.prototype.flush = function() {
   return this.tokens.join('');
 };
 
-myjs.ast.Node = function() { }
+myjs.ast.Node = function() { };
 
-myjs.ast.Statement = function() { }
+myjs.ast.Statement = function() { };
 goog.inherits(myjs.ast.Statement, myjs.ast.Node);
 
-myjs.ast.Expression = function() { }
+myjs.ast.Expression = function() { };
 goog.inherits(myjs.ast.Expression, myjs.ast.Node);
 
 myjs.ast.Node.prototype.unparse = function(out) {
@@ -279,13 +279,13 @@ myjs.ast.SwitchCase.prototype.unparse = function(out) {
 myjs.ast.DoStatement = function(body, cond) {
   this.body = body;
   this.cond = cond;
-}
+};
 goog.inherits(myjs.ast.DoStatement, myjs.ast.Statement);
 
 myjs.ast.WhileStatement = function(cond, body) {
   this.cond = cond;
   this.body = body;
-}
+};
 goog.inherits(myjs.ast.WhileStatement, myjs.ast.Statement);
 
 myjs.ast.WhileStatement.prototype.unparse = function(out) {
@@ -517,7 +517,7 @@ myjs.ast.Identifier.prototype.unparse = function(out) {
   out.string(this.name);
 };
 
-myjs.ast.This = function() { }
+myjs.ast.This = function() { };
 goog.inherits(myjs.ast.This, myjs.ast.Expression);
 
 myjs.ast.This.prototype.translate = function() {

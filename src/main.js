@@ -14,6 +14,9 @@
 
 'use strict';
 
+var fs = require('fs');
+var myjs = require('../myjs-0.1-node');
+
 /**
  * All the files to test the parser on.
  */
@@ -26,8 +29,7 @@ var FILES = [
   ['test/test.js'],
   ['test/framework.js'],
   ['src/main.js'],
-  ['src/dialects/tedir.my.js'],
-  ['src/dialects/classes.my.js', 'tedir/syntax']
+  ['src/dialects/tedir.my.js']
 ];
 
 /**
@@ -54,7 +56,7 @@ function parseAllFiles() {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'default');
     fs.readFile(name, 'utf8', function(error, source) {
-      var origin = new myjs.SourceOrigin(name);
+      var origin = new myjs.tedir.SourceOrigin(name);
       dialect.parseSource(source, origin);
       console.log('Successfully parsed ' + name);
       doNext();
@@ -94,7 +96,7 @@ function strip(text) {
  * Compiles a list of source files into a single file.
  */
 Runner.prototype.compileHandler = function() {
-  var files = utils.toArray(arguments);
+  var files = myjs.utils.toArray(arguments);
   var joined = '';
   forEachAsync(files, function(file, doNext) {
     fs.readFile(file, 'utf8', function(error, source) {

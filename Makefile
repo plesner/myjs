@@ -1,9 +1,16 @@
 # Files that need to be part of the resulting library.
-LIB_FILES=        \
+SHARED_FILES=     \
 src/utils.js      \
 src/ast.js        \
 src/tedir.js      \
-src/my.js         \
+src/my.js
+
+NODE_LIB_FILES=   \
+$(SHARED_FILES)   \
+src/node-module.js
+
+WEB_LIB_FILES=    \
+$(SHARED_FILES)   \
 src/mimetype.js
 
 # Files that we should lint but that aren't part of the library.
@@ -17,24 +24,30 @@ goog/base.js
 # Current version.
 VERSION=0.1
 
-# Output library file.
-LIB=myjs-$(VERSION).js
+# Output library files.
+WEB_LIB=myjs-$(VERSION).js
+NODE_LIB=myjs-$(VERSION)-node.js
 
 # Builds the library and then tests it.
-all:		$(LIB) test
+all:		$(WEB_LIB) test
 
 # Runs the tests and lints all files.
 presubmit:	test lint docs
 
-$(LIB):		$(LIB_FILES) tools/compiler tools/library
+$(WEB_LIB):	$(WEB_LIB_FILES) tools/compiler tools/library
 		java -jar tools/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
-		  $(LIB_FILES:%=--js=%)                            \
-		  --js_output_file $(LIB)
+		  $(WEB_LIB_FILES:%=--js=%)                        \
+		  --js_output_file $(WEB_LIB)
 
+$(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
+		java -jar tools/compiler/compiler.jar              \
+		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
+		  $(NODE_LIB_FILES:%=--js=%)                       \
+		  --js_output_file $(NODE_LIB)
 
 # Runs the tests using closure.
-test:		$(LIB)
+test:		$(NODE_LIB)
 		node src/main.js test
 
 # Lints all files
@@ -42,15 +55,23 @@ lint:
 		gjslint $(LIB_FILES) $(MISC_FILES)
 
 JSDOC_ROOT=tools/jsdoc/jsdoc_toolkit-2.4.0/jsdoc-toolkit/
+JSDOC_FLAGS=-t=$(JSDOC_ROOT)/templates/jsdoc
 docs:		$(LIB_FILES) tools/jsdoc
 		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
-		  -t=$(JSDOC_ROOT)/templates/jsdoc                         \
+		  $(JSDOC_FLAGS)                                           \
 		  -d=doc                                                   \
+		  $(LIB_FILES)
+
+private-docs:	$(LIB_FILES) tools/jsdoc
+		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
+		  $(JSDOC_FLAGS)                                           \
+		  -p -a							   \
+		  -d=private-doc                                           \
 		  $(LIB_FILES)
 
 # Cleans up any files we've built.
 clean:
-		rm -rf $(LIB) doc
+		rm -rf $(WEB_LIB) $(NODE_LIB) doc
 
 # Cleans up any file we've built and downloaded.
 very-clean:	clean

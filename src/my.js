@@ -66,7 +66,7 @@ myjs.Error = function(message) {
     Error.captureStackTrace(this, myjs.Error);
   }
   this.message = message;
-}
+};
 
 myjs.Error.prototype.toString = function() {
   return 'myjs.Error: ' + this.message;
@@ -90,7 +90,7 @@ myjs.Dialect = function(name) {
   this.keywords = null;
   this.punctuators = null;
   this.settings = null;
-}
+};
 
 /**
  * Returns the name that identifies this dialect.
@@ -241,14 +241,14 @@ myjs.Dialect.prototype.calcTokenTypes = function() {
  */
 myjs.registerDialect = function(dialect) {
   dialectRegistry[dialect.getName()] = dialect;
-}
+};
 
 /**
  * Returns the specified named dialect, or null if it doesn't exist.
  */
 myjs.getDialect = function(name) {
   return dialectRegistry[name];
-}
+};
 
 /**
  * A "hard" token with a string value.
@@ -256,7 +256,7 @@ myjs.getDialect = function(name) {
 myjs.HardToken = function(value, typeOpt) {
   this.value = value;
   this.type = typeOpt || value;
-}
+};
 
 /**
  * Is this a soft non-semantic token?
@@ -279,7 +279,7 @@ myjs.HardToken.prototype.toString = function() {
  */
 myjs.SoftToken = function(value) {
   this.value = value;
-}
+};
 
 myjs.SoftToken.prototype.toString = function() {
   return '(' + this.value + ')';
@@ -295,7 +295,7 @@ myjs.TokenizerSettings = function(keywords, punctuation) {
     this.keywords[word] = true;
   }.bind(this));
   this.punctuation = myjs.Trie.build(punctuation);
-}
+};
 
 myjs.TokenizerSettings.prototype.isKeyword = function(word) {
   return this.keywords.hasOwnProperty(word);
@@ -311,7 +311,7 @@ myjs.TokenizerSettings.prototype.getPunctuation = function() {
 
 myjs.Trie = function(map) {
   this.map = map;
-}
+};
 
 /**
  * A singleton empty trie.
@@ -355,7 +355,7 @@ myjs.Scanner = function(source, settings) {
   this.settings = settings;
   this.source = source;
   this.cursor = 0;
-}
+};
 
 myjs.Scanner.prototype.getCurrent = function() {
   return this.source[this.cursor];
@@ -622,7 +622,7 @@ myjs.tokenize = function(source, settings) {
     tokens.push(next);
   }
   return tokens;
-}
+};
 
 /**
  * Returns a function that will, given a list of values [x0, x1, ..., xn]
@@ -658,7 +658,7 @@ function groupInfixRight(Constructor) {
 /**
  * Custom expression used to parse regular expressions.
  */
-myjs.RegExpHandler = function() { }
+myjs.RegExpHandler = function() { };
 goog.inherits(myjs.RegExpHandler, myjs.tedir.CustomHandler);
 
 myjs.RegExpHandler.prototype.parse = function(context) {
