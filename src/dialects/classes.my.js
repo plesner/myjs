@@ -16,7 +16,6 @@
 
 (function() {
 
-  var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
 
   function ClassDeclaration(name, parent, body) {
@@ -36,7 +35,7 @@
         body = part.body;
       }
     });
-    elements.push(new ast.FunctionDeclaration(this.name, params,
+    elements.push(new myjs.ast.FunctionDeclaration(this.name, params,
       body));
     this.body.forEach(function(part) {
       if (!part.isConstructor()) {
@@ -53,12 +52,12 @@
   }
 
   PrototypePropertyDefinition.prototype.translate = function(klass) {
-    var fun = new ast.FunctionDeclaration(this.name, this.params, this.body);
-    return new ast.ExpressionStatement(
-      new ast.AssignmentExpression(
-        new ast.GetPropertyExpression(
-          new ast.GetPropertyExpression(
-            new ast.Identifier(klass.name),
+    var fun = new myjs.ast.FunctionDeclaration(this.name, this.params, this.body);
+    return new myjs.ast.ExpressionStatement(
+      new myjs.ast.AssignmentExpression(
+        new myjs.ast.GetPropertyExpression(
+          new myjs.ast.GetPropertyExpression(
+            new myjs.ast.Identifier(klass.name),
             "prototype"),
           this.name),
         "=",
@@ -104,7 +103,7 @@
   };
 
   function getExtensionSyntax() {
-    var s = new myjs.Syntax();
+    var s = new myjs.tedir.LiteralSyntax();
 
     // <SourceElement>
     //   -> "class" $Identifier ("extends" <Expression>)? "{" <ClassBody> "}"

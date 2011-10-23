@@ -14,7 +14,6 @@
 
 (function() {
 
-  var myjs = (typeof module == "undefined" ? this.myjs : require("../my"));
   var f = myjs.factory;
 
   function SyntaxExpression(rules) {
@@ -23,13 +22,15 @@
 
   SyntaxExpression.prototype.translate = function() {
     var stmts = [];
-    stmts.push(new ast.VariableStatement([
-      new ast.VariableDeclaration(
+    stmts.push(new myjs.ast.VariableStatement([
+      new myjs.ast.VariableDeclaration(
         "syntax",
-        new ast.NewExpression(
-          new ast.GetPropertyExpression(
-            new ast.Identifier("tedir"),
-            "Syntax"
+        new myjs.ast.NewExpression(
+          new myjs.ast.GetPropertyExpression(
+            new myjs.ast.GetPropertyExpression(
+              new myjs.ast.Identifier("myjs"),
+              "tedir"),
+            "LiteralSyntax"
           ),
           []
         )
@@ -38,11 +39,11 @@
     this.rules.forEach(function(rule) {
       stmts.push(rule.translate());
     });
-    stmts.push(new ast.ReturnStatement(
-      new ast.Literal("syntax")
+    stmts.push(new myjs.ast.ReturnStatement(
+      new myjs.ast.Literal("syntax")
     ));
-    return new ast.CallExpression(
-      new ast.FunctionExpression(
+    return new myjs.ast.CallExpression(
+      new myjs.ast.FunctionExpression(
         null,
         [],
         stmts
@@ -57,13 +58,13 @@
   }
 
   RuleDeclaration.prototype.translate = function() {
-    var rule = new ast.ExpressionStatement(
-      new ast.CallExpression(
-        new ast.GetPropertyExpression(
-          new ast.Literal("syntax"),
+    var rule = new myjs.ast.ExpressionStatement(
+      new myjs.ast.CallExpression(
+        new myjs.ast.GetPropertyExpression(
+          new myjs.ast.Literal("syntax"),
           "getRule"
         ), [
-          new ast.Literal("\"" + this.name + "\"")
+          new myjs.ast.Literal("\"" + this.name + "\"")
         ]
       )
     );
@@ -74,7 +75,7 @@
   var POSTFIX_OPERATORS = ["*", "+", "?"];
 
   function getExtensionSyntax() {
-    var syntax = new myjs.Syntax();
+    var syntax = new myjs.tedir.LiteralSyntax();
 
     // <PrimaryExpression>
     //   -> "syntax" "{" <RuleDeclaration>* "}"

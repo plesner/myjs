@@ -26,15 +26,15 @@ var seq = myjs.factory.seq;
 var star = myjs.factory.star;
 var token = myjs.factory.token;
 var value = myjs.factory.value;
-var toArray = utils.toArray;
+var toArray = myjs.utils.toArray;
 
 function testDefined() {
-  assertTrue(tedir);
   assertTrue(myjs);
+  assertTrue(myjs.tedir);
 }
 
 function testTrie() {
-  var Trie = myjs.internal.Trie;
+  var Trie = myjs.Trie;
   var t = Trie.build(['a', 'ab', 'abc', 'abe']);
   var first = t.get('a');
   assertFalse(t.get('b'));
@@ -52,7 +52,7 @@ function testTrie() {
 }
 
 function getExpressionSyntax() {
-  var syntax = new tedir.Syntax();
+  var syntax = new myjs.tedir.LiteralSyntax();
 
   // <expr>
   //   -> <atom> +: "+"
@@ -85,7 +85,7 @@ var DEFAULT_SETTINGS = new myjs.TokenizerSettings(['a', 'b', 'c', 'for'],
 function getParserTestRunner(syntax, startOpt) {
   var start = startOpt || 'start';
   return function(expected, source) {
-    var parser = new tedir.Parser(syntax);
+    var parser = new myjs.tedir.Parser(syntax);
     var tokens = myjs.tokenize(source, DEFAULT_SETTINGS);
     if (typeof expected == 'function') {
       try {
@@ -111,7 +111,7 @@ function testSimpleExpressions() {
 }
 
 function testTokenValues() {
-  var syntax = new tedir.Syntax();
+  var syntax = new myjs.tedir.LiteralSyntax();
 
   syntax.getRule('start')
     .addProd(token('a'))
@@ -126,11 +126,11 @@ function testTokenValues() {
 
 function testSimpleErrors() {
   var run = getParserTestRunner(getExpressionSyntax(), 'expr');
-  run(tedir.SyntaxError, '10 10 10');
+  run(myjs.tedir.SyntaxError, '10 10 10');
 }
 
 function testSequences() {
-  var syntax = new tedir.Syntax();
+  var syntax = new myjs.tedir.LiteralSyntax();
 
   syntax.getRule('start')
     .addProd(token('?'), seq(token('a')))
@@ -153,7 +153,7 @@ function testSequences() {
 }
 
 function testNestedSequences() {
-  var syntax = new tedir.Syntax();
+  var syntax = new myjs.tedir.LiteralSyntax();
 
   syntax.getRule('start')
     .addProd(token('?'), seq(value('a'), seq(value('b'), value('c'))))
@@ -167,7 +167,7 @@ function testNestedSequences() {
 }
 
 function testRepeatValues() {
-  var syntax = new tedir.Syntax();
+  var syntax = new myjs.tedir.LiteralSyntax();
 
   syntax.getRule('start')
     .addProd(token('['), star(value('a'), value('b')))
@@ -180,29 +180,29 @@ function testRepeatValues() {
   run(['a'], '[ a');
   run(['a', 'b', 'a'], '[ a b a');
   run(['a', 'b', 'a', 'b', 'a'], '[ a b a b a');
-  run(tedir.SyntaxError, '[ a b');
+  run(myjs.tedir.SyntaxError, '[ a b');
 
   run([], ']');
   run([], '] a');
   run(['b'], '] a b a');
   run(['b', 'b'], '] a b a b a');
-  run(tedir.SyntaxError, '] a b');
+  run(myjs.tedir.SyntaxError, '] a b');
 
   run([], '(');
   run(['a'], '( a');
   run(['a', 'a'], '( a b a');
   run(['a', 'a', 'a'], '( a b a b a');
-  run(tedir.SyntaxError, '( a b');
+  run(myjs.tedir.SyntaxError, '( a b');
 
   run([], ')');
   run([], ') a');
   run([], ') a b a');
   run([], ') a b a b a');
-  run(tedir.SyntaxError, ') a b');
+  run(myjs.tedir.SyntaxError, ') a b');
 }
 
 function testInvoker() {
-  var Invoker = tedir.internal.Invoker;
+  var Invoker = myjs.tedir.Invoker;
   var lastArgs; // The last args passed to a constructor.
 
   // 0

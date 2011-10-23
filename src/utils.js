@@ -12,43 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-(function() {
+goog.provide('myjs.utils');
 
-function defineUtils(namespace) { // offset: 3
+/**
+ * Converts any array-like object (including arguments objects) to a proper
+ * array.
+ */
+myjs.utils.toArray = function(args) {
+  return Array.prototype.slice.call(args);
+};
 
-  namespace.toArray = toArray;
-  /**
-   * Converts any array-like object (including arguments objects) to a proper
-   * array.
-   */
-  function toArray(args) {
-    return Array.prototype.slice.call(args);
-  }
-
-  namespace.inherits = inherits;
-  /**
-   * Simple prototype-based inheritance.
-   */
-  function inherits(sub, sup) {
-    function Inheriter() { }
-    Inheriter.prototype = sup.prototype;
-    sub.prototype = new Inheriter();
-    sub.prototype.constructor = sub;
-    sub.parent = sup;
-  }
-
-  namespace.getSource = function() {
-    return String(defineUtils);
-  };
-
-  return namespace;
-
-}
-
-if (typeof module == 'undefined') {
-  this.utils = this.utils || defineUtils({});
-} else {
-  defineUtils(module.exports);
-}
-
-}).call(this);
+myjs.utils.base = function(me) {
+  return me.constructor.superClass_.constructor;
+};

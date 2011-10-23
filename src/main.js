@@ -14,11 +14,6 @@
 
 'use strict';
 
-var fs = require('fs');
-var myjs = require('./my');
-var utils = require('./utils');
-require('./dialects/tedir.my.js');
-
 /**
  * All the files to test the parser on.
  */
