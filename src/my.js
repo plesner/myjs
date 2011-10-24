@@ -719,7 +719,7 @@ function buildStandardSyntax() {
   var token = f.token;
   var value = f.value;
 
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   // <Program>
   //   -> <SourceElement>*

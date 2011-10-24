@@ -52,7 +52,7 @@ function testTrie() {
 }
 
 function getExpressionSyntax() {
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   // <expr>
   //   -> <atom> +: "+"
@@ -111,7 +111,7 @@ function testSimpleExpressions() {
 }
 
 function testTokenValues() {
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
     .addProd(token('a'))
@@ -130,7 +130,7 @@ function testSimpleErrors() {
 }
 
 function testSequences() {
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
     .addProd(token('?'), seq(token('a')))
@@ -153,7 +153,7 @@ function testSequences() {
 }
 
 function testNestedSequences() {
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
     .addProd(token('?'), seq(value('a'), seq(value('b'), value('c'))))
@@ -167,7 +167,7 @@ function testNestedSequences() {
 }
 
 function testRepeatValues() {
-  var syntax = new myjs.tedir.LiteralSyntax();
+  var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
     .addProd(token('['), star(value('a'), value('b')))

@@ -68,7 +68,7 @@ myjs.tedir.SyntaxError = function(origin, input, tokenIndex) {
  * Returns the index'th token of the input.
  *
  * @param {number} index which token to return?
- * @return {myjs.tedir.AbstractToken} the index'th token.
+ * @return {myjs.tedir.Token} the index'th token.
  * @private
  */
 myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
@@ -78,7 +78,7 @@ myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
 /**
  * Returns the token that caused the error.
  *
- * @return {myjs.tedir.AbstractToken} the offending token.
+ * @return {myjs.tedir.Token} the offending token.
  */
 myjs.tedir.SyntaxError.prototype.getOffendingToken = function() {
   return this.getToken_(this.tokenIndex);
@@ -1094,8 +1094,17 @@ myjs.tedir.GrammarOrSyntax = function() { };
  *
  * @constructor
  */
-myjs.tedir.AbstractSyntax = function() { };
-goog.inherits(myjs.tedir.AbstractSyntax, myjs.tedir.GrammarOrSyntax);
+myjs.tedir.Syntax = function() { };
+goog.inherits(myjs.tedir.Syntax, myjs.tedir.GrammarOrSyntax);
+
+/**
+ * Creates a new literal syntax builder.
+ *
+ * @return {myjs.tedir.Syntax} a new syntax builder.
+ */
+myjs.tedir.Syntax.create = function() {
+  return new myjs.tedir.LiteralSyntax_();
+};
 
 /**
  * Returns the rule with the given name.
@@ -1104,18 +1113,18 @@ goog.inherits(myjs.tedir.AbstractSyntax, myjs.tedir.GrammarOrSyntax);
  * @param {boolean=} opt_failIfMissing if true is passed, throws an error if
  *   the nonterm doesn't exist. Otherwise creates it.
  */
-myjs.tedir.AbstractSyntax.prototype.getRule = function(name,
+myjs.tedir.Syntax.prototype.getRule = function(name,
     opt_failIfMissing) { };
 
 /**
  * Returns a syntax that contains the union of the rules defined in this
  * grammar and the ones passed in the list argument.
  *
- * @param {Array.<myjs.tedir.AbstractSyntax>} members an array of syntaxes.
- * @return {myjs.tedir.AbstractSyntax} the compositiong of this and the
+ * @param {Array.<myjs.tedir.Syntax>} members an array of syntaxes.
+ * @return {myjs.tedir.Syntax} the compositiong of this and the
  *   given syntaxes.
  */
-myjs.tedir.AbstractSyntax.prototype.compose = function(members) {
+myjs.tedir.Syntax.prototype.compose = function(members) {
   return new myjs.tedir.CompositeSyntax_([this].concat(members));
 };
 
@@ -1124,7 +1133,7 @@ myjs.tedir.AbstractSyntax.prototype.compose = function(members) {
  *
  * @param {function(string, myjs.tedir.Rule)} callback the function to invoke.
  */
-myjs.tedir.AbstractSyntax.prototype.forEachRule = function(callback) {
+myjs.tedir.Syntax.prototype.forEachRule = function(callback) {
   this.getRuleNames().forEach(function(name) {
     callback(name, this.getRule(name).asExpression_());
   }.bind(this));
@@ -1135,7 +1144,7 @@ myjs.tedir.AbstractSyntax.prototype.forEachRule = function(callback) {
  *
  * @return {myjs.tedir.Grammar} a grammar for this syntax.
  */
-myjs.tedir.AbstractSyntax.prototype.asGrammar = function() {
+myjs.tedir.Syntax.prototype.asGrammar = function() {
   return new myjs.tedir.Grammar(this);
 };
 
@@ -1143,17 +1152,18 @@ myjs.tedir.AbstractSyntax.prototype.asGrammar = function() {
  * A (potentially partial) syntax definition.
  *
  * @constructor
- * @extends myjs.tedir.AbstractSyntax
+ * @extends myjs.tedir.Syntax
+ * @private
  */
-myjs.tedir.LiteralSyntax = function() {
+myjs.tedir.LiteralSyntax_ = function() {
   this.rules = {};
 };
-goog.inherits(myjs.tedir.LiteralSyntax, myjs.tedir.AbstractSyntax);
+goog.inherits(myjs.tedir.LiteralSyntax_, myjs.tedir.Syntax);
 
 /**
  * @inheritDoc
  */
-myjs.tedir.LiteralSyntax.prototype.toString = function() {
+myjs.tedir.LiteralSyntax_.prototype.toString = function() {
   var getPair = function(k) {
     return k + ': ' + this.rules[k];
   }.bind(this);
@@ -1163,14 +1173,14 @@ myjs.tedir.LiteralSyntax.prototype.toString = function() {
 /**
  * @inheritDoc
  */
-myjs.tedir.LiteralSyntax.prototype.getRuleNames = function() {
+myjs.tedir.LiteralSyntax_.prototype.getRuleNames = function() {
   return Object.keys(this.rules);
 };
 
 /**
  * @inheritDoc
  */
-myjs.tedir.LiteralSyntax.prototype.getRule = function(name, opt_failIfMissing) {
+myjs.tedir.LiteralSyntax_.prototype.getRule = function(name, opt_failIfMissing) {
   if (!(this.rules.hasOwnProperty(name))) {
     if (opt_failIfMissing) {
       throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');
@@ -1186,17 +1196,17 @@ myjs.tedir.LiteralSyntax.prototype.getRule = function(name, opt_failIfMissing) {
  * syntax has the union of all production of the same rules in all the
  * sub-syntaxes.
  *
- * @param {Array.<myjs.tedir.AbstractSyntax>} members the syntaxes this
+ * @param {Array.<myjs.tedir.Syntax>} members the syntaxes this
  *   composite consists of.
  * @constructor
- * @extends myjs.tedir.AbstractSyntax
+ * @extends myjs.tedir.Syntax
  * @private
  */
 myjs.tedir.CompositeSyntax_ = function(members) {
   this.members = members;
   this.ruleCache = null;
 };
-goog.inherits(myjs.tedir.CompositeSyntax_, myjs.tedir.AbstractSyntax);
+goog.inherits(myjs.tedir.CompositeSyntax_, myjs.tedir.Syntax);
 
 /**
  * @inheritDoc
@@ -1389,7 +1399,7 @@ myjs.tedir.Rule.prototype.asExpression_ = function() {
  * fragments that have to be joined together to be complete, a grammar
  * is always complete.
  *
- * @param {myjs.tedir.AbstractSyntax} syntax the syntax to base this grammar
+ * @param {myjs.tedir.Syntax} syntax the syntax to base this grammar
  *   on.
  * @constructor
  */
@@ -1456,20 +1466,20 @@ var EOF_TOKEN = new myjs.tedir.Terminal_('eof');
  * @interface
  * @constructor
  */
-myjs.tedir.AbstractToken = function() { };
+myjs.tedir.Token = function() { };
 
 /**
  * Is this a soft token?
  *
  * @return {boolean} true iff this is a soft token.
  */
-myjs.tedir.AbstractToken.prototype.isSoft = function() {};
+myjs.tedir.Token.prototype.isSoft = function() {};
 
 /**
  * A stream of tokens with information together with a cursor that indicates
  * the current token.
  *
- * @param {Array.<myjs.tedir.AbstractToken>} tokens an array of tokens.
+ * @param {Array.<myjs.tedir.Token>} tokens an array of tokens.
  * @param {Array.<number>} opt_trace an array to store a trace in or null
  *   if no trace should be stored.
  * @constructor
@@ -1485,7 +1495,7 @@ myjs.tedir.TokenStream = function(tokens, opt_trace) {
 /**
  * Returns the current token.
  *
- * @return {myjs.tedir.AbstractToken} the current token.
+ * @return {myjs.tedir.Token} the current token.
  */
 myjs.tedir.TokenStream.prototype.getCurrent = function() {
   if (this.hasMore()) {
@@ -1508,7 +1518,7 @@ myjs.tedir.TokenStream.prototype.hasMore = function() {
  * Advances the cursor until it reaches a non-soft token or the end of the
  * token stream.
  *
- * @see myjs.tedir.AbstractToken#isSoft
+ * @see myjs.tedir.Token#isSoft
  */
 myjs.tedir.TokenStream.prototype.skipEther = function() {
   while (this.hasMore() && this.getCurrent().isSoft()) {
@@ -1614,7 +1624,7 @@ myjs.tedir.SourceOrigin.prototype.getFileName = function() {
  * Creates a new parser that can be used to parse a given sequence of
  * tokens.
  *
- * @param {myjs.tedir.AbstractSyntax|myjs.tedir.Grammar} grammarOrSyntax
+ * @param {myjs.tedir.Syntax|myjs.tedir.Grammar} grammarOrSyntax
  *   the grammar or syntax to parse according to.
  * @constructor
  */

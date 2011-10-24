@@ -30,7 +30,7 @@
             new myjs.ast.GetPropertyExpression(
               new myjs.ast.Identifier("myjs"),
               "tedir"),
-            "LiteralSyntax"
+            "LiteralSyntax_"
           ),
           []
         )
@@ -75,7 +75,7 @@
   var POSTFIX_OPERATORS = ["*", "+", "?"];
 
   function getExtensionSyntax() {
-    var syntax = new myjs.tedir.LiteralSyntax();
+    var syntax = myjs.tedir.Syntax.create();
 
     // <PrimaryExpression>
     //   -> "syntax" "{" <RuleDeclaration>* "}"

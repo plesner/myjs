@@ -103,7 +103,7 @@
   };
 
   function getExtensionSyntax() {
-    var s = new myjs.tedir.LiteralSyntax();
+    var s = myjs.tedir.Syntax.create();
 
     // <SourceElement>
     //   -> "class" $Identifier ("extends" <Expression>)? "{" <ClassBody> "}"

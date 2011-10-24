@@ -71,7 +71,7 @@ private-docs:	$(SHARED_FILES) tools/jsdoc
 
 # Cleans up any files we've built.
 clean:
-		rm -rf $(WEB_LIB) $(NODE_LIB) doc
+		rm -rf $(WEB_LIB) $(NODE_LIB) doc private-doc
 
 # Cleans up any file we've built and downloaded.
 very-clean:	clean
