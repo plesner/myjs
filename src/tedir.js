@@ -25,8 +25,6 @@ goog.provide('myjs.tedir');
 goog.require('myjs.ast');
 goog.require('myjs.utils');
 
-myjs.tedir.internal = {};
-
 /**
  * Signals an internal error in the parser.
  *
@@ -40,6 +38,9 @@ myjs.tedir.Error = function(message) {
   this.message = message;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.tedir.Error.prototype.toString = function() {
   return 'myjs.tedir.Error: ' + this.message;
 };
@@ -50,7 +51,8 @@ myjs.tedir.Error.prototype.toString = function() {
  *
  * @param {myjs.tedir.SourceOrigin} origin information about the source.
  * @param {Array} input the list of input tokens.
- * @param {number} the index in the input list of the offending token.
+ * @param {number} tokenIndex the index in the input list of the offending
+ *   token.
  * @constructor
  */
 myjs.tedir.SyntaxError = function(origin, input, tokenIndex) {
@@ -62,18 +64,35 @@ myjs.tedir.SyntaxError = function(origin, input, tokenIndex) {
   this.tokenIndex = tokenIndex;
 };
 
-myjs.tedir.SyntaxError.prototype.getToken = function(index) {
+/**
+ * Returns the index'th token of the input.
+ *
+ * @param {number} index which token to return?
+ * @return {myjs.tedir.AbstractToken} the index'th token.
+ * @private
+ */
+myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
   return this.input.tokens[index].value;
 };
 
+/**
+ * Returns the token that caused the error.
+ *
+ * @return {myjs.tedir.AbstractToken} the offending token.
+ */
 myjs.tedir.SyntaxError.prototype.getOffendingToken = function() {
-  return this.getToken(this.tokenIndex);
+  return this.getToken_(this.tokenIndex);
 };
 
+/**
+ * Returns the line of input where this error occurred.
+ *
+ * @return {number} the line where the error occurred.
+ */
 myjs.tedir.SyntaxError.prototype.getLineIndex = function() {
   var i, lines = 0;
   for (i = 0; i < this.tokenIndex; i++) {
-    var token = this.getToken(i);
+    var token = this.getToken_(i);
     var offset = token.indexOf('\n');
     while (offset != -1) {
       lines++;
@@ -83,6 +102,9 @@ myjs.tedir.SyntaxError.prototype.getLineIndex = function() {
   return lines;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.tedir.SyntaxError.prototype.toString = function() {
   var token = this.getOffendingToken();
   var locList = [];
@@ -96,78 +118,175 @@ myjs.tedir.SyntaxError.prototype.toString = function() {
   return 'tedir.SyntaxError' + loc + ': Unexpected token ' + token;
 };
 
-/**
- * Singleton factory object.
- */
 // In general, avoid making any assumptions about what 'this' is when the
 // factory methods are called since it may be convenient to call those methods
 // other than directly through a reference to 'factory'.
+/**
+ * Singleton factory object.
+ * @const
+ */
 myjs.tedir.factory = {};
 
-myjs.tedir.factory.token = function(value, kindOpt) {
-  return new myjs.tedir.Token(value, kindOpt);
-};
-
-myjs.tedir.factory.nonterm = function(name) {
-  return new myjs.tedir.Nonterm(name);
-};
-
-myjs.tedir.factory.custom = function(handler) {
-  return new myjs.tedir.Custom(handler);
-};
-
-myjs.tedir.factory.seq = function() {
-  return new myjs.tedir.Sequence(myjs.utils.toArray(arguments));
-};
-
-myjs.tedir.factory.choice = function() {
-  return new myjs.tedir.Choice(myjs.utils.toArray(arguments));
-};
-
-myjs.tedir.factory.option = function() {
-  return myjs.tedir.factory.choice(new myjs.tedir.Sequence(myjs.utils.toArray(arguments)), EMPTY);
-};
-
-myjs.tedir.factory.star = function(value, sepOpt) {
-  return new myjs.tedir.Repeat(value, sepOpt, true);
-};
-
-myjs.tedir.factory.plus = function(value, sepOpt) {
-  return new myjs.tedir.Repeat(value, sepOpt, false);
-};
-
-myjs.tedir.factory.empty = function() {
-  return EMPTY;
-};
-
-myjs.tedir.factory.ignore = function(value) {
-  return new myjs.tedir.Ignore(value);
-};
-
-myjs.tedir.factory.filter = function(body, filter, isConstructor) {
-  return new myjs.tedir.Filter(body, filter, isConstructor);
-};
-
-myjs.tedir.ERROR_MARKER = {};
-
-myjs.tedir.isError = function(value) {
-  return value === myjs.tedir.ERROR_MARKER;
+/**
+ * Returns an expression that matches exactly the given token in the
+ * input, otherwise fails. The value will be the value of the token.
+ *
+ * @param {string} value the value of the token to match.
+ * @param {string=} opt_kind optional marker that other libraries can use;
+ *   not used or interpreted by tedir.
+ * @return {myjs.tedir.Expression} an expression matching exactly tokens
+ *   with the given value.
+ */
+myjs.tedir.factory.token = function(value, opt_kind) {
+  return new myjs.tedir.Terminal_(value, opt_kind);
 };
 
 /**
+ * Returns an expression that matches using the nonterm with the given name.
+ *
+ * @param {string} name the name of the nonterm.
+ * @return {myjs.tedir.Expression} an expression matching according to the
+ *   given nonterm.
+ */
+myjs.tedir.factory.nonterm = function(name) {
+  return new myjs.tedir.Nonterm_(name);
+};
+
+/**
+ * Returns an expression that uses the given custom handler to parse input.
+ *
+ * @param {myjs.tedir.CustomHandler} handler the custom parse handler to use.
+ * @return {myjs.tedir.Expression} an expression matching according to the
+ *   handler.
+ */
+myjs.tedir.factory.custom = function(handler) {
+  return new myjs.tedir.Custom_(handler);
+};
+
+/**
+ * Returns an expression that matches the given subexpressions in sequence.
+ * The value will either be null if there are no non-ignored subexpressions,
+ * the value of the one non-ignored subexpression if there is exactly one,
+ * or an array of the non-ignored subexpressions if there are more.
+ *
+ * @param {myjs.tedir.Expression...} var_args a sequence of expressions.
+ * @return {myjs.tedir.Expression} an expression that matches the given
+ *   subexpressions in sequence.
+ */
+myjs.tedir.factory.seq = function(var_args) {
+  return new myjs.tedir.Sequence_(myjs.utils.toArray(arguments));
+};
+
+/**
+ * Returns an expression that matches one of the given subexpressions and
+ * yields the value of that subexpression.
+ *
+ * @param {myjs.tedir.Expression...} var_args a sequence of expression.
+ * @return {myjs.tedir.Expression} an expression matching any of the given
+ *   subexpressions.
+ */
+myjs.tedir.factory.choice = function(var_args) {
+  return new myjs.tedir.Choice_(myjs.utils.toArray(arguments));
+};
+
+/**
+ * Returns an expression that either matches the given sequence of expressions
+ * or nothing.
+ *
+ * @param {myjs.tedir.Expression...} var_args a sequence of expressions.
+ * @return {myjs.tedir.Expression} an expression matching either the given
+ *   sequence or nothing.
+ */
+myjs.tedir.factory.option = function(var_args) {
+  var exprs = myjs.utils.toArray(arguments);
+  return myjs.tedir.factory.choice(new myjs.tedir.Sequence_(exprs),
+    myjs.tedir.factory.empty());
+};
+
+/**
+ * Returns an expression that matches a possibly empty sequence of body
+ * expression, optionally separated by a separator.
+ *
+ * @param {myjs.tedir.Expression} body the expression to repeat.
+ * @param {myjs.tedir.Expression=} opt_sep optional separator expression.
+ * @return {myjs.tedir.Expression} an expression representing a possibly
+ *   empty sequence of the body, optionally separated by a separator.
+ */
+myjs.tedir.factory.star = function(body, opt_sep) {
+  return new myjs.tedir.Repeat_(body, opt_sep, true);
+};
+
+/**
+ * Returns an expression that matches a nonempty sequence of body expression,
+ * optionally separated by a separator.
+ *
+ * @param {myjs.tedir.Expression} body the expression to repeat.
+ * @param {myjs.tedir.Expression=} opt_sep optional separator expression.
+ * @return {myjs.tedir.Expression} an expression representing a nonempty
+ *   sequence of the body, optionally separated by a separator.
+ */
+myjs.tedir.factory.plus = function(body, opt_sep) {
+  return new myjs.tedir.Repeat_(body, opt_sep, false);
+};
+
+/**
+ * Returns the empty expression that trivially succeeds without consuming
+ * any input.
+ *
+ * @return {myjs.tedir.Expression} the empty expression.
+ */
+myjs.tedir.factory.empty = function() {
+  return myjs.tedir.Empty_.INSTANCE;
+};
+
+/**
+ * Returns an expression that is identical to the given subexpression but
+ * whose value is discarded when constructing the resulting syntax tree.
+ *
+ * @param {myjs.tedir.Expression} body the subexpression.
+ * @return {myjs.tedir.Expression} an expression identical to the given
+ *   subexpression but with no value.
+ */
+myjs.tedir.factory.ignore = function(body) {
+  return new myjs.tedir.Ignore_(body);
+};
+
+/**
+ * Returns a new expression that first parses the body and then invokes the
+ * given filter function, the result of which will be the result of the whole
+ * expression.
+ *
+ * @param {myjs.tedir.Expression} body the body of this ignore expression.
+ * @param {function(...):*} filter the filter function to pass the result
+ *   through.
+ * @param {boolean} isConstructor invoke the filter as a constructor?
+ * @return {myjs.tedir.Expression} the resulting filter expression.
+ */
+myjs.tedir.factory.filter = function(body, filter, isConstructor) {
+  return new myjs.tedir.Filter_(body, filter, isConstructor);
+};
+
+/**
+ * The singleton error marker.
+ * @type {Object}
+ * @private
+ */
+myjs.tedir.ERROR_MARKER_ = {};
+
+/**
  * The abstract supertype for syntax expressions.
+ *
+ * @constructor
  */
 myjs.tedir.Expression = function() {
   this.useValueCache = null;
 };
 
-myjs.tedir.Expression.prototype.accept = function(visitor) {
-  return visitor(this, this.getType());
-};
-
 /**
  * If the value of this expression is passed through a filter, how many
  * filter arguments does it correspond to?
+ *
+ * @return {number} the number of subvalues this expression yields.
  */
 myjs.tedir.Expression.prototype.getArity = function() {
   return 1;
@@ -175,7 +294,10 @@ myjs.tedir.Expression.prototype.getArity = function() {
 
 /**
  * Should the value of this expression be ignored in the result?  Caches
- * its result so calls are O(1).
+ * its result so calls, except the initial one, are O(1).
+ *
+ * @return {boolean} true iff the value of this expression should be included
+ *   in the resulting syntax tree.
  */
 myjs.tedir.Expression.prototype.useValue = function() {
   if (this.useValueCache === null) {
@@ -187,6 +309,9 @@ myjs.tedir.Expression.prototype.useValue = function() {
 /**
  * Calculates whether the value of this expression should be ignored.
  * Generally, don't call this directly, use useValue so you get caching.
+ *
+ * @return {boolean} true iff the value of this expression should be included
+ *   in the resulting syntax tree.
  */
 myjs.tedir.Expression.prototype.calcUseValue = function() {
   return true;
@@ -195,6 +320,8 @@ myjs.tedir.Expression.prototype.calcUseValue = function() {
 /**
  * Is this the empty expression?  Note that non-normalized expressions may
  * return false but effectively be the empty expression.
+ *
+ * @return {boolean} true iff this is the empty expression.
  */
 myjs.tedir.Expression.prototype.isEmpty = function() {
   return false;
@@ -202,35 +329,54 @@ myjs.tedir.Expression.prototype.isEmpty = function() {
 
 /**
  * An atomic terminal symbol.
+ *
+ * @param {string} value the value of this token, for instance "==" or
+ *   "Identifier".
+ * @param {*=} opt_kind an optional marker that can be used by tools
+ *   built on top of tedir. Not used or interpreted by tedir.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Token = function(value, kindOpt) {
+myjs.tedir.Terminal_ = function(value, opt_kind) {
   myjs.utils.base(this).call(this);
-
-  // What kind of input tokens does this grammar token match?
   this.value = value;
-
-  // If necessary, a value that specified the kind of this token.
-  this.kind = kindOpt;
+  this.kind = opt_kind;
 };
-goog.inherits(myjs.tedir.Token, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Terminal_, myjs.tedir.Expression);
 
-myjs.tedir.Token.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.getType = function() {
   return 'TOKEN';
 };
 
-myjs.tedir.Token.prototype.getKind = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.getKind = function() {
   return this.kind;
 };
 
-myjs.tedir.Token.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.forEachChild = function(visitor) {
   // ignore
 };
 
-myjs.tedir.Token.prototype.normalize = function() {
-  return new myjs.tedir.Token(this.value, this.kind);
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.normalize = function() {
+  return new myjs.tedir.Terminal_(this.value, this.kind);
 };
 
-myjs.tedir.Token.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.parse = function(context) {
   var input = context.input;
   var current = input.getCurrent();
   if (current.type == this.value) {
@@ -241,48 +387,75 @@ myjs.tedir.Token.prototype.parse = function(context) {
   }
 };
 
-myjs.tedir.Token.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Terminal_.prototype.toString = function() {
   return '"' + this.value + '"';
 };
 
 /**
  * A nonterminal reference.
+ *
+ * @param {string} name the name of the nonterminal to use.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Nonterm = function(name) {
+myjs.tedir.Nonterm_ = function(name) {
   myjs.utils.base(this).call(this);
   this.name = name;
 };
-goog.inherits(myjs.tedir.Nonterm, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Nonterm_, myjs.tedir.Expression);
 
-myjs.tedir.Nonterm.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Nonterm_.prototype.getType = function() {
   return 'NONTERM';
 };
 
-myjs.tedir.Nonterm.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Nonterm_.prototype.forEachChild = function(visitor) {
   // ignore
 };
 
-myjs.tedir.Nonterm.prototype.normalize = function() {
-  return new myjs.tedir.Nonterm(this.name);
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Nonterm_.prototype.normalize = function() {
+  return new myjs.tedir.Nonterm_(this.name);
 };
 
-myjs.tedir.Nonterm.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Nonterm_.prototype.parse = function(context) {
   var grammar = context.parser.grammar;
   return grammar.getNonterm(this.name).parse(context);
 };
 
-myjs.tedir.Nonterm.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Nonterm_.prototype.toString = function() {
   return '<' + this.name + '>';
 };
 
 /**
  * Abstract supertype for handlers that define how user-defined expressions
  * parse input.
+ *
+ * @constructor
  */
 myjs.tedir.CustomHandler = function() { };
 
 /**
- * Invokes the given callback for each child element under this expression.
+ * Invoke the given callback for each child element under this expression.
+ *
+ * @param {function(myjs.tedir.Expression):*} callback the function to invoke.
  */
 myjs.tedir.CustomHandler.prototype.forEachChild = function(callback) {
   // no children by default
@@ -292,6 +465,8 @@ myjs.tedir.CustomHandler.prototype.forEachChild = function(callback) {
  * If this handler has subexpressions, must return a new handler with each
  * subexpression t replaced by t.normalize(). Otherwise this handler should
  * be returned.
+ *
+ * @return {myjs.tedir.CustomHandler} a normalized version of this handler.
  */
 myjs.tedir.CustomHandler.prototype.normalize = function() {
   // No normalization
@@ -300,6 +475,11 @@ myjs.tedir.CustomHandler.prototype.normalize = function() {
 
 /**
  * Subtypes must implement this method to parse input from the given context.
+ *
+ * @param {myjs.tedir.ParseContext} context the current parse context which
+ *   provides access to the input and current state.
+ * @return {*} the value of this expression or the failure marker
+ *   (see {@link myjs.tedir.ParseContext#getErrorMarker}) if parsing failed.
  */
 myjs.tedir.CustomHandler.prototype.parse = function(context) {
   throw new Error('Abstract method called');
@@ -307,55 +487,91 @@ myjs.tedir.CustomHandler.prototype.parse = function(context) {
 
 /**
  * A custom user-defined parser expression.
+ *
+ * @param {myjs.tedir.CustomHandler} handler the custom handler that
+ *   constrols how to parse input.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Custom = function(handler) {
+myjs.tedir.Custom_ = function(handler) {
   this.handler = handler;
 };
-goog.inherits(myjs.tedir.Custom, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Custom_, myjs.tedir.Expression);
 
-myjs.tedir.Custom.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Custom_.prototype.getType = function() {
   return 'CUSTOM';
 };
 
-myjs.tedir.Custom.prototype.forEachChild = function(callback) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Custom_.prototype.forEachChild = function(callback) {
   this.handler.forEachChild(callback);
 };
 
-myjs.tedir.Custom.prototype.normalize = function() {
-  return new myjs.tedir.Custom(this.handler.normalize());
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Custom_.prototype.normalize = function() {
+  return new myjs.tedir.Custom_(this.handler.normalize());
 };
 
-myjs.tedir.Custom.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Custom_.prototype.parse = function(context) {
   return this.handler.parse(context);
 };
 
 /**
  * A sequence of expressions.
+ *
+ * @param {Array.<myjs.tedir.Expression>} terms the terms that make up this
+ *   sequence.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Sequence = function(terms) {
+myjs.tedir.Sequence_ = function(terms) {
   myjs.utils.base(this).call(this);
   this.terms = terms;
 };
-goog.inherits(myjs.tedir.Sequence, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Sequence_, myjs.tedir.Expression);
 
-myjs.tedir.Sequence.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.getType = function() {
   return 'SEQUENCE';
 };
 
-myjs.tedir.Sequence.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.forEachChild = function(visitor) {
   this.terms.forEach(visitor);
 };
 
-myjs.tedir.Sequence.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.toString = function() {
   return '(: ' + this.terms.join(' ') + ')';
 };
 
-myjs.tedir.Sequence.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.parse = function(context) {
   var i, values = [];
   for (i = 0; i < this.terms.length; i++) {
     var term = this.terms[i];
     var value = term.parse(context);
-    if (myjs.tedir.isError(value)) {
+    if (context.isError(value)) {
       return context.getErrorMarker();
     } else if (term.useValue()) {
       values.push(value);
@@ -371,7 +587,10 @@ myjs.tedir.Sequence.prototype.parse = function(context) {
   }
 };
 
-myjs.tedir.Sequence.prototype.getArity = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.getArity = function() {
   var result = 0;
   this.terms.forEach(function(term) {
     if (term.useValue()) {
@@ -381,7 +600,10 @@ myjs.tedir.Sequence.prototype.getArity = function() {
   return result;
 };
 
-myjs.tedir.Sequence.prototype.calcUseValue = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.calcUseValue = function() {
   var i, result = false;
   for (i = 0; i < this.terms.length; i++) {
     if (this.terms[i].useValue()) {
@@ -391,7 +613,10 @@ myjs.tedir.Sequence.prototype.calcUseValue = function() {
   return false;
 };
 
-myjs.tedir.Sequence.prototype.normalize = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Sequence_.prototype.normalize = function() {
   var normalTerms = [];
   this.terms.forEach(function(term) {
     var normalTerm = term.normalize();
@@ -401,41 +626,58 @@ myjs.tedir.Sequence.prototype.normalize = function() {
     }
   });
   if (normalTerms.length == 0) {
-    return EMPTY;
+    return myjs.tedir.Empty_.INSTANCE;
   } else if (normalTerms.length == 1) {
     return normalTerms[0];
   } else {
-    return new myjs.tedir.Sequence(normalTerms);
+    return new myjs.tedir.Sequence_(normalTerms);
   }
 };
 
 /**
- * An unordered choice between expressions.
+ * An ordered choice between expressions.
+ *
+ * @param {Array.<myjs.tedir.Expression>} terms the terms to choose between.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Choice = function(terms) {
+myjs.tedir.Choice_ = function(terms) {
   myjs.utils.base(this).call(this);
   this.terms = terms;
 };
-goog.inherits(myjs.tedir.Choice, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Choice_, myjs.tedir.Expression);
 
-myjs.tedir.Choice.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.getType = function() {
   return 'CHOICE';
 };
 
-myjs.tedir.Choice.prototype.addOption = function(term) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.addOption = function(term) {
   this.terms.push(term);
 };
 
-myjs.tedir.Choice.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.toString = function() {
   return '(| ' + this.terms.join(' ') + ')';
 };
 
-myjs.tedir.Choice.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.parse = function(context) {
   var i, start = context.input.getCursor();
   for (i = 0; i < this.terms.length; i++) {
     var term = this.terms[i];
     var result = term.parse(context);
-    if (myjs.tedir.isError(result)) {
+    if (context.isError(result)) {
       context.input.rewind(start);
     } else {
       return result;
@@ -444,137 +686,232 @@ myjs.tedir.Choice.prototype.parse = function(context) {
   return context.getErrorMarker();
 };
 
-myjs.tedir.Choice.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.forEachChild = function(visitor) {
   this.terms.forEach(visitor);
 };
 
-function normalizeAll(terms) {
-  return terms.map(function(t) { return t.normalize(); });
-}
-
-myjs.tedir.Choice.prototype.normalize = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Choice_.prototype.normalize = function() {
   if (this.terms.length == 1) {
     return this.terms[0].normalize();
   } else {
-    return new myjs.tedir.Choice(normalizeAll(this.terms));
+    var newTerms = this.terms.map(function(t) { return t.normalize(); });
+    return new myjs.tedir.Choice_(newTerms);
   }
 };
 
 /**
- * The empty expression that trivially matches everything.
+ * The empty expression that trivially matches everything without consuming
+ * any input.
+ *
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Empty = function() {
+myjs.tedir.Empty_ = function() {
   myjs.utils.base(this).call(this);
 };
-goog.inherits(myjs.tedir.Empty, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Empty_, myjs.tedir.Expression);
 
-var EMPTY = new myjs.tedir.Empty();
+/**
+ * Singleton instance of empty.
+ */
+myjs.tedir.Empty_.INSTANCE = new myjs.tedir.Empty_();
 
-myjs.tedir.Empty.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.getType = function() {
   return 'EMPTY';
 };
 
-myjs.tedir.Empty.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.forEachChild = function(visitor) {
   // ignore
 };
 
-myjs.tedir.Empty.prototype.isEmpty = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.isEmpty = function() {
   return true;
 };
 
-myjs.tedir.Empty.prototype.normalize = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.normalize = function() {
   return this;
 };
 
-myjs.tedir.Empty.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.parse = function(context) {
   return null;
 };
 
-myjs.tedir.Empty.prototype.calcUseValue = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.calcUseValue = function() {
   return false;
 };
 
-myjs.tedir.Empty.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Empty_.prototype.toString = function() {
   return '.';
 };
 
 /**
  * A marker that ensures that the value of the given subexpression will
  * not be included in the resulting concrete syntax tree.
+ *
+ * @param {myjs.tedir.Expression} term the subexpression to parse and
+ *   then discard the value of.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Ignore = function(term) {
+myjs.tedir.Ignore_ = function(term) {
   myjs.utils.base(this).call(this);
   this.term = term;
 };
-goog.inherits(myjs.tedir.Ignore, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Ignore_, myjs.tedir.Expression);
 
-myjs.tedir.Ignore.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.getType = function() {
   return 'IGNORE';
 };
 
-myjs.tedir.Ignore.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.forEachChild = function(visitor) {
   visitor(this.term);
 };
 
-myjs.tedir.Ignore.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.parse = function(context) {
   var value = this.term.parse(context);
-  return myjs.tedir.isError(value) ? value : null;
+  return context.isError(value) ? value : null;
 };
 
-myjs.tedir.Ignore.prototype.normalize = function() {
-  return new myjs.tedir.Ignore(this.term.normalize());
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.normalize = function() {
+  return new myjs.tedir.Ignore_(this.term.normalize());
 };
 
-myjs.tedir.Ignore.prototype.calcUseValue = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.calcUseValue = function() {
   return false;
 };
 
-myjs.tedir.Ignore.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Ignore_.prototype.toString = function() {
   return '(_ ' + this.term + ')';
 };
 
-myjs.tedir.Filter = function(term, filter, isConstructor, arityOpt) {
+/**
+ * A grammar expression that, when parsing, first parses according to the
+ * given subexpression and then invokes the given filter function with the
+ * result, finally returning the value returned by the filter function.
+ *
+ * @param {myjs.tedir.Expression} term the subexpression to parse.
+ * @param {function(Array):*} filter the filter function to invoke.
+ * @param {boolean} isConstructor call the function as a constructor?
+ * @param {number=} opt_arity the arity of the subexpression, if known. If
+ *   not specified it will be calculated when needed.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
+ */
+myjs.tedir.Filter_ = function(term, filter, isConstructor, opt_arity) {
   this.term = term;
   this.filter = filter;
   this.isConstructor = isConstructor;
-  var arity = (arityOpt === undefined) ? -1 : arityOpt;
+  var arity = (opt_arity === undefined) ? -1 : opt_arity;
   this.arity = arity;
-  this.invoker = myjs.tedir.Invoker.forArity(arity, this.isConstructor, this.filter);
+  this.invoker = myjs.tedir.Invoker_.forArity(arity, this.isConstructor,
+    this.filter);
 };
-goog.inherits(myjs.tedir.Filter, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Filter_, myjs.tedir.Expression);
 
-myjs.tedir.Filter.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Filter_.prototype.getType = function() {
   return 'FILTER';
 };
 
-myjs.tedir.Filter.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Filter_.prototype.forEachChild = function(visitor) {
   visitor(this.term);
 };
 
-myjs.tedir.Filter.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Filter_.prototype.parse = function(context) {
   var value = this.term.parse(context);
-  return myjs.tedir.isError(value) ? value : (this.invoker)(value);
+  return context.isError(value) ? value : (this.invoker)(value);
 };
 
-myjs.tedir.Filter.prototype.normalize = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Filter_.prototype.normalize = function() {
   var term = this.term.normalize();
   var arity = (this.arity === -1) ? term.getArity() : this.arity;
-  return new myjs.tedir.Filter(this.term.normalize(), this.filter, this.isConstructor,
-    arity);
+  return new myjs.tedir.Filter_(this.term.normalize(), this.filter,
+    this.isConstructor, arity);
 };
 
 /**
  * Utility function for invoking functions with a given arity.
+ *
+ * @constructor
+ * @private
  */
-myjs.tedir.Invoker = function() { };
+myjs.tedir.Invoker_ = function() { };
 
-myjs.tedir.Invoker.forArity = function(arity, isConstructor, fun) {
+/**
+ * Returns a function that, when given a list of arguments, call the given
+ * function in the appropriate way..
+ *
+ * @param {number} arity how many arguments are we going to pass?
+ * @param {boolean} isConstructor call the function as a constructor?
+ * @param {function(...):*} fun the function to call.
+ * @return {function{Array}:*} function that calls fun appropriately.
+ */
+myjs.tedir.Invoker_.forArity = function(arity, isConstructor, fun) {
   if (arity == -1) {
     return null;
   } else if (isConstructor) {
-    return myjs.tedir.Invoker.constructorForArity(fun, arity);
+    return myjs.tedir.Invoker_.constructorForArity(fun, arity);
   } else {
-    return myjs.tedir.Invoker.callerForArity(fun, arity);
+    return myjs.tedir.Invoker_.callerForArity(fun, arity);
   }
 };
 
@@ -582,8 +919,13 @@ myjs.tedir.Invoker.forArity = function(arity, isConstructor, fun) {
  * Returns a function that, when called with an arguments array (that is,
  * a real array of arguments not an arguments object) calls the given
  * function in the appropriate way for passing it 'arity' arguments.
+ *
+ * @param {function(...):*} fun function to call.
+ * @param {number} arity expected number of arguments.
+ * @return {function(Array):*} function that calls the given function in the
+ *   appropriate way for the given number of arguments.
  */
-myjs.tedir.Invoker.callerForArity = function(fun, arity) {
+myjs.tedir.Invoker_.callerForArity = function(fun, arity) {
   switch (arity) {
   case 1:
     return function(args) { return fun(args); };
@@ -592,25 +934,44 @@ myjs.tedir.Invoker.callerForArity = function(fun, arity) {
   }
 };
 
-myjs.tedir.Invoker.constructorBridges = [];
-myjs.tedir.Invoker.constructorForArity = function(Cons, arity) {
+/**
+ * A cache of constructor bridges.
+ * @type {Array.<Function>}
+ */
+myjs.tedir.Invoker_.constructorBridges = [];
+
+/**
+ * Returns a function that, when given an array, calls the given constructor
+ * in the appropriate way for that arity.
+ *
+ * @param {function(...):*} Cons a constructor function.
+ * @param {number} arity expected number of arguments.
+ * @return {function(Array):*} a bridge function for calling the constructor.
+ */
+myjs.tedir.Invoker_.constructorForArity = function(Cons, arity) {
   if (arity == 1) {
     return function(args) { return new Cons(args); };
   } else {
-    var bridgeBuilder = myjs.tedir.Invoker.constructorBridges[arity];
+    var bridgeBuilder = myjs.tedir.Invoker_.constructorBridges[arity];
     if (!bridgeBuilder) {
-      bridgeBuilder = myjs.tedir.Invoker.buildConstructorBridge(arity);
-      myjs.tedir.Invoker.constructorBridges[arity] = bridgeBuilder;
+      bridgeBuilder = myjs.tedir.Invoker_.buildConstructorBridge(arity);
+      myjs.tedir.Invoker_.constructorBridges[arity] = bridgeBuilder;
     }
     return bridgeBuilder(Cons);
   }
 };
 
 /**
- * Constructs a function that calls a function with a specified number
- * of arguments, taken from a list.
+ * Constructs a function that calls a function as a constructor with a
+ * specified number of arguments, taken from a list.
+ *
+ * @param {number} arity how many arguments should the function be called
+ *   with?
+ * @return {Function:function(Array):*} a function that, given a
+ *   constructor function, returns a function that takes an array and calls
+ *   the first function as a constructor with those arguments.
  */
-myjs.tedir.Invoker.buildConstructorBridge = function(arity) {
+myjs.tedir.Invoker_.buildConstructorBridge = function(arity) {
   var i, params = [];
   for (i = 0; i < arity; i++) {
     params.push('args[' + i + ']');
@@ -629,36 +990,56 @@ myjs.tedir.Invoker.buildConstructorBridge = function(arity) {
 
 /**
  * A repetition of an expression, separated by a separator expression.
+ *
+ * @param {myjs.tedir.Expression} body the expression to repeat.
+ * @param {myjs.tedir.Expression=} opt_sep an optional expression to separate
+ *   occurrences of the body. If not specified the empty expression is used.
+ * @param {boolean=} opt_allowEmpty whether to allow the sequence to be empty.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
  */
-myjs.tedir.Repeat = function(body, sepOpt, allowEmpty) {
+myjs.tedir.Repeat_ = function(body, opt_sep, opt_allowEmpty) {
   myjs.utils.base(this).call(this);
   this.body = body;
-  this.sep = sepOpt || EMPTY;
-  this.allowEmpty = allowEmpty;
+  this.sep = opt_sep || myjs.tedir.Empty_.INSTANCE;
+  this.allowEmpty = !!opt_allowEmpty;
 };
-goog.inherits(myjs.tedir.Repeat, myjs.tedir.Expression);
+goog.inherits(myjs.tedir.Repeat_, myjs.tedir.Expression);
 
-myjs.tedir.Repeat.prototype.getType = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Repeat_.prototype.getType = function() {
   return 'REPEAT';
 };
 
-myjs.tedir.Repeat.prototype.forEachChild = function(visitor) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Repeat_.prototype.forEachChild = function(visitor) {
   visitor(this.body);
   visitor(this.sep);
 };
 
-myjs.tedir.Repeat.prototype.normalize = function() {
-  return new myjs.tedir.Repeat(this.body.normalize(), this.sep.normalize(),
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Repeat_.prototype.normalize = function() {
+  return new myjs.tedir.Repeat_(this.body.normalize(), this.sep.normalize(),
       this.allowEmpty);
 };
 
-myjs.tedir.Repeat.prototype.parse = function(context) {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Repeat_.prototype.parse = function(context) {
   var input = context.input;
   var start = input.getCursor();
   var body = this.body;
   var sep = this.sep;
   var first = body.parse(context);
-  if (myjs.tedir.isError(first)) {
+  if (context.isError(first)) {
     if (this.allowEmpty) {
       input.rewind(start);
       return [];
@@ -673,12 +1054,12 @@ myjs.tedir.Repeat.prototype.parse = function(context) {
     while (true) {
       start = input.getCursor();
       var sepValue = sep.parse(context);
-      if (myjs.tedir.isError(sepValue)) {
+      if (context.isError(sepValue)) {
         input.rewind(start);
         break;
       } else {
         var bodyValue = body.parse(context);
-        if (myjs.tedir.isError(bodyValue)) {
+        if (context.isError(bodyValue)) {
           input.rewind(start);
           break;
         } else {
@@ -695,25 +1076,12 @@ myjs.tedir.Repeat.prototype.parse = function(context) {
   }
 };
 
-myjs.tedir.Repeat.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Repeat_.prototype.toString = function() {
   return '(' + (this.allowEmpty ? '* ' : '+ ') + this.body + ' ' + this.sep +
     ')';
-};
-
-myjs.tedir.Operator = function(value) {
-  this.value = value;
-  this.infixPrecedence = -1;
-  this.prefixPrecedence = -1;
-  this.suffixPrecedence = -1;
-};
-
-myjs.tedir.OperatorTable = function() {
-  this.ops = {};
-};
-
-myjs.tedir.Operators = function(body, table) {
-  this.body = body;
-  this.table = table;
 };
 
 /**
@@ -723,43 +1091,68 @@ myjs.tedir.GrammarOrSyntax = function() { };
 
 /**
  * Abstract supertype for syntaxes.
+ *
+ * @constructor
  */
 myjs.tedir.AbstractSyntax = function() { };
 goog.inherits(myjs.tedir.AbstractSyntax, myjs.tedir.GrammarOrSyntax);
 
 /**
- * Returns a syntax that contains the same rules as this syntax
- * and the one passed as the argument.
+ * Returns the rule with the given name.
+ *
+ * @param {string} name the name of the nonterm to return.
+ * @param {boolean=} opt_failIfMissing if true is passed, throws an error if
+ *   the nonterm doesn't exist. Otherwise creates it.
+ */
+myjs.tedir.AbstractSyntax.prototype.getRule = function(name,
+    opt_failIfMissing) { };
+
+/**
+ * Returns a syntax that contains the union of the rules defined in this
+ * grammar and the ones passed in the list argument.
+ *
+ * @param {Array.<myjs.tedir.AbstractSyntax>} members an array of syntaxes.
+ * @return {myjs.tedir.AbstractSyntax} the compositiong of this and the
+ *   given syntaxes.
  */
 myjs.tedir.AbstractSyntax.prototype.compose = function(members) {
-  return new myjs.tedir.CompositeSyntax([this].concat(members));
+  return new myjs.tedir.CompositeSyntax_([this].concat(members));
 };
 
 /**
  * Invokes the callback for each rule defined in this grammar.
+ *
+ * @param {function(string, myjs.tedir.Rule)} callback the function to invoke.
  */
 myjs.tedir.AbstractSyntax.prototype.forEachRule = function(callback) {
   this.getRuleNames().forEach(function(name) {
-    callback(name, this.getRule(name).asExpression());
+    callback(name, this.getRule(name).asExpression_());
   }.bind(this));
 };
 
 /**
  * Returns a new grammar that represents this syntax.
+ *
+ * @return {myjs.tedir.Grammar} a grammar for this syntax.
  */
 myjs.tedir.AbstractSyntax.prototype.asGrammar = function() {
   return new myjs.tedir.Grammar(this);
 };
 
 /**
- * A (potentially partial) syntax definition. A number of syntaxes together
- * can be compiled into a grammar.
+ * A (potentially partial) syntax definition.
+ *
+ * @constructor
+ * @extends myjs.tedir.AbstractSyntax
  */
 myjs.tedir.LiteralSyntax = function() {
   this.rules = {};
 };
 goog.inherits(myjs.tedir.LiteralSyntax, myjs.tedir.AbstractSyntax);
 
+/**
+ * @inheritDoc
+ */
 myjs.tedir.LiteralSyntax.prototype.toString = function() {
   var getPair = function(k) {
     return k + ': ' + this.rules[k];
@@ -767,16 +1160,19 @@ myjs.tedir.LiteralSyntax.prototype.toString = function() {
   return 'grammar { ' + this.getRuleNames().map(getPair).join(', ') + ' } ';
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.tedir.LiteralSyntax.prototype.getRuleNames = function() {
   return Object.keys(this.rules);
 };
 
 /**
- * Adds the given expression as a possible production for the given name.
+ * @inheritDoc
  */
-myjs.tedir.LiteralSyntax.prototype.getRule = function(name, failIfMissingOpt) {
+myjs.tedir.LiteralSyntax.prototype.getRule = function(name, opt_failIfMissing) {
   if (!(this.rules.hasOwnProperty(name))) {
-    if (failIfMissingOpt) {
+    if (opt_failIfMissing) {
       throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');
     } else {
       this.rules[name] = new myjs.tedir.Rule([]);
@@ -785,25 +1181,52 @@ myjs.tedir.LiteralSyntax.prototype.getRule = function(name, failIfMissingOpt) {
   return this.rules[name];
 };
 
-myjs.tedir.CompositeSyntax = function(members) {
+/**
+ * A syntax defined by composing a number of sub-syntaxes. Each rule in this
+ * syntax has the union of all production of the same rules in all the
+ * sub-syntaxes.
+ *
+ * @param {Array.<myjs.tedir.AbstractSyntax>} members the syntaxes this
+ *   composite consists of.
+ * @constructor
+ * @extends myjs.tedir.AbstractSyntax
+ * @private
+ */
+myjs.tedir.CompositeSyntax_ = function(members) {
   this.members = members;
   this.ruleCache = null;
 };
-goog.inherits(myjs.tedir.CompositeSyntax, myjs.tedir.AbstractSyntax);
+goog.inherits(myjs.tedir.CompositeSyntax_, myjs.tedir.AbstractSyntax);
 
-myjs.tedir.CompositeSyntax.prototype.getRuleNames = function() {
-  return Object.keys(this.getRules());
+/**
+ * @inheritDoc
+ */
+myjs.tedir.CompositeSyntax_.prototype.getRuleNames = function() {
+  return Object.keys(this.getRules_());
 };
 
-myjs.tedir.CompositeSyntax.prototype.getRule = function(name, failIfMissingOpt) {
-  var rules = this.getRules();
+/**
+ * @inheritDoc
+ */
+myjs.tedir.CompositeSyntax_.prototype.getRule = function(name,
+    opt_failIfMissing) {
+  var rules = this.getRules_();
   if (!(rules.hasOwnProperty(name))) {
     throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');
   }
   return rules[name];
 };
 
-myjs.tedir.CompositeSyntax.prototype.getRules = function() {
+/**
+ * Returns a mapping from nonterm names to the union of all the corresponding
+ * productions from the sub-syntaxes. Calculates and caches the result the
+ * first time it is called.
+ *
+ * @return {Object.<string, myjs.tedir.Rule>} a map from names to the resulting
+ *   combined rules.
+ * @private
+ */
+myjs.tedir.CompositeSyntax_.prototype.getRules_ = function() {
   if (!this.ruleCache) {
     var ruleLists = {};
     this.members.forEach(function(member) {
@@ -816,7 +1239,7 @@ myjs.tedir.CompositeSyntax.prototype.getRules = function() {
     });
     this.ruleCache = {};
     Object.keys(ruleLists).forEach(function(name) {
-      this.ruleCache[name] = myjs.tedir.Rule.merge(ruleLists[name]);
+      this.ruleCache[name] = myjs.tedir.Rule.merge_(ruleLists[name]);
     }.bind(this));
   }
   return this.ruleCache;
@@ -824,13 +1247,23 @@ myjs.tedir.CompositeSyntax.prototype.getRules = function() {
 
 /**
  * A single production.
+ *
+ * @param {myjs.tedir.Expression} value the value of this production.
+ * @constructor
+ * @private
  */
-myjs.tedir.Production = function(value) {
+myjs.tedir.Production_ = function(value) {
   this.value = value;
   this.filter = null;
 };
 
-myjs.tedir.Production.prototype.asExpression = function() {
+/**
+ * Returns the expression value of this production.
+ *
+ * @return {myjs.tedir.Expression} the value of this production.
+ * @private
+ */
+myjs.tedir.Production_.prototype.asExpression_ = function() {
   if (this.filter) {
     return myjs.tedir.factory.filter(this.value, this.filter.fun,
       this.filter.isConstructor);
@@ -840,18 +1273,41 @@ myjs.tedir.Production.prototype.asExpression = function() {
 };
 
 /**
- * The "value" of a nonterm, the productions the nonterm expands to.
+ * The "value" of a nonterm, the productions the nonterm expands to. Can be
+ * used to build nonterms using {@link #addProd}.
+ *
+ * @param {Array.<myjs.tedir.Production_>} prods the array to store
+ *   productions in for this rule.
+ * @constructor
  */
 myjs.tedir.Rule = function(prods) {
-  this.prods = prods;
-  this.exprCache = null;
+
+  /**
+   * The rules of this production.
+   * @type {Array.<myjs.tedir.Production_>}
+   * @private
+   */
+  this.prods_ = prods;
+
+  /**
+   * A cache for the expression value of this rule.
+   * @type {?myjs.tedir.Expression}
+   * @private
+   */
+  this.exprCache_ = null;
+
 };
 
 /**
  * Merges the given rules into a single rule with the union of all the
  * productions.
+ *
+ * @param {Array.<myjs.tedir.Rule>} rules to merge.
+ * @return {myjs.tedir.Rule} a rule containing all the productions from the
+ *   given list.
+ * @private
  */
-myjs.tedir.Rule.merge = function(rules) {
+myjs.tedir.Rule.merge_ = function(rules) {
   if (rules.length == 1) {
     return rules[0];
   } else {
@@ -865,22 +1321,33 @@ myjs.tedir.Rule.merge = function(rules) {
 
 /**
  * Returns the last production that was added.
+ *
+ * @return {myjs.tedir.Production_} the last added production.
+ * @private
  */
-myjs.tedir.Rule.prototype.getLastProd = function() {
-  return this.prods[this.prods.length - 1];
+myjs.tedir.Rule.prototype.getLastProd_ = function() {
+  return this.prods_[this.prods_.length - 1];
 };
 
 /**
  * Adds a new production to this rule.
+ *
+ * @param {...myjs.tedir.Expression} var_args a sequence of subexpressions.
+ * @return {myjs.tedir.Rule} this rule, to enable call chaining.
  */
-myjs.tedir.Rule.prototype.addProd = function() {
-  this.prods.push(new myjs.tedir.Production(new myjs.tedir.Sequence(myjs.utils.toArray(arguments))));
+myjs.tedir.Rule.prototype.addProd = function(var_args) {
+  var array = myjs.utils.toArray(arguments);
+  this.prods_.push(new myjs.tedir.Production_(new myjs.tedir.Sequence_(array)));
   return this;
 };
 
 /**
  * Sets the constructor function that should be instantiated when the last
- * production that was added succeeds during parsing.
+ * production that was added succeeds during parsing. Equivalent to calling
+ * {@link #setHandler} with opt_isConstructor=true.
+ *
+ * @param {function(*, ...):*} Constructor the constructor function.
+ * @return {myjs.tedir.Rule} this rule, to enable call chaining.
  */
 myjs.tedir.Rule.prototype.setConstructor = function(Constructor) {
   return this.setHandler(Constructor, true);
@@ -889,24 +1356,42 @@ myjs.tedir.Rule.prototype.setConstructor = function(Constructor) {
 /**
  * Sets the function that should be called when the last production that
  * was added succeeds during parsing.
+ *
+ * @param {function(*, ...):*} handler the function to handle the value.
+ * @param {boolean=} opt_isConstructor whether the handler should be called
+ *   as a function or a constructor.
+ * @return {myjs.tedir.Rule} this rule, to enable call chaining.
  */
-myjs.tedir.Rule.prototype.setHandler = function(handler, isConstructor) {
-  this.getLastProd().filter = {fun: handler, isConstructor: isConstructor};
+myjs.tedir.Rule.prototype.setHandler = function(handler, opt_isConstructor) {
+  this.getLastProd_().filter = {
+    fun: handler,
+    isConstructor: !!opt_isConstructor
+  };
   return this;
 };
 
-myjs.tedir.Rule.prototype.asExpression = function() {
-  if (!this.exprCache) {
-    var prodExprs = this.prods.map(function(p) {return p.asExpression(); });
-    this.exprCache = new myjs.tedir.Choice(prodExprs);
+/**
+ * Returns the expression produced by this rule.
+ *
+ * @return {myjs.tedir.Expression} the expression produced by this rule.
+ * @private
+ */
+myjs.tedir.Rule.prototype.asExpression_ = function() {
+  if (!this.exprCache_) {
+    var prodExprs = this.prods_.map(function(p) {return p.asExpression_(); });
+    this.exprCache_ = new myjs.tedir.Choice_(prodExprs);
   }
-  return this.exprCache;
+  return this.exprCache_;
 };
 
 /**
  * A fixed immutable grammar. Where syntaxes are (or at least can be)
  * fragments that have to be joined together to be complete, a grammar
  * is always complete.
+ *
+ * @param {myjs.tedir.AbstractSyntax} syntax the syntax to base this grammar
+ *   on.
+ * @constructor
  */
 myjs.tedir.Grammar = function(syntax) {
   this.syntax = syntax;
@@ -914,15 +1399,21 @@ myjs.tedir.Grammar = function(syntax) {
 };
 
 /**
- * Returns true if this grammar is valid.
+ * Returns true if this grammar is valid. A grammar is valid if all referenced
+ * nonterms exist.
+ *
+ * @return {boolean} true iff this grammar is valid.
+ * @private
  */
-myjs.tedir.Grammar.prototype.isValid = function() {
+myjs.tedir.Grammar.prototype.isValid_ = function() {
   return true;
 };
 
 /**
  * Convenience method that allows syntaxes and grammars to be treated
  * uniformly.
+ *
+ * @return {myjs.tedir.Grammar} this grammar.
  */
 myjs.tedir.Grammar.prototype.asGrammar = function() {
   return this;
@@ -931,40 +1422,70 @@ myjs.tedir.Grammar.prototype.asGrammar = function() {
 /**
  * Returns the local nonterminal with the given name, building it the
  * first time the method is called.
+ *
+ * @param {string} name the name of the nonterm to return.
+ * @return {myjs.tedir.Expression} the value of that nonterm.
  */
 myjs.tedir.Grammar.prototype.getNonterm = function(name) {
   var value = this.nonterms[name];
   if (!value) {
-    value = this.buildNonterm(name);
+    value = this.buildNonterm_(name);
     this.nonterms[name] = value;
   }
   return value;
 };
 
 /**
- * Returns a normalized local expression for the given that only this grammar
- * will use.
+ * Returns a normalized local expression for the given nonterm that only
+ * this grammar will use.
+ *
+ * @param {string} name the name of the nonterm.
+ * @return {myjs.tedir.Expression} the value of that nonterm.
+ * @private
  */
-myjs.tedir.Grammar.prototype.buildNonterm = function(name) {
+myjs.tedir.Grammar.prototype.buildNonterm_ = function(name) {
   var rule = this.syntax.getRule(name, true);
-  return rule.asExpression().normalize();
+  return rule.asExpression_().normalize();
 };
 
-var EOF_TOKEN = new myjs.tedir.Token('eof');
+var EOF_TOKEN = new myjs.tedir.Terminal_('eof');
 
 /**
- * A stream of tokens with information about the current position.
+ * Interface for token objects.
+ *
+ * @interface
+ * @constructor
  */
-myjs.tedir.TokenStream = function(tokens, traceOut) {
+myjs.tedir.AbstractToken = function() { };
+
+/**
+ * Is this a soft token?
+ *
+ * @return {boolean} true iff this is a soft token.
+ */
+myjs.tedir.AbstractToken.prototype.isSoft = function() {};
+
+/**
+ * A stream of tokens with information together with a cursor that indicates
+ * the current token.
+ *
+ * @param {Array.<myjs.tedir.AbstractToken>} tokens an array of tokens.
+ * @param {Array.<number>} opt_trace an array to store a trace in or null
+ *   if no trace should be stored.
+ * @constructor
+ */
+myjs.tedir.TokenStream = function(tokens, opt_trace) {
   this.tokens = tokens;
   this.cursor = 0;
   this.highWaterMark = 0;
-  this.traceOut = traceOut;
+  this.traceOut = opt_trace;
   this.skipEther();
 };
 
 /**
  * Returns the current token.
+ *
+ * @return {myjs.tedir.AbstractToken} the current token.
  */
 myjs.tedir.TokenStream.prototype.getCurrent = function() {
   if (this.hasMore()) {
@@ -976,11 +1497,19 @@ myjs.tedir.TokenStream.prototype.getCurrent = function() {
 
 /**
  * Does this stream have more tokens?
+ *
+ * @return {boolean} true if there are more tokens in this stream.
  */
 myjs.tedir.TokenStream.prototype.hasMore = function() {
   return this.cursor < this.tokens.length;
 };
 
+/**
+ * Advances the cursor until it reaches a non-soft token or the end of the
+ * token stream.
+ *
+ * @see myjs.tedir.AbstractToken#isSoft
+ */
 myjs.tedir.TokenStream.prototype.skipEther = function() {
   while (this.hasMore() && this.getCurrent().isSoft()) {
     this.cursor++;
@@ -993,21 +1522,38 @@ myjs.tedir.TokenStream.prototype.skipEther = function() {
   }
 };
 
+/**
+ * Advances the cursor one step and then skips over any soft tokens.
+ */
 myjs.tedir.TokenStream.prototype.advance = function() {
   this.cursor++;
   this.skipEther();
 };
 
+/**
+ * Returns the current cursor.
+ *
+ * @return {number} the index of the current token.
+ */
 myjs.tedir.TokenStream.prototype.getCursor = function() {
   return this.cursor;
 };
 
+/**
+ * Rewinds the cursor to the given position earlier in the stream.
+ *
+ * @param {number} value the position to rewind to.
+ */
 myjs.tedir.TokenStream.prototype.rewind = function(value) {
   this.cursor = value;
 };
 
 /**
  * A collection of information about a parse process.
+ *
+ * @param {myjs.tedir.Parser} parser the parser using this context.
+ * @param {myjs.tedir.TokenStream} input the input we're parsing.
+ * @constructor
  */
 myjs.tedir.ParseContext = function(parser, input) {
   this.parser = parser;
@@ -1015,24 +1561,33 @@ myjs.tedir.ParseContext = function(parser, input) {
 };
 
 /**
- * Returns the token stream currently being parsed.
+ * Returns the raw token stream of input.
+ *
+ * @return {myjs.tedir.TokenStream} the raw array of input tokens.
  */
 myjs.tedir.ParseContext.prototype.getTokenStream = function() {
   return this.input;
 };
 
 /**
- * Returns the token stream of input.
+ * Returns the sentinel object used to signal that parsing failed.
+ *
+ * @return {Object} the one singleton object that
+ *   {@link #isError} will return true for.
  */
-myjs.tedir.ParseContext.prototype.getInput = function() {
-  return this.input;
+myjs.tedir.ParseContext.prototype.getErrorMarker = function() {
+  return myjs.tedir.ERROR_MARKER_;
 };
 
 /**
- * Returns the sentinel object used to signal that parsing failed.
+ * Is the given value the singleton error marker value?
+ *
+ * @param {*} value the value to test.
+ * @return {boolean} true iff the value is the error marker object.
+ * @see #getErrorMarker
  */
-myjs.tedir.ParseContext.prototype.getErrorMarker = function() {
-  return myjs.tedir.ERROR_MARKER;
+myjs.tedir.ParseContext.prototype.isError = function(value) {
+  return value == myjs.tedir.ERROR_MARKER_;
 };
 
 /**
@@ -1045,50 +1600,78 @@ myjs.tedir.SourceOrigin = function(opt_fileName) {
   this.fileName = opt_fileName;
 };
 
+/**
+ * Returns the name of the file this source came from or null if it is
+ * unknown.
+ *
+ * @return {?string} the file name if it is known.
+ */
 myjs.tedir.SourceOrigin.prototype.getFileName = function() {
   return this.fileName;
 };
 
 /**
- * Creates a new parser that can be used to parse the given sequence of
+ * Creates a new parser that can be used to parse a given sequence of
  * tokens.
+ *
+ * @param {myjs.tedir.AbstractSyntax|myjs.tedir.Grammar} grammarOrSyntax
+ *   the grammar or syntax to parse according to.
+ * @constructor
  */
 myjs.tedir.Parser = function(grammarOrSyntax) {
   this.grammar = grammarOrSyntax.asGrammar();
 };
 
 /**
+ * Parses the given array of tokens according to this parser's grammar.
+ *
+ * @param {string} nonterm the start production.
+ * @param {Array} tokens the array of tokens to parse.
+ * @param {myjs.tedir.SourceOrigin=} opt_origin the origin of the source.
+ * @param {boolean=} opt_trace whether or not to trace parsing.
+ * @return {*} a syntax tree constructed according to the grammar.
+ * @throws {myjs.tedir.SyntaxError} if the tokens can't be parsed.
+ */
+myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, opt_origin,
+    opt_trace) {
+  var origin = opt_origin || new myjs.tedir.SourceOrigin();
+  var start = this.grammar.getNonterm(nonterm);
+  var steps = opt_trace ? [] : null;
+  var stream = new myjs.tedir.TokenStream(tokens, steps);
+  var context = new myjs.tedir.ParseContext(this, stream);
+  var result = start.parse(context);
+  var error = (context.isError(result) || stream.hasMore()) ?
+      new myjs.tedir.SyntaxError(origin, stream, stream.highWaterMark) : null;
+  if (opt_trace) {
+    return new myjs.tedir.ParseTrace_(steps, tokens, error || result);
+  } else if (context.isError(result) || stream.hasMore()) {
+    throw error;
+  } else {
+    return result;
+  }
+};
+
+/**
  * A collection of information about the process of parsing one piece
  * of input.
+ *
+ * @param {Array.<number>} steps the steps taken by the parser.
+ * @param {Array} tokens the tokens that were parsed.
+ * @param {*} result the parse result, either an ast or a syntax error.
+ * @constructor
+ * @private
  */
-myjs.tedir.ParseTrace = function(steps, tokens, result) {
+myjs.tedir.ParseTrace_ = function(steps, tokens, result) {
   this.steps = steps;
   this.tokens = tokens;
   this.result = result;
 };
 
-myjs.tedir.ParseTrace.prototype.isError = function() {
-  return this.result instanceof myjs.tedir.SyntaxError;
-};
-
 /**
- * Parses the given tokens according to this parser's grammar. If traceOpt
- * is set a trace of the parsing is returned, otherwise just the result.
+ * Did this parse fail?
+ *
+ * @return {boolean} true iff parsing failed.
  */
-myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, originOpt, traceOpt) {
-  var origin = originOpt || new myjs.tedir.SourceOrigin();
-  var start = this.grammar.getNonterm(nonterm);
-  var steps = traceOpt ? [] : null;
-  var stream = new myjs.tedir.TokenStream(tokens, steps);
-  var context = new myjs.tedir.ParseContext(this, stream);
-  var result = start.parse(context);
-  var error = (myjs.tedir.isError(result) || stream.hasMore()) ?
-      new myjs.tedir.SyntaxError(origin, stream, stream.highWaterMark) : null;
-  if (traceOpt) {
-    return new myjs.tedir.ParseTrace(steps, tokens, error || result);
-  } else if (myjs.tedir.isError(result) || stream.hasMore()) {
-    throw error;
-  } else {
-    return result;
-  }
+myjs.tedir.ParseTrace_.prototype.isError = function() {
+  return this.result instanceof myjs.tedir.SyntaxError;
 };

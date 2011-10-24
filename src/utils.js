@@ -17,11 +17,20 @@ goog.provide('myjs.utils');
 /**
  * Converts any array-like object (including arguments objects) to a proper
  * array.
+ *
+ * @param {*} args an array-like object to convert.
+ * @return {Array} an array containing the elements of the given argument.
  */
 myjs.utils.toArray = function(args) {
   return Array.prototype.slice.call(args);
 };
 
+/**
+ * Returns the parent constructor function for the given object.
+ *
+ * @param {Object} me the value to extract the constructor from.
+ * @return {function} the parent constructor function.
+ */
 myjs.utils.base = function(me) {
   return me.constructor.superClass_.constructor;
 };

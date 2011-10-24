@@ -52,22 +52,22 @@ test:		$(NODE_LIB)
 
 # Lints all files
 lint:
-		gjslint $(LIB_FILES) $(MISC_FILES)
+		gjslint $(SHARED_FILES) $(MISC_FILES)
 
 JSDOC_ROOT=tools/jsdoc/jsdoc_toolkit-2.4.0/jsdoc-toolkit/
 JSDOC_FLAGS=-t=$(JSDOC_ROOT)/templates/jsdoc
-docs:		$(LIB_FILES) tools/jsdoc
+docs:		$(SHARED_FILES) tools/jsdoc
 		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
 		  $(JSDOC_FLAGS)                                           \
 		  -d=doc                                                   \
-		  $(LIB_FILES)
+		  $(SHARED_FILES)
 
-private-docs:	$(LIB_FILES) tools/jsdoc
+private-docs:	$(SHARED_FILES) tools/jsdoc
 		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
 		  $(JSDOC_FLAGS)                                           \
 		  -p -a							   \
 		  -d=private-doc                                           \
-		  $(LIB_FILES)
+		  $(SHARED_FILES)
 
 # Cleans up any files we've built.
 clean:
