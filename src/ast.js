@@ -13,7 +13,10 @@
 // limitations under the License.
 
 /**
- * Syntax tree definitions and utilities for working with them.
+ * @fileoverview Utilitied for working with JSON syntax trees for javascript
+ * programs. The structure of the syntax trees is taken directly from the
+ * mozilla parser api, http://developer.mozilla.org/en/SpiderMonkey/Parser_API,
+ * but without any of the SpiderMonkey-specific extensions.
  */
 
 'use strict';
@@ -21,6 +24,307 @@
 goog.provide('myjs.ast');
 
 goog.require('myjs.utils');
+
+/**
+ * A syntax tree node.
+ *
+ * @constructor
+ */
+myjs.ast.Node = function() {
+  /**
+   * A string representing the AST variant type.
+   * @type {string}
+   */
+  this.type = null;
+};
+
+/**
+ * A standard Program element.
+ *
+ * @param {Array} body the program elements.
+ * @constructor
+ * @extends myjs.ast.Node
+ */
+myjs.ast.Program = function(body) {
+  /**
+   * "Program"
+   * @const
+   */
+  this.type = 'Program';
+
+  /**
+   * The program elements.
+   * @type {Array}
+   */
+  this.elements = body;
+};
+
+/**
+ * A standard function element.
+ *
+ * @param {myjs.ast.Identifier} id the name of the function.
+ * @param {Array.<myjs.ast.Identifier>} params the function's parameters.
+ * @param {myjs.ast.BlockStatement} body the body of the function.
+ * @constructor
+ * @extends myjs.ast.Node
+ */
+myjs.ast.Function = function(id, params, body) {
+  /**
+   * The name of the function.
+   * @type {myjs.ast.Identifier}
+   */
+  this.id = id;
+
+  /**
+   * This function's parameters.
+   * @type {Array.<myjs.ast.Identifier>}
+   */
+  this.params = params;
+
+  /**
+   * The body of this function.
+   * @type {myjs.ast.BlockStatement}
+   */
+  this.body = body;
+};
+
+/**
+ * Any statement.
+ *
+ * @constructor
+ * @extends myjs.ast.Node
+ */
+myjs.ast.Statement = function() { };
+
+/**
+ * An empty statement, i.e., a solitary semicolon.
+ *
+ * @constructor
+ * @extends myjs.ast.Statement
+ */
+myjs.ast.EmptyStatement = function() {
+  /**
+   * "EmptyStatement"
+   * @const
+   */
+  this.type = 'EmptyStatement';
+};
+
+myjs.ast.BlockStatement = function(body) {
+  this.type = 'BlockStatement';
+  this.body = body;
+};
+
+myjs.ast.IfStatement = function(test, consequent, alternate) {
+  this.type = 'IfStatement';
+  this.test = test;
+  this.consequent = consequent;
+  this.alternate = alternate;
+};
+
+myjs.ast.LabeledStatement = function(label, body) {
+  this.type = 'LabeledStatement';
+  this.label = label;
+  this.body = body;
+};
+
+myjs.ast.BreakStatement = function(label) {
+  this.type = 'BreakStatement';
+  this.label = label;
+};
+
+myjs.ast.ContinueStatement = function(label) {
+  this.type = 'ContinueStatement';
+  this.label = label;
+};
+
+myjs.ast.WithStatement = function(object, body) {
+  this.type = 'WithStatement';
+  this.object = object;
+  this.body = body;
+};
+
+myjs.ast.SwitchStatement = function(discriminant, cases) {
+  this.type = 'SwitchStatement';
+  this.discriminant = discriminant;
+  this.cases = cases;
+};
+
+myjs.ast.SwitchCase = function(test, consequent) {
+  this.type = 'SwitchCase';
+  this.test = test;
+  this.consequent = consequent;
+};
+
+myjs.ast.ReturnStatement = function(argument) {
+  this.type = 'ReturnStatement';
+  this.argument = argument;
+};
+
+myjs.ast.ThrowStatement = function(argument) {
+  this.type = 'ThrowStatement';
+  this.argument = argument;
+};
+
+myjs.ast.TryStatement = function(block, handlers, finalizer) {
+  this.type = 'TryStatement';
+  this.block = block;
+  this.handlers = handlers;
+  this.finalizer = finalizer;
+};
+
+myjs.ast.CatchClause = function(param, body) {
+  this.type = 'CatchClause';
+  this.param = param;
+  this.body = body;
+};
+
+myjs.ast.WhileStatement = function(test, body) {
+  this.type = 'WhileStatement';
+  this.test = test;
+  this.body = body;
+};
+
+myjs.ast.DoWhileStatement = function(body, test) {
+  this.type = 'DoWhileStatement';
+  this.body = body;
+  this.test = test;
+};
+
+myjs.ast.ForStatement = function(init, test, update, body) {
+  this.type = 'ForStatement';
+  this.init = init;
+  this.test = test;
+  this.update = update;
+  this.body = body;
+};
+
+myjs.ast.ForInStatement = function(left, right, body) {
+  this.type = 'ForInStatement';
+  this.left = left;
+  this.right = right;
+  this.body = body;
+};
+
+myjs.ast.FunctionDeclaration = function(id, params, body) {
+  this.type = 'FunctionDeclaration';
+  this.id = id;
+  this.params = params;
+  this.body = body;
+};
+
+myjs.ast.VariableDeclaration = function(declarations) {
+  this.type = 'VariableDeclaration';
+  this.declarations = declarations;
+};
+
+myjs.ast.VariableDeclarator = function(id, init) {
+  this.type = 'VariableDeclarator';
+  this.id = id;
+  this.init = init;
+};
+
+myjs.ast.ThisExpression = function() {
+  this.type = 'ThisExpression';
+};
+
+myjs.ast.ArrayExpression = function(elements) {
+  this.type = 'ArrayExpression';
+  this.elements = elements;
+};
+
+myjs.ast.ObjectExpression = function(properties) {
+  this.type = 'ObjectExpression';
+  this.properties = properties;
+};
+
+myjs.ast.ObjectProperty = function(key, value) {
+  this.key = key;
+  this.value = value;
+};
+
+myjs.ast.FunctionExpression = function(id, params, body) {
+  this.type = 'FunctionExpression';
+  this.id = id;
+  this.params = params;
+  this.body = body;
+};
+
+myjs.ast.SequenceExpression = function(expressions) {
+  this.type = 'SequenceExpression';
+  this.expressions = expressions;
+};
+
+myjs.ast.UnaryExpression = function(operator, prefix, argument) {
+  this.type = 'UnaryExpression';
+  this.operator = operator;
+  this.prefix = prefix;
+  this.argument = argument;
+};
+
+myjs.ast.BinaryExpression = function(left, operator, right) {
+  this.type = 'BinaryExpression';
+  this.left = left;
+  this.operator = operator;
+  this.right = right;
+};
+
+myjs.ast.AssignmentExpression = function(left, operator, right) {
+  this.type = 'AssignmentExpression';
+  this.left = left;
+  this.operator = operator;
+  this.right = right;
+};
+
+myjs.ast.UpdateExpression = function(operator, argument, prefix) {
+  this.type = 'UpdateExpression';
+  this.operator = operator;
+  this.argument = argument;
+  this.prefix = prefix;
+};
+
+myjs.ast.LogicalExpression = function(operator, left, right) {
+  this.type = 'LogicalExpression';
+  this.operator = operator;
+  this.left = left;
+  this.right = right;
+};
+
+myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
+  this.type = 'ConditionalExpression';
+  this.test = test;
+  this.consequence = consequence;
+  this.alternate = alternate;
+};
+
+myjs.ast.NewExpression = function(constructor, args) {
+  this.type = 'NewExpression';
+  this.constructor = constructor;
+  this.args = args;
+};
+
+myjs.ast.CallExpression = function(callee, args) {
+  this.type = 'CallExpression';
+  this.callee = callee;
+  this.args = args;
+};
+
+myjs.ast.MemberExpression = function(object, property, computed) {
+  this.type = 'MemberExpression';
+  this.object = object;
+  this.property = property;
+  this.computed = computed;
+};
+
+myjs.ast.Identifier = function(name) {
+  this.type = 'Identifier';
+  this.name = name;
+};
+
+myjs.ast.Literal = function(value) {
+  this.type = 'Literal';
+  this.value = value;
+};
 
 myjs.ast.TextFormatter = function(settings) {
   this.settings = settings;
@@ -119,11 +423,6 @@ function translateAll(elms) {
   });
   return result;
 }
-
-myjs.ast.Program = function(elements) {
-  this.elements = elements;
-};
-goog.inherits(myjs.ast.Program, myjs.ast.Node);
 
 myjs.ast.Program.prototype.translate = function() {
   return new myjs.ast.Program(translateAll(this.elements));
