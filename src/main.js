@@ -15,7 +15,7 @@
 'use strict';
 
 var fs = require('fs');
-var myjs = require('../myjs-0.1-node');
+var myjs = require('./c9');
 
 /**
  * All the files to test the parser on.
