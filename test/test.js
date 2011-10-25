@@ -114,6 +114,15 @@ function getParserTestRunner(syntax, startOpt) {
   };
 }
 
+function getFragmentParser(start) {
+  var dialect = myjs.getDialect('default');
+  var parser = new myjs.tedir.Parser(dialect.getSyntax());
+  return function (source) {
+    var tokens = myjs.tokenize(source, DEFAULT_SETTINGS);
+    return parser.parse(start, tokens);
+  };
+}
+
 registerTest(testSimpleExpressions);
 function testSimpleExpressions() {
   var run = getParserTestRunner(getExpressionSyntax(), 'expr');
@@ -340,10 +349,38 @@ function testTokenizing() {
   runTokenTest(['(', '[', ',', ';', ']', ')', '.'], '([,;]).');
 }
 
-registerTest(testJsSyntax);
-function testJsSyntax() {
-  var syntax = myjs.getDialect('default');
-  assertTrue(syntax.getGrammar());
+function alphaJson(obj) {
+  if (typeof obj == "object") {
+    var parts = Object.keys(obj).sort().map(function (key) {
+      return alphaJson(key) + ":" + alphaJson(obj[key]);
+    });
+    return "{" + parts.join(",") + "}";
+  } else {
+    return JSON.stringify(obj);
+  }
+}
+
+var exprParser = getFragmentParser("Expression");
+function exprCheck(source, expected) {
+  assertEquals(alphaJson(exprParser(source)), alphaJson(expected));
+}
+
+function lit(value) {
+  return {type: 'Literal', value: value};
+}
+
+function arr(var_args) {
+  return {type: 'ArrayExpression', elements: toArray(arguments)};
+}
+
+registerTest(testLiteralParsing);
+function testLiteralParsing() {
+  exprCheck("1", lit(1));
+  exprCheck("'foo'", lit("foo"));
+  exprCheck("\"foo\"", lit("foo"));
+  exprCheck("[1, 2, 3]", arr(lit(1), lit(2), lit(3)));
+  exprCheck("[1]", arr(lit(1)));
+  exprCheck("[]", arr());
 }
 
 myjs.test.getAllTests = function() {

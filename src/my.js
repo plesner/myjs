@@ -1147,7 +1147,7 @@ function buildStandardSyntax() {
   syntax.getRule('ArrayLiteral')
     .addProd(punct('['), star(nonterm('AssignmentExpression'), punct(',')),
       punct(']'))
-    .setConstructor(myjs.ast.ArrayLiteral);
+    .setConstructor(myjs.ast.ArrayExpression);
 
   // <Literal>
   //   -> $NumericLiteral
@@ -1155,11 +1155,28 @@ function buildStandardSyntax() {
   //   -> <RegularExpressionLiteral>
   syntax.getRule('Literal')
     .addProd(value('NumericLiteral'))
-    .setConstructor(myjs.ast.Literal)
+    .setConstructor(convertLiteral(Number))
     .addProd(value('StringLiteral'))
-    .setConstructor(myjs.ast.Literal)
+    .setConstructor(convertLiteral(stripString))
     .addProd(nonterm('RegularExpressionLiteral'))
     .setConstructor(myjs.ast.Literal);
+
+  /**
+   * Strips the delimiters off a string.
+   */
+  function stripString(str) {
+    return str.substring(1, str.length - 1);
+  }
+
+  /**
+   * Returns a function that first converts its argument using the given
+   * converter and then wraps the result in a literal.
+   */
+  function convertLiteral(converter) {
+    return function (token) {
+      return new myjs.ast.Literal(converter(token));
+    };
+  }
 
   // <RegularExpressionLiteral>
   //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]

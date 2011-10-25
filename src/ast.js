@@ -790,19 +790,6 @@ myjs.ast.NewExpression.prototype.unparse = function(out) {
     .nodes(this.args, ', ').string(')');
 };
 
-myjs.ast.Literal = function(value) {
-  this.value = value;
-};
-goog.inherits(myjs.ast.Literal, myjs.ast.Expression);
-
-myjs.ast.Literal.prototype.translate = function() {
-  return this;
-};
-
-myjs.ast.Literal.prototype.unparse = function(out) {
-  out.string(this.value);
-};
-
 myjs.ast.Identifier = function(name) {
   this.name = name;
 };
@@ -834,17 +821,4 @@ goog.inherits(myjs.ast.ObjectLiteral, myjs.ast.Expression);
 
 myjs.ast.ObjectLiteral.prototype.unparse = function(out) {
   out.string('{').string(this.elms, ', ').string('}');
-};
-
-myjs.ast.ArrayLiteral = function(elms) {
-  this.elms = elms;
-};
-goog.inherits(myjs.ast.ArrayLiteral, myjs.ast.Expression);
-
-myjs.ast.ArrayLiteral.prototype.translate = function() {
-  return new myjs.ast.ArrayLiteral(translateAll(this.elms));
-};
-
-myjs.ast.ArrayLiteral.prototype.unparse = function(out) {
-  out.string('[').nodes(this.elms, ', ').string(']');
 };

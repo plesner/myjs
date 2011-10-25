@@ -14,8 +14,8 @@
 
 /**
  * Adaptor that replaces some of the closure stuff with dummy implementations and
- * wires the raw code up as a node module in such a way that it can be run under
- * c9. Quite hacky.
+ * wires the raw code up as a node module in such a way that the uncompiled sources
+ * can be used directly with node. Quite hacky.
  */
 
 var fs = require('fs');

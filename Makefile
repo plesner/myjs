@@ -47,7 +47,7 @@ $(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
 		  --js_output_file $(NODE_LIB)
 
 # Runs the tests using closure.
-test:		$(NODE_LIB)
+test:		$(NODE_LIB_FILES)
 		node src/main.js test
 
 # Lints all files
