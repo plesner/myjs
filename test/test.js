@@ -350,13 +350,13 @@ function testTokenizing() {
 }
 
 function alphaJson(obj) {
-  if (typeof obj == "object") {
+  if (Array.isArray(obj) || typeof obj != "object") {
+    return JSON.stringify(obj);
+  } else if (typeof obj == "object") {
     var parts = Object.keys(obj).sort().map(function (key) {
       return alphaJson(key) + ":" + alphaJson(obj[key]);
     });
     return "{" + parts.join(",") + "}";
-  } else {
-    return JSON.stringify(obj);
   }
 }
 
@@ -373,6 +373,18 @@ function arr(var_args) {
   return {type: 'ArrayExpression', elements: toArray(arguments)};
 }
 
+function obj(var_args) {
+  return {type: 'ObjectExpression', properties: toArray(arguments)};
+}
+
+function prop(key, value) {
+  return {key: key, value: value};
+}
+
+function id(name) {
+  return {type: 'Identifier', name: name};
+}
+
 registerTest(testLiteralParsing);
 function testLiteralParsing() {
   exprCheck("1", lit(1));
@@ -381,6 +393,12 @@ function testLiteralParsing() {
   exprCheck("[1, 2, 3]", arr(lit(1), lit(2), lit(3)));
   exprCheck("[1]", arr(lit(1)));
   exprCheck("[]", arr());
+  exprCheck("{}", obj());
+  exprCheck("{foo: 1}", obj(
+    prop(id("foo"), lit(1))));
+  exprCheck("{foo: 1, bar: 2}", obj(
+    prop(id("foo"), lit(1)),
+    prop(id("bar"), lit(2))));
 }
 
 myjs.test.getAllTests = function() {

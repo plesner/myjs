@@ -1125,22 +1125,23 @@ function buildStandardSyntax() {
   syntax.getRule('ObjectLiteral')
     .addProd(punct('{'), star(nonterm('PropertyAssignment'), punct(',')),
       punct('}'))
-    .setConstructor(myjs.ast.ObjectLiteral);
+    .setConstructor(myjs.ast.ObjectExpression);
 
   // <PropertyAssignment>
   //   -> <PropertyName> ":" <AssignmentExpression>
   syntax.getRule('PropertyAssignment')
     .addProd(nonterm('PropertyName'), punct(':'),
-      nonterm('AssignmentExpression'));
+      nonterm('AssignmentExpression'))
+    .setConstructor(myjs.ast.ObjectProperty);
 
   // <PropertyName>
-  //   -> $Identifier
-  //   -> $StringLiteral
-  //   -> $NumericLiteral
+  //   -> <Identifier>
+  //   -> <StringLiteral>
+  //   -> <NumericLiteral>
   syntax.getRule('PropertyName')
-    .addProd(value('Identifier'))
-    .addProd(value('StringLiteral'))
-    .addProd(value('NumericLiteral'));
+    .addProd(nonterm('Identifier'))
+    .addProd(nonterm('StringLiteral'))
+    .addProd(nonterm('NumericLiteral'));
 
   // <ArrayLiteral>
   //   -> "[" <AssignmentExpression> *: "," "]"
@@ -1150,16 +1151,32 @@ function buildStandardSyntax() {
     .setConstructor(myjs.ast.ArrayExpression);
 
   // <Literal>
-  //   -> $NumericLiteral
-  //   -> $StringLiteral
+  //   -> <NumericLiteral>
+  //   -> <StringLiteral>
   //   -> <RegularExpressionLiteral>
   syntax.getRule('Literal')
-    .addProd(value('NumericLiteral'))
-    .setConstructor(convertLiteral(Number))
-    .addProd(value('StringLiteral'))
-    .setConstructor(convertLiteral(stripString))
+    .addProd(nonterm('NumericLiteral'))
+    .addProd(nonterm('StringLiteral'))
     .addProd(nonterm('RegularExpressionLiteral'))
     .setConstructor(myjs.ast.Literal);
+
+  // <Identifier>
+  //   -> $Identifier
+  syntax.getRule("Identifier")
+    .addProd(value("Identifier"))
+    .setConstructor(myjs.ast.Identifier);
+
+  // <StringLiteral>
+  //   -> $StringLiteral
+  syntax.getRule("StringLiteral")
+    .addProd(value('StringLiteral'))
+    .setConstructor(convertLiteral(stripString));
+
+  // <NumericLiteral>
+  //   -> $NumericLiteral
+  syntax.getRule('NumericLiteral')
+    .addProd(value('NumericLiteral'))
+    .setConstructor(convertLiteral(Number));
 
   /**
    * Strips the delimiters off a string.
