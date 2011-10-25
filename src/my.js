@@ -969,12 +969,10 @@ function buildStandardSyntax() {
   function buildUnary(prefix, value, postfix) {
     var i, current = value;
     for (i = 0; i < postfix.length; i++) {
-      current = new myjs.ast.UnaryExpression(current, postfix[i],
-        myjs.ast.UnaryExpression.POSTFIX);
+      current = new myjs.ast.UpdateExpression(postfix[i], current, false);
     }
     for (i = prefix.length - 1; i >= 0; i--) {
-      current = new myjs.ast.UnaryExpression(current, prefix[i],
-        myjs.ast.UnaryExpression.PREFIX);
+      current = new myjs.ast.UpdateExpression(prefix[i], current, true);
     }
     return current;
   }
@@ -1112,7 +1110,7 @@ function buildStandardSyntax() {
   //   -> "(" <Expression> ")"
   syntax.getRule('PrimaryExpression')
     .addProd(keyword('this'))
-    .setConstructor(myjs.ast.This)
+    .setHandler(myjs.ast.ThisExpression.get)
     .addProd(value('Identifier'))
     .setConstructor(myjs.ast.Identifier)
     .addProd(nonterm('Literal'))

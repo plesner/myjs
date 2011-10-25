@@ -228,6 +228,12 @@ myjs.ast.ThisExpression = function() {
   this.type = 'ThisExpression';
 };
 
+myjs.ast.ThisExpression.INSTANCE_ = new myjs.ast.ThisExpression();
+
+myjs.ast.ThisExpression.get = function () {
+  return myjs.ast.ThisExpression.INSTANCE_;
+}
+
 myjs.ast.ArrayExpression = function(elements) {
   this.type = 'ArrayExpression';
   this.elements = elements;
@@ -788,15 +794,4 @@ myjs.ast.NewExpression.prototype.translate = function() {
 myjs.ast.NewExpression.prototype.unparse = function(out) {
   out.string('new (').node(this.base).string(')(')
     .nodes(this.args, ', ').string(')');
-};
-
-myjs.ast.This = function() { };
-goog.inherits(myjs.ast.This, myjs.ast.Expression);
-
-myjs.ast.This.prototype.translate = function() {
-  return this;
-};
-
-myjs.ast.This.prototype.unparse = function(out) {
-  out.string('this');
 };

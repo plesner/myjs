@@ -117,8 +117,9 @@ function getParserTestRunner(syntax, startOpt) {
 function getFragmentParser(start) {
   var dialect = myjs.getDialect('default');
   var parser = new myjs.tedir.Parser(dialect.getSyntax());
+  var settings = dialect.getSettings();
   return function (source) {
-    var tokens = myjs.tokenize(source, DEFAULT_SETTINGS);
+    var tokens = myjs.tokenize(source, settings);
     return parser.parse(start, tokens);
   };
 }
@@ -385,6 +386,22 @@ function id(name) {
   return {type: 'Identifier', name: name};
 }
 
+function ths() {
+  return {type: 'ThisExpression'};
+}
+
+function upd(op, arg, pre) {
+  return {type: 'UpdateExpression', operator: op, argument: arg, prefix: pre};
+}
+
+function preu(op, arg) {
+  return upd(op, arg, true);
+}
+
+function posu(arg, op) {
+  return upd(op, arg, false);
+}
+
 registerTest(testLiteralParsing);
 function testLiteralParsing() {
   exprCheck("1", lit(1));
@@ -399,6 +416,29 @@ function testLiteralParsing() {
   exprCheck("{foo: 1, bar: 2}", obj(
     prop(id("foo"), lit(1)),
     prop(id("bar"), lit(2))));
+}
+
+registerTest(testSimpleExpressionParsing);
+function testSimpleExpressionParsing() {
+  exprCheck("this", ths());
+  exprCheck("foo", id("foo"));
+  exprCheck("(foo)", id("foo"));
+}
+
+registerTest(testUpdateExpressionParsing);
+function testUpdateExpressionParsing() {
+  exprCheck("++a", preu("++", id("a")));
+  exprCheck("++ ++ a", preu("++", preu("++", id("a"))));
+  exprCheck("++ -- a", preu("++", preu("--", id("a"))));
+  exprCheck("-- ++ a", preu("--", preu("++", id("a"))));
+  exprCheck("a++", posu(id("a"), "++"));
+  exprCheck("a ++ ++", posu(posu(id("a"), "++"), "++"));
+  exprCheck("a ++ --", posu(posu(id("a"), "++"), "--"));
+  exprCheck("a -- ++", posu(posu(id("a"), "--"), "++"));
+  // Postfix binds tighter than prefix.
+  exprCheck("++a--", preu("++", posu(id("a"), "--")));
+  exprCheck("--++a--++", preu("--", preu("++",
+    posu(posu(id("a"), "--"), "++"))));
 }
 
 myjs.test.getAllTests = function() {
