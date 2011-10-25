@@ -24,6 +24,7 @@ var myjs = module.exports;
 myjs.ast = { };
 myjs.tedir = { };
 myjs.utils = { };
+myjs.test = { };
 
 var goog = {
   provide: function () { },
@@ -46,3 +47,5 @@ hackRequire("src/utils.js");
 hackRequire("src/ast.js");
 hackRequire("src/tedir.js");
 hackRequire("src/my.js");
+hackRequire("test/framework.js")
+hackRequire("test/test.js")

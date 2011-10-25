@@ -928,7 +928,7 @@ myjs.tedir.Invoker_.forArity = function(arity, isConstructor, fun) {
 myjs.tedir.Invoker_.callerForArity = function(fun, arity) {
   switch (arity) {
   case 1:
-    return function(args) { return fun(args); };
+    return function(args) { return fun.call(null, args); };
   default:
     return function(args) { return fun.apply(null, args); };
   }

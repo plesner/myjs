@@ -16,6 +16,8 @@
  * Tests of tedir and myjs.
  */
 
+(function() {
+
 'use strict';
 
 var ignore = myjs.factory.ignore;
@@ -28,11 +30,23 @@ var token = myjs.factory.token;
 var value = myjs.factory.value;
 var toArray = myjs.utils.toArray;
 
+var assertTrue = myjs.test.assertTrue;
+var assertFalse = myjs.test.assertFalse;
+var assertEquals = myjs.test.assertEquals;
+var assertListEquals = myjs.test.assertListEquals;
+
+var allTests = [];
+function registerTest(fun) {
+  allTests.push(fun);
+}
+
+registerTest(testDefined);
 function testDefined() {
   assertTrue(myjs);
   assertTrue(myjs.tedir);
 }
 
+registerTest(testTrie);
 function testTrie() {
   var Trie = myjs.Trie;
   var t = Trie.build(['a', 'ab', 'abc', 'abe']);
@@ -100,6 +114,7 @@ function getParserTestRunner(syntax, startOpt) {
   };
 }
 
+registerTest(testSimpleExpressions);
 function testSimpleExpressions() {
   var run = getParserTestRunner(getExpressionSyntax(), 'expr');
   run([10], '10');
@@ -110,6 +125,7 @@ function testSimpleExpressions() {
   run([[[22, 23], [24, 25]]], '((22 + 23) + (24 + 25))');
 }
 
+registerTest(testTokenValues);
 function testTokenValues() {
   var syntax = myjs.tedir.Syntax.create();
 
@@ -124,11 +140,13 @@ function testTokenValues() {
   run(null, '[');
 }
 
+registerTest(testSimpleErrors);
 function testSimpleErrors() {
   var run = getParserTestRunner(getExpressionSyntax(), 'expr');
   run(myjs.tedir.SyntaxError, '10 10 10');
 }
 
+registerTest(testSequences);
 function testSequences() {
   var syntax = myjs.tedir.Syntax.create();
 
@@ -152,6 +170,7 @@ function testSequences() {
   run(['a', 'c'], '} a b c');
 }
 
+registerTest(testNestedSequences);
 function testNestedSequences() {
   var syntax = myjs.tedir.Syntax.create();
 
@@ -166,6 +185,7 @@ function testNestedSequences() {
   run('a', '[ a b c');
 }
 
+registerTest(testRepeatValues);
 function testRepeatValues() {
   var syntax = myjs.tedir.Syntax.create();
 
@@ -201,13 +221,13 @@ function testRepeatValues() {
   run(myjs.tedir.SyntaxError, ') a b');
 }
 
+registerTest(testInvoker);
 function testInvoker() {
-  var Invoker = myjs.tedir.Invoker;
+  var Invoker = myjs.tedir.Invoker_;
   var lastArgs; // The last args passed to a constructor.
 
   // 0
   var zeroCall = Invoker.forArity(0, false, function() {
-    assertEquals(null, this);
     return toArray(arguments);
   });
   assertListEquals([], zeroCall([]));
@@ -229,7 +249,6 @@ function testInvoker() {
 
   // 1
   var oneCall = Invoker.forArity(1, false, function(arg) {
-    assertEquals(null, this);
     return toArray(arguments);
   });
   assertListEquals([[]], oneCall([]));
@@ -251,7 +270,6 @@ function testInvoker() {
 
   // 2
   var twoCall = Invoker.forArity(2, false, function(arg1, arg2) {
-    assertEquals(null, this);
     return toArray(arguments);
   });
   assertListEquals([], twoCall([]));
@@ -290,6 +308,7 @@ function runTokenTest(expected, source) {
   assertListEquals(expected, tokens);
 }
 
+registerTest(testTokenizing);
 function testTokenizing() {
   runTokenTest(['=', '==', '===', '===', '='], '= == === ====');
   runTokenTest(['!', '!=', '!==', '!===', '!===', '='], '! != !== !=== !====');
@@ -321,7 +340,14 @@ function testTokenizing() {
   runTokenTest(['(', '[', ',', ';', ']', ')', '.'], '([,;]).');
 }
 
+registerTest(testJsSyntax);
 function testJsSyntax() {
   var syntax = myjs.getDialect('default');
-  assertTrue(syntax.getGrammar().isValid());
+  assertTrue(syntax.getGrammar());
 }
+
+myjs.test.getAllTests = function() {
+  return allTests;
+};
+
+})();

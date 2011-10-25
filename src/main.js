@@ -62,7 +62,16 @@ function parseAllFiles() {
       doNext();
     });
   }, function() {
-    console.log('All tests completed successfully.');
+    console.log('All files parsed successfully.');
+  });
+}
+
+function runUnitTests() {
+  var tests = myjs.test.getAllTests();
+  tests.forEach(function (test) {
+    console.log("Running " + test.name);
+    test();
+    console.log("Succeeded");
   });
 }
 
@@ -86,6 +95,7 @@ Runner.prototype.start = function() {
  */
 Runner.prototype.testHandler = function() {
   parseAllFiles();
+  runUnitTests();
 };
 
 function strip(text) {
