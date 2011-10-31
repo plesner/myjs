@@ -261,11 +261,16 @@ myjs.ast.SequenceExpression = function(expressions) {
   this.expressions = expressions;
 };
 
-myjs.ast.UnaryExpression = function(operator, prefix, argument) {
+myjs.ast.UnaryExpression = function(operator, argument, prefix) {
   this.type = 'UnaryExpression';
   this.operator = operator;
-  this.prefix = prefix;
   this.argument = argument;
+  this.prefix = prefix;
+};
+
+myjs.ast.UnaryOperator = function(token) {
+  this.type = 'UnaryOperator';
+  this.token = token;
 };
 
 myjs.ast.UpdateOperator = function(token) {
@@ -309,7 +314,7 @@ myjs.ast.LogicalOperator = function(token) {
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.type = 'ConditionalExpression';
   this.test = test;
-  this.consequence = consequence;
+  this.consequent = consequent;
   this.alternate = alternate;
 };
 
@@ -681,26 +686,6 @@ myjs.ast.InfixExpression.prototype.unparse = function(out) {
     .node(this.right).string(')');
 };
 
-myjs.ast.ConditionalExpression = function(cond, thenPart, elsePart) {
-  this.cond = cond;
-  this.thenPart = thenPart;
-  this.elsePart = elsePart;
-};
-goog.inherits(myjs.ast.ConditionalExpression, myjs.ast.Expression);
-
-myjs.ast.ConditionalExpression.prototype.translate = function() {
-  var newCond = this.cond.translate();
-  var newThen = this.thenPart.translate();
-  var newElse = this.elsePart ? this.elsePart.translate() : null;
-  return new myjs.ast.ConditionalExpression(newCond, newThen, newElse);
-};
-
-myjs.ast.ConditionalExpression.prototype.unparse = function(out) {
-  out.string('(').node(this.cond).string(') ? (')
-    .node(this.thenPart).string(') : (').node(this.elsePart)
-    .string(')');
-};
-
 myjs.ast.FunctionExpression = function(name, params, body) {
   this.name = name;
   this.params = params;
@@ -765,30 +750,6 @@ myjs.ast.CallExpression.prototype.translate = function() {
 myjs.ast.CallExpression.prototype.unparse = function(out) {
   out.string('(').node(this.base).string(')(')
     .nodes(this.args, ', ').string(')');
-};
-
-myjs.ast.UnaryExpression = function(base, op, isPrefix) {
-  this.base = base;
-  this.op = op;
-  this.isPrefix = isPrefix;
-};
-goog.inherits(myjs.ast.UnaryExpression, myjs.ast.Expression);
-
-myjs.ast.UnaryExpression.PREFIX = true;
-myjs.ast.UnaryExpression.POSTFIX = false;
-
-myjs.ast.UnaryExpression.prototype.translate = function() {
-  return new myjs.ast.UnaryExpression(this.base.translate(), this.op, this.isPrefix);
-};
-
-myjs.ast.UnaryExpression.prototype.unparse = function(out) {
-  if (this.isPrefix) {
-    out.string(this.op);
-  }
-  out.string('(').node(this.base).string(')');
-  if (!this.isPrefix) {
-    out.string(this.op);
-  }
 };
 
 myjs.ast.NewExpression = function(base, args) {

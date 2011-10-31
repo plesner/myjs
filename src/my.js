@@ -706,9 +706,9 @@ var INFIX_OPERATORS = ['<', '<<', '>', '>>', '|', '==', '!=', '+',
   '>>>', '>='];
 var LOGICAL_OPERATORS = ['||', '&&'];
 var INFIX_KEYWORDS = ['instanceof'];
-var PREFIX_OPERATORS = ['++', '--', '+', '-', '~', '!'];
-var PREFIX_KEYWORDS = ['delete', 'void', 'typeof'];
-var POSTFIX_OPERATORS = ['++', '--'];
+var UNARY_OPERATORS = ['-', '+', '!', '~', '!'];
+var UNARY_KEYWORDS = ['typeof', 'void', 'delete'];
+var UPDATE_OPERATORS = ['++', '--'];
 
 var standardSyntaxCache = null;
 
@@ -1003,33 +1003,53 @@ function buildStandardSyntax() {
   function buildUnary(prefix, value, postfix) {
     var i, current = value;
     for (i = 0; i < postfix.length; i++) {
-      current = new myjs.ast.UpdateExpression(postfix[i], current, false);
+      current = postfix[i](current, false);
     }
     for (i = prefix.length - 1; i >= 0; i--) {
-      current = new myjs.ast.UpdateExpression(prefix[i], current, true);
+      current = prefix[i](current, true);
     }
     return current;
   }
 
+  function unaryBuilder(OpBuilder, AstBuilder) {
+    return function(op) {
+      var opAst = new OpBuilder(op);
+      return function(value, isPrefix) {
+        return new AstBuilder(opAst, value, isPrefix);
+      };
+    };
+  }
+
   // <PrefixToken>
-  //   -> ... prefix operators ...
-  //   -> ... prefix keywords ...
-  PREFIX_OPERATORS.forEach(function(op) {
+  //   -> ... update operators ...
+  //   -> ... unary keywords ...
+  //   -> ... unary operators ...
+  var updateBuilder = unaryBuilder(myjs.ast.UpdateOperator,
+    myjs.ast.UpdateExpression);
+  UPDATE_OPERATORS.forEach(function(op) {
     syntax.getRule('PrefixToken')
       .addProd(punctValue(op))
-      .setConstructor(myjs.ast.UpdateOperator);
+      .setHandler(updateBuilder);
   });
-  PREFIX_KEYWORDS.forEach(function(word) {
+  var unaryBuilder = unaryBuilder(myjs.ast.UnaryOperator,
+    myjs.ast.UnaryExpression);
+  UNARY_KEYWORDS.forEach(function(word) {
     syntax.getRule('PrefixToken')
-      .addProd(keywordValue(word));
+      .addProd(keywordValue(word))
+      .setHandler(unaryBuilder);
+  });
+  UNARY_OPERATORS.forEach(function(op) {
+    syntax.getRule("PrefixToken")
+      .addProd(punctValue(op))
+      .setHandler(unaryBuilder);
   });
 
   // <PostfixOperator>
-  //   -> ... postfix operators ...
-  POSTFIX_OPERATORS.forEach(function(op) {
+  //   -> ... update operators ...
+  UPDATE_OPERATORS.forEach(function(op) {
     syntax.getRule('PostfixOperator')
       .addProd(punctValue(op))
-      .setConstructor(myjs.ast.UpdateOperator);
+      .setHandler(updateBuilder);
   });
 
   // <LeftHandSideExpression>

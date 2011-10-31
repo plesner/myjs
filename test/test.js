@@ -400,6 +400,17 @@ function log(left, op, right) {
   return {type: 'LogicalExpression', operator: opAst, left: left, right: right};
 }
 
+function cond(test, cons, alt) {
+  return {type: 'ConditionalExpression', test: test, consequent: cons,
+    alternate: alt};
+}
+
+function ury(op, arg, pre) {
+  var opAst = {type: 'UnaryOperator', token: op};
+  return {type: 'UnaryExpression', operator: opAst, prefix: pre,
+    argument: arg};
+}
+
 function preu(op, arg) {
   return upd(op, arg, true);
 }
@@ -453,6 +464,22 @@ registerTest(testLogicalExpressionParsing);
 function testLogicalExpressionParsing() {
   exprCheck("true || false", log(lit(true), "||", lit(false)));
   exprCheck("true && false", log(lit(true), "&&", lit(false)));
+}
+
+registerTest(testConditionalExpressionParsing);
+function testConditionalExpressionParsing() {
+  exprCheck("a ? b : c", cond(id("a"), id("b"), id("c")));
+}
+
+registerTest(testUnaryOperatorParsing);
+function testUnaryOperatorParsing() {
+  exprCheck("!a", ury("!", id("a"), true));
+  exprCheck("-a", ury("-", id("a"), true));
+  exprCheck("~a", ury("~", id("a"), true));
+  exprCheck("+a", ury("+", id("a"), true));
+  exprCheck("typeof a", ury("typeof", id("a"), true));
+  exprCheck("void a", ury("void", id("a"), true));
+  exprCheck("delete a", ury("delete", id("a"), true));
 }
 
 myjs.test.getAllTests = function() {
