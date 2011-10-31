@@ -656,6 +656,22 @@ function groupInfixRight(Constructor) {
 }
 
 /**
+ * Given a list of values, [x0, o0, x1, o1, ..., o_n-1, xn] returns
+ * o0(x0, o1(x1, o2(x2, ..., xn))).
+ */
+function applyInfixFunctions(items) {
+  var i, result = items[items.length - 1];
+  for (i = items.length - 3; i >= 0; i -= 2) {
+    var next = items[i];
+    var op = items[i + 1];
+    if (typeof op == "function") {
+      result = op(next, result);
+    }
+  }
+  return result;
+}
+
+/**
  * Custom expression used to parse regular expressions.
  */
 myjs.RegExpHandler = function() { };
@@ -946,7 +962,17 @@ function buildStandardSyntax() {
   //   <UnaryExpression> +: <InfixToken>
   syntax.getRule('OperatorExpression')
     .addProd(plus(nonterm('UnaryExpression'), nonterm('InfixToken')))
-    .setHandler(groupInfixRight(myjs.ast.InfixExpression));
+    .setHandler(applyInfixFunctions);
+
+  // Who said higher-order functions weren't useful?
+  function infixBuilder(OpBuilder, AstBuilder) {
+    return function(op) { // Called during parsing.
+      var opAst = new OpBuilder(op);
+      return function(left, right) { // Called during post processing.
+        return new AstBuilder(left, opAst, right);
+      };
+    };
+  }
 
   // <InfixToken>
   //   -> ... infix operators ...
@@ -955,10 +981,12 @@ function buildStandardSyntax() {
     syntax.getRule('InfixToken')
       .addProd(punctValue(op));
   });
+  var logicBuilder = infixBuilder(myjs.ast.LogicalOperator,
+    myjs.ast.LogicalExpression);
   LOGICAL_OPERATORS.forEach(function(op) {
     syntax.getRule('InfixToken')
       .addProd(punctValue(op))
-      .setConstructor(myjs.ast.LogicalOperator);
+      .setHandler(logicBuilder);
   });
   INFIX_KEYWORDS.forEach(function(word) {
     syntax.getRule('InfixToken')

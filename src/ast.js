@@ -294,7 +294,7 @@ myjs.ast.UpdateExpression = function(operator, argument, prefix) {
   this.prefix = prefix;
 };
 
-myjs.ast.LogicalExpression = function(operator, left, right) {
+myjs.ast.LogicalExpression = function(left, operator, right) {
   this.type = 'LogicalExpression';
   this.operator = operator;
   this.left = left;

@@ -51,6 +51,8 @@ myjs.test.assertFalse = function(value) {
 };
 
 myjs.test.failComparison = function(a, b) {
+  console.log(a);
+  console.log(b);
   throw 'Error: ' + a + ' != ' + b;
 };
 

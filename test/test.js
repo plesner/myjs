@@ -451,7 +451,8 @@ function testUpdateExpressionParsing() {
 
 registerTest(testLogicalExpressionParsing);
 function testLogicalExpressionParsing() {
-  // exprCheck("true || false", log(lit(true), "||", lit(false)));
+  exprCheck("true || false", log(lit(true), "||", lit(false)));
+  exprCheck("true && false", log(lit(true), "&&", lit(false)));
 }
 
 myjs.test.getAllTests = function() {
