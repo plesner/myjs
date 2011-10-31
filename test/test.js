@@ -391,7 +391,13 @@ function ths() {
 }
 
 function upd(op, arg, pre) {
-  return {type: 'UpdateExpression', operator: op, argument: arg, prefix: pre};
+  var opAst = {type: 'UpdateOperator', token: op};
+  return {type: 'UpdateExpression', operator: opAst, argument: arg, prefix: pre};
+}
+
+function log(left, op, right) {
+  var opAst = {type: 'LogicalOperator', token: op};
+  return {type: 'LogicalExpression', operator: opAst, left: left, right: right};
 }
 
 function preu(op, arg) {
@@ -405,6 +411,8 @@ function posu(arg, op) {
 registerTest(testLiteralParsing);
 function testLiteralParsing() {
   exprCheck("1", lit(1));
+  exprCheck("true", lit(true));
+  exprCheck("false", lit(false));
   exprCheck("'foo'", lit("foo"));
   exprCheck("\"foo\"", lit("foo"));
   exprCheck("[1, 2, 3]", arr(lit(1), lit(2), lit(3)));
@@ -439,6 +447,11 @@ function testUpdateExpressionParsing() {
   exprCheck("++a--", preu("++", posu(id("a"), "--")));
   exprCheck("--++a--++", preu("--", preu("++",
     posu(posu(id("a"), "--"), "++"))));
+}
+
+registerTest(testLogicalExpressionParsing);
+function testLogicalExpressionParsing() {
+  // exprCheck("true || false", log(lit(true), "||", lit(false)));
 }
 
 myjs.test.getAllTests = function() {

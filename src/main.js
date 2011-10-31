@@ -15,7 +15,7 @@
 'use strict';
 
 var fs = require('fs');
-var myjs = require('./myjs-raw');
+var myjs = require('./myjs-raw.js');
 
 /**
  * All the files to test the parser on.
@@ -69,13 +69,9 @@ function parseAllFiles() {
 function runUnitTests() {
   var tests = myjs.test.getAllTests();
   tests.forEach(function (test) {
-    try {
-      test();
-      console.log(test.name + " succeeded");
-    } catch (e) {
-      console.log(e);
-      console.log(e.stack);
-    }
+    console.log("Running " + test.name);
+    test();
+    console.log("Succeeded");
   });
 }
 
@@ -98,7 +94,7 @@ Runner.prototype.start = function() {
  * Runs all the node-based tests.
  */
 Runner.prototype.testHandler = function() {
-  // parseAllFiles();
+  parseAllFiles();
   runUnitTests();
 };
 

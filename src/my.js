@@ -685,9 +685,10 @@ myjs.RegExpHandler.prototype.parse = function(context) {
 
 var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
   '>>=', '>>>=', '<<='];
-var INFIX_OPERATORS = ['<', '<<', '>', '>>', '|', '||', '==', '!=', '+',
-  '===', '&&', '&', '|', '-', '*', '%', '^', '<=', '>=', '!==', '!===',
+var INFIX_OPERATORS = ['<', '<<', '>', '>>', '|', '==', '!=', '+',
+  '===', '&', '|', '-', '*', '%', '^', '<=', '>=', '!==', '!===',
   '>>>', '>='];
+var LOGICAL_OPERATORS = ['||', '&&'];
 var INFIX_KEYWORDS = ['instanceof'];
 var PREFIX_OPERATORS = ['++', '--', '+', '-', '~', '!'];
 var PREFIX_KEYWORDS = ['delete', 'void', 'typeof'];
@@ -954,6 +955,11 @@ function buildStandardSyntax() {
     syntax.getRule('InfixToken')
       .addProd(punctValue(op));
   });
+  LOGICAL_OPERATORS.forEach(function(op) {
+    syntax.getRule('InfixToken')
+      .addProd(punctValue(op))
+      .setConstructor(myjs.ast.LogicalOperator);
+  });
   INFIX_KEYWORDS.forEach(function(word) {
     syntax.getRule('InfixToken')
       .addProd(keywordValue(word));
@@ -982,7 +988,8 @@ function buildStandardSyntax() {
   //   -> ... prefix keywords ...
   PREFIX_OPERATORS.forEach(function(op) {
     syntax.getRule('PrefixToken')
-      .addProd(punctValue(op));
+      .addProd(punctValue(op))
+      .setConstructor(myjs.ast.UpdateOperator);
   });
   PREFIX_KEYWORDS.forEach(function(word) {
     syntax.getRule('PrefixToken')
@@ -993,7 +1000,8 @@ function buildStandardSyntax() {
   //   -> ... postfix operators ...
   POSTFIX_OPERATORS.forEach(function(op) {
     syntax.getRule('PostfixOperator')
-      .addProd(value(op));
+      .addProd(punctValue(op))
+      .setConstructor(myjs.ast.UpdateOperator);
   });
 
   // <LeftHandSideExpression>
@@ -1152,11 +1160,13 @@ function buildStandardSyntax() {
   //   -> <NumericLiteral>
   //   -> <StringLiteral>
   //   -> <RegularExpressionLiteral>
+  //   -> <BooleanLiteral>
   syntax.getRule('Literal')
     .addProd(nonterm('NumericLiteral'))
     .addProd(nonterm('StringLiteral'))
     .addProd(nonterm('RegularExpressionLiteral'))
-    .setConstructor(myjs.ast.Literal);
+    .setConstructor(myjs.ast.Literal)
+    .addProd(nonterm('BooleanLiteral'));
 
   // <Identifier>
   //   -> $Identifier
@@ -1175,6 +1185,15 @@ function buildStandardSyntax() {
   syntax.getRule('NumericLiteral')
     .addProd(value('NumericLiteral'))
     .setConstructor(convertLiteral(Number));
+
+  // <BooleanLiteral>
+  //   -> "true"
+  //   -> "false"
+  syntax.getRule('BooleanLiteral')
+    .addProd(keyword('true'))
+    .setHandler(function () { return new myjs.ast.Literal(true); })
+    .addProd(keyword('false'))
+    .setConstructor(function () { return new myjs.ast.Literal(false); });
 
   /**
    * Strips the delimiters off a string.

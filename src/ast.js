@@ -232,7 +232,7 @@ myjs.ast.ThisExpression.INSTANCE_ = new myjs.ast.ThisExpression();
 
 myjs.ast.ThisExpression.get = function () {
   return myjs.ast.ThisExpression.INSTANCE_;
-}
+};
 
 myjs.ast.ArrayExpression = function(elements) {
   this.type = 'ArrayExpression';
@@ -268,6 +268,11 @@ myjs.ast.UnaryExpression = function(operator, prefix, argument) {
   this.argument = argument;
 };
 
+myjs.ast.UpdateOperator = function(token) {
+  this.type = 'UpdateOperator';
+  this.token = token;
+};
+
 myjs.ast.BinaryExpression = function(left, operator, right) {
   this.type = 'BinaryExpression';
   this.left = left;
@@ -294,6 +299,11 @@ myjs.ast.LogicalExpression = function(operator, left, right) {
   this.operator = operator;
   this.left = left;
   this.right = right;
+};
+
+myjs.ast.LogicalOperator = function(token) {
+  this.type = 'LogicalOperator';
+  this.token = token;
 };
 
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
