@@ -36,6 +36,8 @@ var FILES = [
   ['src/fragment/lefthand.js'],
   ['src/fragment/operators.js'],
   ['src/fragment/expression.js'],
+  ['src/fragment/control.js'],
+  ['src/fragment/iteration.js'],
   ['src/dialects/tedir.my.js']
 ];
 

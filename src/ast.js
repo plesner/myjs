@@ -75,29 +75,6 @@ myjs.ast.Function = function(id, params, body) {
  */
 myjs.ast.Statement = function() { };
 
-myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
-  this.type = 'IfStatement';
-  this.test = test;
-  this.consequent = consequent;
-  this.alternate = opt_alternate || null;
-};
-
-myjs.ast.LabeledStatement = function(label, body) {
-  this.type = 'LabeledStatement';
-  this.label = label;
-  this.body = body;
-};
-
-myjs.ast.BreakStatement = function(label) {
-  this.type = 'BreakStatement';
-  this.label = label;
-};
-
-myjs.ast.ContinueStatement = function(label) {
-  this.type = 'ContinueStatement';
-  this.label = label;
-};
-
 myjs.ast.WithStatement = function(object, body) {
   this.type = 'WithStatement';
   this.object = object;
@@ -114,11 +91,6 @@ myjs.ast.SwitchCase = function(test, consequent) {
   this.type = 'SwitchCase';
   this.test = test;
   this.consequent = consequent;
-};
-
-myjs.ast.ReturnStatement = function(argument) {
-  this.type = 'ReturnStatement';
-  this.argument = argument;
 };
 
 myjs.ast.ThrowStatement = function(argument) {
@@ -139,29 +111,3 @@ myjs.ast.CatchClause = function(param, body) {
   this.body = body;
 };
 
-myjs.ast.WhileStatement = function(test, body) {
-  this.type = 'WhileStatement';
-  this.test = test;
-  this.body = body;
-};
-
-myjs.ast.DoWhileStatement = function(body, test) {
-  this.type = 'DoWhileStatement';
-  this.body = body;
-  this.test = test;
-};
-
-myjs.ast.ForStatement = function(init, test, update, body) {
-  this.type = 'ForStatement';
-  this.init = init;
-  this.test = test;
-  this.update = update;
-  this.body = body;
-};
-
-myjs.ast.ForInStatement = function(left, right, body) {
-  this.type = 'ForInStatement';
-  this.left = left;
-  this.right = right;
-  this.body = body;
-};

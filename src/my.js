@@ -156,8 +156,9 @@ myjs.Dialect.prototype.getSyntax = function() {
     if (extensions.length > 0) {
       syntax = syntax.compose(extensions);
     }
-    var fragments = this.fragments.map(function(frag) {
-      return myjs.getFragment(frag).getSyntax();
+    var fragments = this.fragments.map(function(name) {
+      var fragment = myjs.getFragment(name);
+      return fragment.getSyntax();
     });
     if (fragments.length > 0) {
       syntax = syntax.compose(fragments);
@@ -347,6 +348,9 @@ myjs.registerFragment = function(fragment) {
 };
 
 myjs.getFragment = function(name) {
+  if (!myjs.fragmentRegistry.hasOwnProperty(name)) {
+    throw new myjs.Error('Unknown dialect "' + name + '".');
+  }
   return myjs.fragmentRegistry[name];
 };
 
@@ -804,76 +808,13 @@ function buildStandardSyntax() {
     .setConstructor(myjs.ast.BlockStatement);
 
   // <Statement>
-  //   -> <IfStatement>
-  //   -> <IterationStatement>
-  //   -> <ReturnStatement>
-  //   -> <BreakStatement>
-  //   -> <ContinueStatement>
   //   -> <SwitchStatement>
   //   -> <ThrowStatement>
   //   -> <TryStatement>
   syntax.getRule('Statement')
-    .addProd(nonterm('IfStatement'))
-    .addProd(nonterm('IterationStatement'))
-    .addProd(nonterm('ReturnStatement'))
-    .addProd(nonterm('BreakStatement'))
-    .addProd(nonterm('ContinueStatement'))
     .addProd(nonterm('SwitchStatement'))
     .addProd(nonterm('ThrowStatement'))
     .addProd(nonterm('TryStatement'));
-
-  // <IfStatement>
-  //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
-  syntax.getRule('IfStatement')
-    .addProd(keyword('if'), punct('('), nonterm('Expression'), punct(')'),
-      nonterm('Statement'), option(keyword('else'), nonterm('Statement')))
-    .setConstructor(myjs.ast.IfStatement);
-
-  // <IterationStatement>
-  //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
-  //   -> "while" "(" <Expression> ")" <Statement>
-  //   -> "for" "(" "var" <VariableDeclarationList> ";" <Expression>? ";"
-  //      <Expression>? ")" <Statement>
-  //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")"
-  //      <Statement>
-  //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")"
-  //      <Statement>
-  //   -> "for" "(" <LeftHandSideExpression> "in" <Expression> ")" <Statement>
-  syntax.getRule('IterationStatement')
-    .addProd(keyword('do'), nonterm('Statement'), keyword('while'),
-      punct('('), nonterm('Expression'), punct(')'), punct(';'))
-    .setConstructor(myjs.ast.DoWhileStatement)
-    .addProd(keyword('while'), punct('('), nonterm('Expression'), punct(')'),
-      nonterm('Statement'))
-    .setConstructor(myjs.ast.WhileStatement)
-    .addProd(keyword('for'), punct('('), keyword('var'),
-      nonterm('VariableDeclarationList'), punct(';'),
-      option(nonterm('Expression')), punct(';'),
-      option(nonterm('Expression')), punct(')'), nonterm('Statement'))
-    .setConstructor(myjs.ast.ForStatement)
-    .addProd(keyword('for'), punct('('), option(nonterm('Expression')),
-      punct(';'), option(nonterm('Expression')), punct(';'),
-      option(nonterm('Expression')), punct(')'), nonterm('Statement'))
-    .setConstructor(myjs.ast.ForStatement)
-    .addProd(keyword('for'), punct('('), keyword('var'),
-      nonterm('VariableDeclaration'), keyword('in'),
-      nonterm('Expression'), punct(')'), nonterm('Statement'))
-    .setConstructor(myjs.ast.ForInStatement)
-    .addProd(keyword('for'), punct('('), nonterm('LeftHandSideExpression'),
-      keyword('in'), nonterm('Expression'), punct(')'), nonterm('Statement'))
-    .setConstructor(myjs.ast.ForInStatement);
-
-  // <BreakStatement>
-  //   -> "break" <Identifier>? ";"
-  syntax.getRule('BreakStatement')
-    .addProd(keyword('break'), option(nonterm('Identifier')), punct(';'))
-    .setConstructor(myjs.ast.BreakStatement);
-
-  // <ContinueStatement>
-  //   -> "continue" <Identifier>? ";"
-  syntax.getRule('ContinueStatement')
-    .addProd(keyword('continue'), option(nonterm('Identifier')), punct(';'))
-    .setConstructor(myjs.ast.ContinueStatement);
 
   // <SwitchStatement>
   //   -> "switch" "(" <Expression> ")" <CaseBlock>
@@ -929,12 +870,6 @@ function buildStandardSyntax() {
   //   -> "finally" <Block>
   syntax.getRule('Finally')
     .addProd(keyword('finally'), nonterm('Block'));
-
-  // <ReturnStatement>
-  //   -> "return" <Expression>? ";"
-  syntax.getRule('ReturnStatement')
-    .addProd(keyword('return'), option(nonterm('Expression')), punct(';'))
-    .setConstructor(myjs.ast.ReturnStatement);
 
   // <RegularExpressionLiteral>
   //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
@@ -1034,7 +969,9 @@ function registerBuiltInDialects() {
     .addFragment('myjs.Core')
     .addFragment('myjs.LeftHandSide')
     .addFragment('myjs.Operators')
-    .addFragment('myjs.Expression'));
+    .addFragment('myjs.Expression')
+    .addFragment('myjs.Control')
+    .addFragment('myjs.Iteration'));
 }
 
 registerBuiltInDialects();

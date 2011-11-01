@@ -74,6 +74,12 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
       .newline();
   };
 
+  function ThisExpressionHandler() { }
+
+  ThisExpressionHandler.prototype.unparse = function(context, ast) {
+    context.write('this');
+  };
+
   function getSyntax() {
     var syntax = myjs.Syntax.create();
     var f = myjs.factory;
@@ -155,7 +161,8 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
 
   var fragment = new myjs.Fragment('myjs.Expression')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('FunctionExpression', new FunctionExpressionHandler());
+    .addNodeHandler('FunctionExpression', new FunctionExpressionHandler())
+    .addNodeHandler('ThisExpression', new ThisExpressionHandler());
 
   myjs.registerFragment(fragment);
 
