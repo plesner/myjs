@@ -799,7 +799,7 @@ function buildStandardSyntax() {
   //   -> "{" <Statement>* "}"
   syntax.getRule('Block')
     .addProd(punct('{'), star(nonterm('Statement')), punct('}'))
-    .setConstructor(myjs.ast.Block);
+    .setConstructor(myjs.ast.BlockStatement);
 
   // <VariableStatement>
   //   -> "var" <VariableDeclaration> +: "," ";"

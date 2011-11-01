@@ -115,6 +115,11 @@ myjs.ast.BlockStatement = function(body) {
   this.body = body;
 };
 
+myjs.ast.ExpressionStatement = function(expression) {
+  this.type = 'ExpressionStatement';
+  this.expression = expression;
+};
+
 myjs.ast.IfStatement = function(test, consequent, alternate) {
   this.type = 'IfStatement';
   this.test = test;
@@ -513,20 +518,6 @@ myjs.ast.ThrowStatement.prototype.unparse = function(out) {
   out.string('throw ').node(this.value).string(';').newline();
 };
 
-myjs.ast.Block = function(stmts) {
-  this.stmts = stmts;
-};
-goog.inherits(myjs.ast.Block, myjs.ast.Statement);
-
-myjs.ast.Block.prototype.translate = function() {
-  return new myjs.ast.Block(translateAll(this.stmts));
-};
-
-myjs.ast.Block.prototype.unparse = function(out) {
-  out.string('{').indent().newline().nodes(this.stmts).deindent()
-    .string('}');
-};
-
 myjs.ast.VariableStatement = function(decls) {
   this.decls = decls;
 };
@@ -555,28 +546,6 @@ myjs.ast.VariableDeclaration.prototype.unparse = function(out) {
   if (this.value) {
     out.string(' = (').node(this.value).string(')');
   }
-};
-
-myjs.ast.IfStatement = function(cond, thenPart, elsePart) {
-  this.cond = cond;
-  this.thenPart = thenPart;
-  this.elsePart = elsePart;
-};
-goog.inherits(myjs.ast.IfStatement, myjs.ast.Statement);
-
-myjs.ast.IfStatement.prototype.translate = function() {
-  var newCond = this.cond.translate();
-  var newThen = this.thenPart.translate();
-  var newElse = this.elsePart ? this.elsePart.translate() : null;
-  return new myjs.ast.IfStatement(newCond, newThen, newElse);
-};
-
-myjs.ast.IfStatement.prototype.unparse = function(out) {
-  out.string('if (').node(this.cond).string(') ').node(this.thenPart);
-  if (this.elsePart) {
-    out.string(' else ').node(this.elsePart);
-  }
-  out.newline();
 };
 
 myjs.ast.SwitchStatement = function(value, cases) {
@@ -648,19 +617,6 @@ myjs.ast.ContinueStatement = function(label) {
   this.label = label;
 };
 goog.inherits(myjs.ast.ContinueStatement, myjs.ast.Statement);
-
-myjs.ast.ExpressionStatement = function(expr) {
-  this.expr = expr;
-};
-goog.inherits(myjs.ast.ExpressionStatement, myjs.ast.Statement);
-
-myjs.ast.ExpressionStatement.prototype.unparse = function(out) {
-  out.node(this.expr).string(';').newline();
-};
-
-myjs.ast.ExpressionStatement.prototype.translate = function() {
-  return new myjs.ast.ExpressionStatement(this.expr.translate());
-};
 
 myjs.ast.FunctionExpression = function(name, params, body) {
   this.name = name;

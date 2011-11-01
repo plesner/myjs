@@ -351,7 +351,9 @@ function testTokenizing() {
 }
 
 function alphaJson(obj) {
-  if (Array.isArray(obj) || typeof obj != "object") {
+  if (Array.isArray(obj)) {
+    return "[" + obj.map(alphaJson).join(",") + "]";
+  } else if (!obj || typeof obj != "object") {
     return JSON.stringify(obj);
   } else if (typeof obj == "object") {
     var parts = Object.keys(obj).sort().map(function (key) {
@@ -577,6 +579,42 @@ function testNewExpressionParsing() {
   exprCheck("new a.b(1, 2)", nw(get(id("a"), "b"), lit(1), lit(2)));
   exprCheck("new new A", nw(nw(id("A"))));
   exprCheck("new new A(4)(5)", nw(nw(id("A"), lit(4)), lit(5)));
+}
+
+var stmtParser = getFragmentParser("Statement");
+function stmtCheck(source, expected) {
+  assertEquals(alphaJson(stmtParser(source)), alphaJson(expected));
+}
+
+function exp(expr) {
+  return {type: 'ExpressionStatement', expression: expr};
+}
+
+function bck(var_args) {
+  return {type: 'BlockStatement', body: toArray(arguments)};
+}
+
+function ift(test, cons, alt) {
+  return {type: 'IfStatement', test: test, consequent: cons, alternate: (alt || null)};
+}
+
+registerTest(testExpressionStatementParsing);
+function testExpressionStatementParsing() {
+  stmtCheck("1;", exp(lit(1)));
+  stmtCheck("1 + 2;", exp(bin(lit(1), "+", lit(2))));
+}
+
+registerTest(testBlockStatementParsing);
+function testBlockStatementParsing() {
+  stmtCheck("{}", bck());
+  stmtCheck("{1;}", bck(exp(lit(1))));
+  stmtCheck("{1; 2;}", bck(exp(lit(1)), exp(lit(2))));
+}
+
+registerTest(testIfStatementParsing);
+function testIfStatementParsing() {
+  stmtCheck("if (1) 2; else 3;", ift(lit(1), exp(lit(2)), exp(lit(3))));
+  stmtCheck("if (1) 2;", ift(lit(1), exp(lit(2))));
 }
 
 myjs.test.getAllTests = function() {
