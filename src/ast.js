@@ -120,11 +120,11 @@ myjs.ast.ExpressionStatement = function(expression) {
   this.expression = expression;
 };
 
-myjs.ast.IfStatement = function(test, consequent, alternate) {
+myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.type = 'IfStatement';
   this.test = test;
   this.consequent = consequent;
-  this.alternate = alternate;
+  this.alternate = opt_alternate || null;
 };
 
 myjs.ast.LabeledStatement = function(label, body) {
@@ -171,10 +171,10 @@ myjs.ast.ThrowStatement = function(argument) {
   this.argument = argument;
 };
 
-myjs.ast.TryStatement = function(block, handlers, finalizer) {
+myjs.ast.TryStatement = function(block, handler, finalizer) {
   this.type = 'TryStatement';
   this.block = block;
-  this.handlers = handlers;
+  this.handler = handler;
   this.finalizer = finalizer;
 };
 
@@ -488,36 +488,6 @@ myjs.ast.FunctionDeclaration.prototype.unparse = function(out) {
     .nodes(this.body).deindent().string('}').newline();
 };
 
-myjs.ast.ReturnStatement = function(valueOpt) {
-  this.value = valueOpt;
-};
-goog.inherits(myjs.ast.ReturnStatement, myjs.ast.Statement);
-
-myjs.ast.ReturnStatement.prototype.translate = function() {
-  if (this.value) {
-    return new myjs.ast.ReturnStatement(this.value.translate());
-  } else {
-    return this;
-  }
-};
-
-myjs.ast.ReturnStatement.prototype.unparse = function(out) {
-  if (this.value) {
-    out.string('return ').node(this.value).string(';').newline();
-  } else {
-    out.string('return;').newline();
-  }
-};
-
-myjs.ast.ThrowStatement = function(value) {
-  this.value = value;
-};
-goog.inherits(myjs.ast.ThrowStatement, myjs.ast.Statement);
-
-myjs.ast.ThrowStatement.prototype.unparse = function(out) {
-  out.string('throw ').node(this.value).string(';').newline();
-};
-
 myjs.ast.VariableStatement = function(decls) {
   this.decls = decls;
 };
@@ -573,65 +543,4 @@ myjs.ast.SwitchCase.prototype.unparse = function(out) {
     out.string('default: ');
   }
   out.indent().newline().nodes(this.body).deindent().newline();
-};
-
-myjs.ast.DoStatement = function(body, cond) {
-  this.body = body;
-  this.cond = cond;
-};
-goog.inherits(myjs.ast.DoStatement, myjs.ast.Statement);
-
-myjs.ast.WhileStatement = function(cond, body) {
-  this.cond = cond;
-  this.body = body;
-};
-goog.inherits(myjs.ast.WhileStatement, myjs.ast.Statement);
-
-myjs.ast.WhileStatement.prototype.unparse = function(out) {
-  out.string('while (').node(this.cond).string(') ')
-    .node(this.body).newline();
-};
-
-myjs.ast.ForStatement = function(init, test, update, body) {
-  this.init = init;
-  this.test = test;
-  this.update = update;
-  this.body = body;
-};
-goog.inherits(myjs.ast.ForStatement, myjs.ast.Statement);
-
-myjs.ast.ForStatement.prototype.unparse = function(out) {
-  out.string('for (').addOptNode(this.init).string(';')
-    .addOptNode(this.test).string(';').addOptNode(this.update)
-    .string(') ').node(this.body).newline();
-};
-
-myjs.ast.ForInStatement = function(target, source, body) {
-  this.target = target;
-  this.source = source;
-  this.body = body;
-};
-goog.inherits(myjs.ast.ForInStatement, myjs.ast.Statement);
-
-myjs.ast.ContinueStatement = function(label) {
-  this.label = label;
-};
-goog.inherits(myjs.ast.ContinueStatement, myjs.ast.Statement);
-
-myjs.ast.FunctionExpression = function(name, params, body) {
-  this.name = name;
-  this.params = params;
-  this.body = body;
-};
-goog.inherits(myjs.ast.FunctionExpression, myjs.ast.Expression);
-
-myjs.ast.FunctionExpression.prototype.translate = function() {
-  return new myjs.ast.FunctionExpression(this.name, this.params,
-    translateAll(this.body));
-};
-
-myjs.ast.FunctionExpression.prototype.unparse = function(out) {
-  out.string('function ').string(this.name).string('(')
-    .strings(this.params, ', ').string(') {').indent().newline()
-    .nodes(this.body).deindent().string('}');
 };

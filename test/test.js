@@ -434,19 +434,28 @@ function posu(arg, op) {
 }
 
 function call(fun, var_args) {
-  return {type: 'CallExpression', callee: fun, arguments: toArray(arguments, 1)};
+  return {type: 'CallExpression', callee: fun,
+    arguments: toArray(arguments, 1)};
 }
 
 function nw(cons, var_args) {
-  return {type: 'NewExpression', constructor: cons, arguments: toArray(arguments, 1)};
+  return {type: 'NewExpression', constructor: cons,
+    arguments: toArray(arguments, 1)};
 }
 
 function get(obj, prop) {
-  return {type: 'MemberExpression', object: obj, property: id(prop), computed: false};
+  return {type: 'MemberExpression', object: obj, property: id(prop),
+    computed: false};
 }
 
 function mem(obj, prop) {
-  return {type: 'MemberExpression', object: obj, property: prop, computed: true};
+  return {type: 'MemberExpression', object: obj, property: prop,
+    computed: true};
+}
+
+function fun(name, params, body) {
+  return {type: 'FunctionExpression', id: name || null, params: params.map(id),
+    body: body};
 }
 
 registerTest(testLiteralParsing);
@@ -533,6 +542,7 @@ function testBinaryExpressionParsing() {
   exprCheck("a|b", bin(id("a"), "|", id("b")));
   exprCheck("a^b", bin(id("a"), "^", id("b")));
   exprCheck("a instanceof b", bin(id("a"), "instanceof", id("b")));
+  exprCheck("a in b", bin(id("a"), "in", id("b")));
 }
 
 registerTest(testAssignmentExpressionParsing);
@@ -581,6 +591,16 @@ function testNewExpressionParsing() {
   exprCheck("new new A(4)(5)", nw(nw(id("A"), lit(4)), lit(5)));
 }
 
+registerTest(testFunctionExpressionParsing);
+function testFunctionExpressionParsing() {
+  exprCheck("function () { }", fun(null, [], bck()));
+  exprCheck("function (a) { }", fun(null, ["a"], bck()));
+  exprCheck("function (a, b) { }", fun(null, ["a", "b"], bck()));
+  exprCheck("function (a, b, c) { }", fun(null, ["a", "b", "c"], bck()));
+  exprCheck("function yutz(a, b, c) { }", fun(id("yutz"), ["a", "b", "c"],
+    bck()));
+}
+
 var stmtParser = getFragmentParser("Statement");
 function stmtCheck(source, expected) {
   assertEquals(alphaJson(stmtParser(source)), alphaJson(expected));
@@ -596,6 +616,48 @@ function bck(var_args) {
 
 function ift(test, cons, alt) {
   return {type: 'IfStatement', test: test, consequent: cons, alternate: (alt || null)};
+}
+
+function brk(lab) {
+  return {type: 'BreakStatement', label: lab ? id(lab) : null};
+}
+
+function cnt(lab) {
+  return {type: 'ContinueStatement', label: lab ? id(lab) : null};
+}
+
+function ret(value) {
+  return {type: 'ReturnStatement', argument: value || null};
+}
+
+function thr(value) {
+  return {type: 'ThrowStatement', argument: value};
+}
+
+function ty(block, handler, fin) {
+  return {type: 'TryStatement', block: block, handler: handler,
+    finalizer: fin || null};
+}
+
+function cth(param, body) {
+  return {type: 'CatchClause', param: id(param), body: body};
+}
+
+function whl(test, body) {
+  return {type: 'WhileStatement', test: test, body: body};
+}
+
+function dow(body, test) {
+  return {type: 'DoWhileStatement', test: test, body: body};
+}
+
+function fr(init, test, update, body) {
+  return {type: 'ForStatement', init: init || null, test: test || null,
+    update: update || null, body: body};
+}
+
+function fin(left, right, body) {
+  return {type: 'ForInStatement', left: left, right: right, body: body};
 }
 
 registerTest(testExpressionStatementParsing);
@@ -615,6 +677,51 @@ registerTest(testIfStatementParsing);
 function testIfStatementParsing() {
   stmtCheck("if (1) 2; else 3;", ift(lit(1), exp(lit(2)), exp(lit(3))));
   stmtCheck("if (1) 2;", ift(lit(1), exp(lit(2))));
+}
+
+registerTest(testTryStatementParsing);
+function testTryStatementParsing() {
+  stmtCheck("try {} catch (a) {}", ty(bck(), cth("a", bck())));
+  stmtCheck("try {1;} catch (a) {2;}", ty(bck(exp(lit(1))), cth("a",
+    bck(exp(lit(2))))));
+  stmtCheck("try {} finally {}", ty(bck(), null, bck()));
+  stmtCheck("try {3;} finally {4;}", ty(bck(exp(lit(3))), null,
+    bck(exp(lit(4)))));
+  stmtCheck("try {} catch (a) {} finally {}", ty(bck(), cth("a", bck()),
+    bck()));
+}
+
+registerTest(testSimpleStatementParsing);
+function testSimpleStatementParsing() {
+  stmtCheck("break;", brk());
+  stmtCheck("break foo;", brk("foo"));
+  stmtCheck("continue;", cnt());
+  stmtCheck("continue foo;", cnt("foo"));
+  stmtCheck("return;", ret());
+  stmtCheck("return foo;", ret(id("foo")));
+  stmtCheck("return 4;", ret(lit(4)));
+  stmtCheck("throw foo;", thr(id("foo")));
+  stmtCheck("throw 4;", thr(lit(4)));
+}
+
+registerTest(testWhileStatementParsing);
+function testWhileStatementParsing() {
+  stmtCheck("while (a) b;", whl(id("a"), exp(id("b"))));
+  stmtCheck("do a; while (b);", dow(exp(id("a")), id("b")));
+}
+
+registerTest(testForStatementParsing);
+function testForStatementParsing() {
+  // Three-clause
+  stmtCheck("for (;;) x;", fr(null, null, null, exp(id("x"))));
+  stmtCheck("for (1;;) x;", fr(lit(1), null, null, exp(id("x"))));
+  stmtCheck("for (;1;) x;", fr(null, lit(1), null, exp(id("x"))));
+  stmtCheck("for (;;1) x;", fr(null, null, lit(1), exp(id("x"))));
+  stmtCheck("for (1;2;3) x;", fr(lit(1), lit(2), lit(3), exp(id("x"))));
+  stmtCheck("for (x;true;) x;", fr(id("x"), lit(true), null, exp(id("x"))));
+  // For-in
+  stmtCheck("for (x in y) s;", fin(id("x"), id("y"), exp(id("s"))));
+  stmtCheck("for (x.y in y) s;", fin(get(id("x"), "y"), id("y"), exp(id("s"))));
 }
 
 myjs.test.getAllTests = function() {

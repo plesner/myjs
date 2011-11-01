@@ -705,7 +705,7 @@ var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
   '>>=', '>>>=', '<<=', '/='];
 var BINARY_OPERATORS = ["==", "!=", "===", "!==", "<", "<=", ">", ">=",
   "<<", ">>", ">>>", "+", "-", "*", "%", "|", "^", "/"];
-var BINARY_KEYWORDS = ["instanceof"];
+var BINARY_KEYWORDS = ["instanceof", "in"];
 var LOGICAL_OPERATORS = ['||', '&&'];
 var INFIX_KEYWORDS = ['instanceof'];
 var UNARY_OPERATORS = ['-', '+', '!', '~', '!'];
@@ -763,14 +763,15 @@ function buildStandardSyntax() {
     .setConstructor(myjs.ast.FunctionDeclaration);
 
   // <FormalParameterList>
-  //   -> $Identifier *: ","
+  //   -> <Identifier> *: ","
   syntax.getRule('FormalParameterList')
-    .addProd(star(value('Identifier'), punct(',')));
+    .addProd(star(nonterm('Identifier'), punct(',')));
 
   // <FunctionBody>
   //   -> <SourceElement>*
   syntax.getRule('FunctionBody')
-    .addProd(star(nonterm('SourceElement')));
+    .addProd(star(nonterm('SourceElement')))
+    .setConstructor(myjs.ast.BlockStatement);
 
   // <Statement>
   //   -> <Block>
@@ -779,6 +780,7 @@ function buildStandardSyntax() {
   //   -> <IfStatement>
   //   -> <IterationStatement>
   //   -> <ReturnStatement>
+  //   -> <BreakStatement>
   //   -> <ContinueStatement>
   //   -> <SwitchStatement>
   //   -> <ThrowStatement>
@@ -790,6 +792,7 @@ function buildStandardSyntax() {
     .addProd(nonterm('IfStatement'))
     .addProd(nonterm('IterationStatement'))
     .addProd(nonterm('ReturnStatement'))
+    .addProd(nonterm('BreakStatement'))
     .addProd(nonterm('ContinueStatement'))
     .addProd(nonterm('SwitchStatement'))
     .addProd(nonterm('ThrowStatement'))
@@ -830,10 +833,11 @@ function buildStandardSyntax() {
   //      <Statement>
   //   -> "for" "(" "var" <VariableDeclaration> "in"  <Expression> ")"
   //      <Statement>
+  //   -> "for" "(" <LeftHandSideExpression> "in" <Expression> ")" <Statement>
   syntax.getRule('IterationStatement')
     .addProd(keyword('do'), nonterm('Statement'), keyword('while'),
       punct('('), nonterm('Expression'), punct(')'), punct(';'))
-    .setConstructor(myjs.ast.DoStatement)
+    .setConstructor(myjs.ast.DoWhileStatement)
     .addProd(keyword('while'), punct('('), nonterm('Expression'), punct(')'),
       nonterm('Statement'))
     .setConstructor(myjs.ast.WhileStatement)
@@ -849,12 +853,21 @@ function buildStandardSyntax() {
     .addProd(keyword('for'), punct('('), keyword('var'),
       nonterm('VariableDeclaration'), keyword('in'),
       nonterm('Expression'), punct(')'), nonterm('Statement'))
+    .setConstructor(myjs.ast.ForInStatement)
+    .addProd(keyword('for'), punct('('), nonterm('LeftHandSideExpression'),
+      keyword('in'), nonterm('Expression'), punct(')'), nonterm('Statement'))
     .setConstructor(myjs.ast.ForInStatement);
 
+  // <BreakStatement>
+  //   -> "break" <Identifier>? ";"
+  syntax.getRule('BreakStatement')
+    .addProd(keyword('break'), option(nonterm('Identifier')), punct(';'))
+    .setConstructor(myjs.ast.BreakStatement);
+
   // <ContinueStatement>
-  //   -> "continue" $Identifier? ";"
+  //   -> "continue" <Identifier>? ";"
   syntax.getRule('ContinueStatement')
-    .addProd(keyword('continue'), option(value('Identifier')), punct(';'))
+    .addProd(keyword('continue'), option(nonterm('Identifier')), punct(';'))
     .setConstructor(myjs.ast.ContinueStatement);
 
   // <SwitchStatement>
@@ -897,13 +910,15 @@ function buildStandardSyntax() {
   //   -> "try" <Block> <Catch>? <Finally>?
   syntax.getRule('TryStatement')
     .addProd(keyword('try'), nonterm('Block'), option(nonterm('Catch')),
-      option(nonterm('Finally')));
+      option(nonterm('Finally')))
+    .setConstructor(myjs.ast.TryStatement);
 
   // <Catch>
-  //   -> "catch" "(" $Identifier ")" <Block>
+  //   -> "catch" "(" <Identifier> ")" <Block>
   syntax.getRule('Catch')
-    .addProd(keyword('catch'), punct('('), value('Identifier'), punct(')'),
-      nonterm('Block'));
+    .addProd(keyword('catch'), punct('('), nonterm('Identifier'), punct(')'),
+      nonterm('Block'))
+    .setConstructor(myjs.ast.CatchClause);
 
   // <Finally>
   //   -> "finally" <Block>
@@ -1157,10 +1172,10 @@ function buildStandardSyntax() {
   };
 
   // <FunctionExpression>
-  //   -> "function" $Identifier? "(" <FormalParameterList> ")" "{"
+  //   -> "function" <Identifier>? "(" <FormalParameterList> ")" "{"
   //      <FunctionBody> "}"
   syntax.getRule('FunctionExpression')
-    .addProd(keyword('function'), option(value('Identifier')), punct('('),
+    .addProd(keyword('function'), option(nonterm('Identifier')), punct('('),
       nonterm('FormalParameterList'), punct(')'), punct('{'),
       nonterm('FunctionBody'), punct('}'))
     .setConstructor(myjs.ast.FunctionExpression);
