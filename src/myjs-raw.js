@@ -47,5 +47,8 @@ hackRequire("src/utils.js");
 hackRequire("src/ast.js");
 hackRequire("src/tedir.js");
 hackRequire("src/my.js");
+hackRequire('src/fragment/program.js');
+hackRequire('src/fragment/statement.js');
+hackRequire('src/fragment/declaration.js');
 hackRequire("test/framework.js")
 hackRequire("test/test.js")

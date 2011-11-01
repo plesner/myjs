@@ -1323,7 +1323,7 @@ myjs.tedir.Rule.merge_ = function(rules) {
   } else {
     var prods = [];
     rules.forEach(function(rule) {
-      prods = prods.concat(rule.prods);
+      prods = prods.concat(rule.prods_);
     });
     return new myjs.tedir.Rule(prods);
   }
@@ -1388,7 +1388,7 @@ myjs.tedir.Rule.prototype.setHandler = function(handler, opt_isConstructor) {
  */
 myjs.tedir.Rule.prototype.asExpression_ = function() {
   if (!this.exprCache_) {
-    var prodExprs = this.prods_.map(function(p) {return p.asExpression_(); });
+    var prodExprs = this.prods_.map(function(p) { return p.asExpression_(); });
     this.exprCache_ = new myjs.tedir.Choice_(prodExprs);
   }
   return this.exprCache_;

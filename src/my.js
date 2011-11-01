@@ -25,11 +25,12 @@ goog.require('myjs.ast');
 goog.require('myjs.utils');
 goog.require('myjs.tedir');
 
-
 myjs.factory = {};
 Object.keys(myjs.tedir.factory).forEach(function(key) {
   myjs.factory[key] = myjs.tedir.factory[key];
 });
+
+myjs.Syntax = myjs.tedir.Syntax;
 
 myjs.factory.punct = function(name) {
   return myjs.factory.ignore(myjs.tedir.factory.token(name, PUNCTUATOR_MARKER));
@@ -75,7 +76,7 @@ myjs.Error.prototype.toString = function() {
 /**
  * A map from dialect name to dialect object.
  */
-var dialectRegistry = {};
+myjs.dialectRegistry = {};
 
 /**
  * A description of a javascript dialect.
@@ -84,12 +85,14 @@ myjs.Dialect = function(name) {
   this.name = name;
   this.baseSyntaxProvider = getStandardSyntax;
   this.extensionSyntaxProviders = [];
+  this.fragments = [];
   this.syntax = null;
   this.grammar = null;
   this.start = 'Program';
   this.keywords = null;
   this.punctuators = null;
   this.settings = null;
+  this.nodeHandlers = null;
 };
 
 /**
@@ -118,6 +121,18 @@ myjs.Dialect.prototype.addExtensionSyntaxProvider = function(value) {
 };
 
 /**
+ * Adds one or more fragment names to the list of fragments to include in
+ * this dialect.
+ */
+myjs.Dialect.prototype.addFragment = function(var_args) {
+  var i;
+  for (i = 0; i < arguments.length; i++) {
+    this.fragments.push(arguments[i]);
+  }
+  return this;
+};
+
+/**
  * Sets the start production to use.
  */
 myjs.Dialect.prototype.setStart = function(value) {
@@ -141,9 +156,32 @@ myjs.Dialect.prototype.getSyntax = function() {
     if (extensions.length > 0) {
       syntax = syntax.compose(extensions);
     }
+    var fragments = this.fragments.map(function(frag) {
+      return myjs.getFragment(frag).getSyntax();
+    });
+    if (fragments.length > 0) {
+      syntax = syntax.compose(fragments);
+    }
     this.syntax = syntax;
   }
   return this.syntax;
+};
+
+/**
+ * Returns a map from node handler names to handler objects.
+ */
+myjs.Dialect.prototype.getNodeHandlers = function() {
+  if (!this.nodeHandlers) {
+    this.nodeHandlers = {};
+    this.fragments.forEach(function(fragName) {
+      var frag = myjs.getFragment(fragName);
+      var handlers = frag.getNodeHandlers();
+      Object.keys(handlers).forEach(function(name) {
+        this.nodeHandlers[name] = handlers[name];
+      }.bind(this));
+    }.bind(this));
+  }
+  return this.nodeHandlers;
 };
 
 /**
@@ -240,14 +278,76 @@ myjs.Dialect.prototype.calcTokenTypes = function() {
  * Adds the given dialect to the set known by myjs.
  */
 myjs.registerDialect = function(dialect) {
-  dialectRegistry[dialect.getName()] = dialect;
+  myjs.dialectRegistry[dialect.getName()] = dialect;
 };
 
 /**
  * Returns the specified named dialect, or null if it doesn't exist.
  */
 myjs.getDialect = function(name) {
-  return dialectRegistry[name];
+  return myjs.dialectRegistry[name];
+};
+
+/**
+ * A map from fragment name to fragment object.
+ */
+myjs.fragmentRegistry = {};
+
+/**
+ * A (potentially incomplete) fragment of syntax that defines how a type
+ * of syntax should be parsed and processed.
+ */
+myjs.Fragment = function(name) {
+  this.name = name;
+  this.syntaxProvider = null;
+  this.syntax = null;
+  this.nodeHandlers = {};
+};
+
+myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
+  this.syntaxProvider = syntaxProvider;
+  return this;
+};
+
+/**
+ * Adds a node handler for the given type of syntax tree node.
+ */
+myjs.Fragment.prototype.addNodeHandler = function(name, handler) {
+  this.nodeHandlers[name] = handler;
+  return this;
+};
+
+myjs.Fragment.prototype.getNodeHandlers = function() {
+  return this.nodeHandlers;
+};
+
+/**
+ * Builds and returns the syntax for this fragment.
+ */
+myjs.Fragment.prototype.getSyntax = function() {
+  if (!this.syntax) {
+    var value = (this.syntaxProvider)();
+    if (!value) {
+      throw new myjs.Error('Fragment "' + this.name + '" provided no syntax.');
+    }
+    this.syntax = value;
+  }
+  return this.syntax;
+};
+
+/**
+ * Returns the name of this fragment.
+ */
+myjs.Fragment.prototype.getName = function() {
+  return this.name;
+};
+
+myjs.registerFragment = function(fragment) {
+  myjs.fragmentRegistry[fragment.getName()] = fragment;
+};
+
+myjs.getFragment = function(name) {
+  return myjs.fragmentRegistry[name];
 };
 
 /**
@@ -736,33 +836,6 @@ function buildStandardSyntax() {
 
   var syntax = myjs.tedir.Syntax.create();
 
-  // <Program>
-  //   -> <SourceElement>*
-  syntax.getRule('Program')
-    .addProd(star(nonterm('SourceElement')))
-    .setConstructor(myjs.ast.Program);
-
-  // <SourceElement>
-  //   -> <FunctionDeclaration>
-  //   -> <Statement>
-  syntax.getRule('SourceElement')
-    .addProd(nonterm('FunctionDeclaration'))
-    .addProd(nonterm('Statement'));
-
-  // <FunctionDeclaration>
-  //   -> "function" <Identifier> "(" <FormalParameterList> ")" "{"
-  //      <FunctionBody> "}"
-  syntax.getRule('FunctionDeclaration')
-    .addProd(keyword('function'), nonterm('Identifier'), punct('('),
-      nonterm('FormalParameterList'), punct(')'), punct('{'),
-      nonterm('FunctionBody'), punct('}'))
-    .setConstructor(myjs.ast.FunctionDeclaration);
-
-  // <FormalParameterList>
-  //   -> <Identifier> *: ","
-  syntax.getRule('FormalParameterList')
-    .addProd(star(nonterm('Identifier'), punct(',')));
-
   // <FunctionBody>
   //   -> <SourceElement>*
   syntax.getRule('FunctionBody')
@@ -772,7 +845,6 @@ function buildStandardSyntax() {
   // <Statement>
   //   -> <Block>
   //   -> <VariableStatement>
-  //   -> <ExpressionStatement>
   //   -> <IfStatement>
   //   -> <IterationStatement>
   //   -> <ReturnStatement>
@@ -784,7 +856,6 @@ function buildStandardSyntax() {
   syntax.getRule('Statement')
     .addProd(nonterm('Block'))
     .addProd(nonterm('VariableStatement'))
-    .addProd(nonterm('ExpressionStatement'))
     .addProd(nonterm('IfStatement'))
     .addProd(nonterm('IterationStatement'))
     .addProd(nonterm('ReturnStatement'))
@@ -804,18 +875,6 @@ function buildStandardSyntax() {
   //   -> "var" <VariableDeclarationList> ";"
   syntax.getRule('VariableStatement')
     .addProd(keyword('var'), nonterm('VariableDeclarationList'), punct(';'));
-
-  // <VariableDeclarationList>
-  //   -> <VariableDeclaration> +: ","
-  syntax.getRule('VariableDeclarationList')
-    .addProd(plus(nonterm('VariableDeclaration'), punct(',')))
-    .setConstructor(myjs.ast.VariableDeclaration);
-
-  // <ExpressionStatement>
-  //   -> <Expression> ";"
-  syntax.getRule('ExpressionStatement')
-    .addProd(nonterm('Expression'), punct(';'))
-    .setConstructor(myjs.ast.ExpressionStatement);
 
   // <IfStatement>
   //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
@@ -924,13 +983,6 @@ function buildStandardSyntax() {
   //   -> "finally" <Block>
   syntax.getRule('Finally')
     .addProd(keyword('finally'), nonterm('Block'));
-
-  // <VariableDeclaration>
-  //   -> <Identifier> ("=" <AssignmentExpression>)?
-  syntax.getRule('VariableDeclaration')
-    .addProd(nonterm('Identifier'), option(punct('='),
-      nonterm('AssignmentExpression')))
-    .setConstructor(myjs.ast.VariableDeclarator);
 
   // <ReturnStatement>
   //   -> "return" <Expression>? ";"
@@ -1296,6 +1348,41 @@ function buildStandardSyntax() {
   return syntax;
 }
 
+myjs.UnparseContext = function(dialect) {
+  this.dialect = dialect;
+  this.handlers = dialect.getNodeHandlers();
+  this.text = [];
+};
+
+myjs.UnparseContext.prototype.node = function(ast) {
+  var type = ast.type;
+  var handler = this.handlers[type];
+  if (!handler) {
+    throw new myjs.Error('Unknown node type "' + type + '".');
+  }
+  handler.unparse(this, ast);
+};
+
+myjs.UnparseContext.prototype.nodes = function(asts) {
+  asts.forEach(function(ast) {
+    this.node(ast);
+  }.bind(this));
+};
+
+myjs.UnparseContext.prototype.write = function(str) {
+  this.text.push(str);
+};
+
+myjs.UnparseContext.prototype.flush = function() {
+  return this.text.join();
+};
+
+myjs.Dialect.prototype.unparse = function(ast) {
+  var context = new myjs.UnparseContext(this);
+  context.node(ast);
+  return context.flush();
+};
+
 function unparse(node) {
   var settings = {
     newline: '\n',
@@ -1307,7 +1394,10 @@ function unparse(node) {
 }
 
 function registerBuiltInDialects() {
-  myjs.registerDialect(new myjs.Dialect('default'));
+  myjs.registerDialect(new myjs.Dialect('default')
+    .addFragment('myjs.Program')
+    .addFragment('myjs.Statement')
+    .addFragment('myjs.Declaration'));
 }
 
 registerBuiltInDialects();

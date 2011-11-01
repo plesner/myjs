@@ -29,6 +29,9 @@ var FILES = [
   ['test/test.js'],
   ['test/framework.js'],
   ['src/main.js'],
+  ['src/fragment/program.js'],
+  ['src/fragment/statement.js'],
+  ['src/fragment/declaration.js'],
   ['src/dialects/tedir.my.js']
 ];
 
@@ -56,9 +59,11 @@ function parseAllFiles() {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'default');
     fs.readFile(name, 'utf8', function(error, source) {
+      console.log("Parsing " + name);
       var origin = new myjs.tedir.SourceOrigin(name);
-      dialect.parseSource(source, origin);
-      console.log('Successfully parsed ' + name);
+      var ast = dialect.parseSource(source, origin);
+      var code = dialect.unparse(ast);
+      console.log(code);
       doNext();
     });
   }, function() {
@@ -71,7 +76,6 @@ function runUnitTests() {
   tests.forEach(function (test) {
     console.log("Running " + test.name);
     test();
-    console.log("Succeeded");
   });
 }
 

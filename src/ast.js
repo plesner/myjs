@@ -39,27 +39,6 @@ myjs.ast.Node = function() {
 };
 
 /**
- * A standard Program element.
- *
- * @param {Array} body the program elements.
- * @constructor
- * @extends myjs.ast.Node
- */
-myjs.ast.Program = function(body) {
-  /**
-   * "Program"
-   * @const
-   */
-  this.type = 'Program';
-
-  /**
-   * The program elements.
-   * @type {Array}
-   */
-  this.elements = body;
-};
-
-/**
  * A standard function element.
  *
  * @param {myjs.ast.Identifier} id the name of the function.
@@ -113,11 +92,6 @@ myjs.ast.EmptyStatement = function() {
 myjs.ast.BlockStatement = function(body) {
   this.type = 'BlockStatement';
   this.body = body;
-};
-
-myjs.ast.ExpressionStatement = function(expression) {
-  this.type = 'ExpressionStatement';
-  this.expression = expression;
 };
 
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
@@ -209,24 +183,6 @@ myjs.ast.ForInStatement = function(left, right, body) {
   this.left = left;
   this.right = right;
   this.body = body;
-};
-
-myjs.ast.FunctionDeclaration = function(id, params, body) {
-  this.type = 'FunctionDeclaration';
-  this.id = id;
-  this.params = params;
-  this.body = body;
-};
-
-myjs.ast.VariableDeclaration = function(declarations) {
-  this.type = 'VariableDeclaration';
-  this.declarations = declarations;
-};
-
-myjs.ast.VariableDeclarator = function(id, init) {
-  this.type = 'VariableDeclarator';
-  this.id = id;
-  this.init = init;
 };
 
 myjs.ast.ThisExpression = function() {
