@@ -38,6 +38,7 @@ var FILES = [
   ['src/fragment/expression.js'],
   ['src/fragment/control.js'],
   ['src/fragment/iteration.js'],
+  ['src/fragment/exceptions.js'],
   ['src/dialects/tedir.my.js']
 ];
 

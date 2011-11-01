@@ -65,6 +65,12 @@ myjs.ast.Program.prototype.unparse = function(context) {
       .addProd(f.nonterm('FunctionDeclaration'))
       .addProd(f.nonterm('Statement'));
 
+    // <FunctionBody>
+    //   -> <SourceElement>*
+    syntax.getRule('FunctionBody')
+      .addProd(f.star(f.nonterm('SourceElement')))
+      .setConstructor(myjs.ast.BlockStatement);
+
     return syntax;
   }
 

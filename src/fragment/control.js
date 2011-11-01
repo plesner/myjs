@@ -57,6 +57,18 @@ myjs.ast.ContinueStatement = function(label) {
   this.label = label;
 };
 
+myjs.ast.SwitchStatement = function(discriminant, cases) {
+  this.type = 'SwitchStatement';
+  this.discriminant = discriminant;
+  this.cases = cases;
+};
+
+myjs.ast.SwitchCase = function(test, consequent) {
+  this.type = 'SwitchCase';
+  this.test = test;
+  this.consequent = consequent;
+};
+
 (function () {
 
   function getSyntax() {
@@ -68,11 +80,13 @@ myjs.ast.ContinueStatement = function(label) {
     //   -> <ReturnStatement>
     //   -> <BreakStatement>
     //   -> <ContinueStatement>
+    //   -> <SwitchStatement>
     syntax.getRule('Statement')
       .addProd(f.nonterm('IfStatement'))
       .addProd(f.nonterm('ReturnStatement'))
       .addProd(f.nonterm('BreakStatement'))
-      .addProd(f.nonterm('ContinueStatement'));
+      .addProd(f.nonterm('ContinueStatement'))
+      .addProd(f.nonterm('SwitchStatement'));
 
     // <ReturnStatement>
     //   -> "return" <Expression>? ";"
@@ -102,6 +116,36 @@ myjs.ast.ContinueStatement = function(label) {
         f.punct(')'), f.nonterm('Statement'), f.option(f.keyword('else'),
         f.nonterm('Statement')))
       .setConstructor(myjs.ast.IfStatement);
+
+    // <SwitchStatement>
+    //   -> "switch" "(" <Expression> ")" <CaseBlock>
+    syntax.getRule('SwitchStatement')
+      .addProd(f.keyword('switch'), f.punct('('), f.nonterm('Expression'),
+        f.punct(')'), f.nonterm('CaseBlock'))
+      .setConstructor(myjs.ast.SwitchStatement);
+
+    // <CaseBlock>
+    //   -> "{" (<CaseClause>|<DefaultClause>)* "}"
+    syntax.getRule('CaseBlock')
+      .addProd(f.punct('{'), f.star(f.choice(f.nonterm('CaseClause'),
+        f.nonterm('DefaultClause'))), f.punct('}'));
+
+    // <CaseClause>
+    //   -> "case" <Expression> ":" <Statement>*
+    syntax.getRule('CaseClause')
+      .addProd(f.keyword('case'), f.nonterm('Expression'), f.punct(':'),
+        f.star(f.nonterm('Statement')))
+      .setConstructor(myjs.ast.SwitchCase);
+
+    // <DefaultClause>
+    //   // -> "default" ":" <Statement>*
+    syntax.getRule('DefaultClause')
+      .addProd(f.keyword('default'), f.punct(':'), f.star(f.nonterm('Statement')))
+      .setHandler(buildDefaultCase);
+
+    function buildDefaultCase(body) {
+      return new myjs.ast.SwitchCase(null, body);
+    }
 
     return syntax;
   }

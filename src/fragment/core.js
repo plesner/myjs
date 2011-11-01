@@ -101,6 +101,39 @@ myjs.ast.Literal.prototype.unparse = function(context) {
       .addProd(f.keyword('false'))
       .setConstructor(function () { return new myjs.ast.Literal(false); });
 
+    /**
+     * Custom expression used to parse regular expressions.
+     */
+    function RegExpHandler() { }
+    goog.inherits(RegExpHandler, myjs.tedir.CustomHandler);
+
+    RegExpHandler.prototype.parse = function(context) {
+      var input = context.getTokenStream();
+      var tokens = [];
+      var current = input.getCurrent().value;
+      // Scan forward until we meet the end of the input or a "/".
+      while (input.hasMore() && (current != '/')) {
+        tokens.push(current);
+        input.advance();
+        current = input.getCurrent().value;
+      }
+      if (input.hasMore()) {
+        input.advance();
+        if (input.hasMore() && input.getCurrent().type == 'Identifier') {
+          tokens += input.getCurrent().value;
+          input.advance();
+        }
+      } else {
+        return context.getErrorMarker();
+      }
+      return tokens;
+    };
+
+    // <RegularExpressionLiteral>
+    //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
+    syntax.getRule('RegularExpressionLiteral')
+      .addProd(f.token('/'), f.custom(new RegExpHandler()));
+
     return syntax;
   }
 

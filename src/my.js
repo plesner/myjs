@@ -83,8 +83,6 @@ myjs.dialectRegistry = {};
  */
 myjs.Dialect = function(name) {
   this.name = name;
-  this.baseSyntaxProvider = getStandardSyntax;
-  this.extensionSyntaxProviders = [];
   this.fragments = [];
   this.syntax = null;
   this.grammar = null;
@@ -100,24 +98,6 @@ myjs.Dialect = function(name) {
  */
 myjs.Dialect.prototype.getName = function() {
   return this.name;
-};
-
-/**
- * Sets a function that, when called, returns the syntax for this dialect.
- * The reason for not setting the syntax directly is that constructing a
- * syntax for every dialect object up front is unnecessarily expensive.
- */
-myjs.Dialect.prototype.setBaseSyntaxProvider = function(value) {
-  this.baseSyntaxProvider = value;
-  return this;
-};
-
-myjs.Dialect.prototype.addExtensionSyntaxProvider = function(value) {
-  if (!value) {
-    throw new myjs.Error("Extension syntax provider is not a function.");
-  }
-  this.extensionSyntaxProviders.push(value);
-  return this;
 };
 
 /**
@@ -149,13 +129,7 @@ myjs.Dialect.prototype.getStart = function() {
  */
 myjs.Dialect.prototype.getSyntax = function() {
   if (!this.syntax) {
-    var syntax = (this.baseSyntaxProvider)();
-    var extensions = this.extensionSyntaxProviders.map(function(ext) {
-      return ext();
-    });
-    if (extensions.length > 0) {
-      syntax = syntax.compose(extensions);
-    }
+    var syntax = myjs.Syntax.create();
     var fragments = this.fragments.map(function(name) {
       var fragment = myjs.getFragment(name);
       return fragment.getSyntax();
@@ -725,157 +699,6 @@ myjs.tokenize = function(source, settings) {
   return tokens;
 };
 
-/**
- * Returns a function that will, given a list of values
- * [x0, o0, x1, o1, ..., o_n-1, xn] returns
- * Cons(x0, o0, Cons(x1, o1, Cons(..., o_n-1, xn))).
- */
-function groupInfixRight(Constructor) {
-  return function(items) {
-    var i, result = items[items.length - 1];
-    for (i = items.length - 3; i >= 0; i -= 2) {
-      var next = items[i];
-      var op = items[i + 1];
-      result = new Constructor(next, op, result);
-    }
-    return result;
-  };
-}
-
-/**
- * Custom expression used to parse regular expressions.
- */
-myjs.RegExpHandler = function() { };
-goog.inherits(myjs.RegExpHandler, myjs.tedir.CustomHandler);
-
-myjs.RegExpHandler.prototype.parse = function(context) {
-  var input = context.getTokenStream();
-  var tokens = [];
-  var current = input.getCurrent().value;
-  // Scan forward until we meet the end of the input or a "/".
-  while (input.hasMore() && (current != '/')) {
-    tokens.push(current);
-    input.advance();
-    current = input.getCurrent().value;
-  }
-  if (input.hasMore()) {
-    input.advance();
-    if (input.hasMore() && input.getCurrent().type == 'Identifier') {
-      tokens += input.getCurrent().value;
-      input.advance();
-    }
-  } else {
-    return context.getErrorMarker();
-  }
-  return tokens;
-};
-
-var standardSyntaxCache = null;
-
-function getStandardSyntax() {
-  if (!standardSyntaxCache) {
-    standardSyntaxCache = buildStandardSyntax();
-  }
-  return standardSyntaxCache;
-}
-
-function buildStandardSyntax() {
-  var f = myjs.factory;
-
-  var choice = f.choice;
-  var custom = f.custom;
-  var keyword = f.keyword;
-  var keywordValue = f.keywordValue;
-  var nonterm = f.nonterm;
-  var option = f.option;
-  var plus = f.plus;
-  var punct = f.punct;
-  var punctValue = f.punctValue;
-  var seq = f.seq;
-  var star = f.star;
-  var token = f.token;
-  var value = f.value;
-
-  var syntax = myjs.tedir.Syntax.create();
-
-  // <FunctionBody>
-  //   -> <SourceElement>*
-  syntax.getRule('FunctionBody')
-    .addProd(star(nonterm('SourceElement')))
-    .setConstructor(myjs.ast.BlockStatement);
-
-  // <Statement>
-  //   -> <SwitchStatement>
-  //   -> <ThrowStatement>
-  //   -> <TryStatement>
-  syntax.getRule('Statement')
-    .addProd(nonterm('SwitchStatement'))
-    .addProd(nonterm('ThrowStatement'))
-    .addProd(nonterm('TryStatement'));
-
-  // <SwitchStatement>
-  //   -> "switch" "(" <Expression> ")" <CaseBlock>
-  syntax.getRule('SwitchStatement')
-    .addProd(keyword('switch'), punct('('), nonterm('Expression'),
-      punct(')'), nonterm('CaseBlock'))
-    .setConstructor(myjs.ast.SwitchStatement);
-
-  // <CaseBlock>
-  //   -> "{" (<CaseClause>|<DefaultClause>)* "}"
-  syntax.getRule('CaseBlock')
-    .addProd(punct('{'), star(choice(nonterm('CaseClause'),
-      nonterm('DefaultClause'))), punct('}'));
-
-  // <CaseClause>
-  //   -> "case" <Expression> ":" <Statement>*
-  syntax.getRule('CaseClause')
-    .addProd(keyword('case'), nonterm('Expression'), punct(':'),
-      star(nonterm('Statement')))
-    .setConstructor(myjs.ast.SwitchCase);
-
-  // <DefaultClause>
-  //   // -> "default" ":" <Statement>*
-  syntax.getRule('DefaultClause')
-    .addProd(keyword('default'), punct(':'), star(nonterm('Statement')))
-    .setHandler(buildDefaultCase);
-
-  function buildDefaultCase(body) {
-    return new myjs.ast.SwitchCase(null, body);
-  }
-
-  // <ThrowStatement>
-  //   -> "throw" <Expression> ";"
-  syntax.getRule('ThrowStatement')
-    .addProd(keyword('throw'), nonterm('Expression'), punct(';'))
-    .setConstructor(myjs.ast.ThrowStatement);
-
-  // <TryStatement>
-  //   -> "try" <Block> <Catch>? <Finally>?
-  syntax.getRule('TryStatement')
-    .addProd(keyword('try'), nonterm('Block'), option(nonterm('Catch')),
-      option(nonterm('Finally')))
-    .setConstructor(myjs.ast.TryStatement);
-
-  // <Catch>
-  //   -> "catch" "(" <Identifier> ")" <Block>
-  syntax.getRule('Catch')
-    .addProd(keyword('catch'), punct('('), nonterm('Identifier'), punct(')'),
-      nonterm('Block'))
-    .setConstructor(myjs.ast.CatchClause);
-
-  // <Finally>
-  //   -> "finally" <Block>
-  syntax.getRule('Finally')
-    .addProd(keyword('finally'), nonterm('Block'));
-
-  // <RegularExpressionLiteral>
-  //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
-  syntax.getRule('RegularExpressionLiteral')
-    .addProd(token('/'), custom(new myjs.RegExpHandler()));
-
-  return syntax;
-}
-
 myjs.UnparseContext = function(dialect) {
   this.dialect = dialect;
   this.types = dialect.getTypes();
@@ -968,7 +791,8 @@ function registerBuiltInDialects() {
     .addFragment('myjs.Operators')
     .addFragment('myjs.Expression')
     .addFragment('myjs.Control')
-    .addFragment('myjs.Iteration'));
+    .addFragment('myjs.Iteration')
+    .addFragment('myjs.Exceptions'));
 }
 
 registerBuiltInDialects();
