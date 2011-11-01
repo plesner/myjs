@@ -285,11 +285,21 @@ myjs.ast.BinaryExpression = function(left, operator, right) {
   this.right = right;
 };
 
+myjs.ast.BinaryOperator = function(token) {
+  this.type = 'BinaryOperator';
+  this.token = token;
+};
+
 myjs.ast.AssignmentExpression = function(left, operator, right) {
   this.type = 'AssignmentExpression';
   this.left = left;
   this.operator = operator;
   this.right = right;
+};
+
+myjs.ast.AssignmentOperator = function(token) {
+  this.type = 'AssignmentOperator';
+  this.token = token;
 };
 
 myjs.ast.UpdateExpression = function(operator, argument, prefix) {
@@ -650,40 +660,6 @@ myjs.ast.ExpressionStatement.prototype.unparse = function(out) {
 
 myjs.ast.ExpressionStatement.prototype.translate = function() {
   return new myjs.ast.ExpressionStatement(this.expr.translate());
-};
-
-myjs.ast.AssignmentExpression = function(target, op, source) {
-  this.target = target;
-  this.op = op;
-  this.source = source;
-};
-goog.inherits(myjs.ast.AssignmentExpression, myjs.ast.Expression);
-
-myjs.ast.AssignmentExpression.prototype.translate = function() {
-  return new myjs.ast.AssignmentExpression(this.target.translate(), this.op,
-    this.source.translate());
-};
-
-myjs.ast.AssignmentExpression.prototype.unparse = function(out) {
-  out.node(this.target).string(' ' + this.op + ' (')
-    .node(this.source).string(')');
-};
-
-myjs.ast.InfixExpression = function(left, op, right) {
-  this.left = left;
-  this.op = op;
-  this.right = right;
-};
-goog.inherits(myjs.ast.InfixExpression, myjs.ast.Expression);
-
-myjs.ast.InfixExpression.prototype.translate = function() {
-  return new myjs.ast.InfixExpression(this.left.translate(), this.op,
-    this.right.translate());
-};
-
-myjs.ast.InfixExpression.prototype.unparse = function(out) {
-  out.string('(').node(this.left).string(') ' + this.op + ' (')
-    .node(this.right).string(')');
 };
 
 myjs.ast.FunctionExpression = function(name, params, body) {

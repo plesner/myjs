@@ -443,15 +443,6 @@ function isIdentifierPart(c) {
  */
 myjs.Scanner.prototype.scanToken = function() {
   var c = this.getCurrent();
-  if (isWhiteSpace(c)) {
-    return this.scanWhiteSpace();
-  } else if (this.settings.isPunctuation(c)) {
-    return this.scanPunctuation();
-  } else if (isDigit(c)) {
-    return this.scanNumber(c);
-  } else if (isIdentifierStart(c)) {
-    return this.scanIdentifier(c);
-  }
   switch (c) {
   case '\"':
   case "'":
@@ -468,9 +459,18 @@ myjs.Scanner.prototype.scanToken = function() {
     default:
       return this.advanceAndYield('/');
     }
-  default:
+  }
+  if (isWhiteSpace(c)) {
+    return this.scanWhiteSpace();
+  } else if (this.settings.isPunctuation(c)) {
+    return this.scanPunctuation();
+  } else if (isDigit(c)) {
+    return this.scanNumber(c);
+  } else if (isIdentifierStart(c)) {
+    return this.scanIdentifier(c);
+  } else {
     this.advance();
-    return new myjs.SoftToken(c);
+    return new myjs.SoftToken(c, c);
   }
 };
 
@@ -664,7 +664,9 @@ function applyInfixFunctions(items) {
   for (i = items.length - 3; i >= 0; i -= 2) {
     var next = items[i];
     var op = items[i + 1];
-    if (typeof op == "function") {
+    if (typeof op != "function") {
+      console.log(op);
+    } else {
       result = op(next, result);
     }
   }
@@ -700,10 +702,10 @@ myjs.RegExpHandler.prototype.parse = function(context) {
 };
 
 var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
-  '>>=', '>>>=', '<<='];
-var INFIX_OPERATORS = ['<', '<<', '>', '>>', '|', '==', '!=', '+',
-  '===', '&', '|', '-', '*', '%', '^', '<=', '>=', '!==', '!===',
-  '>>>', '>='];
+  '>>=', '>>>=', '<<=', '/='];
+var BINARY_OPERATORS = ["==", "!=", "===", "!==", "<", "<=", ">", ">=",
+  "<<", ">>", ">>>", "+", "-", "*", "%", "|", "^", "/"];
+var BINARY_KEYWORDS = ["instanceof"];
 var LOGICAL_OPERATORS = ['||', '&&'];
 var INFIX_KEYWORDS = ['instanceof'];
 var UNARY_OPERATORS = ['-', '+', '!', '~', '!'];
@@ -932,7 +934,7 @@ function buildStandardSyntax() {
   syntax.getRule('AssignmentExpression')
     .addProd(plus(nonterm('ConditionalExpression'),
       nonterm('AssignmentOperator')))
-    .setHandler(groupInfixRight(myjs.ast.AssignmentExpression));
+    .setHandler(applyInfixFunctions);
 
   // <ConditionalExpression>
   //   -> <OperatorExpression> ("?" <OperatorExpression> ":"
@@ -953,9 +955,12 @@ function buildStandardSyntax() {
 
   // <AssignmentOperator>
   //   -> ... assignment operators ...
+  var assignmentBuilder = infixBuilder(myjs.ast.AssignmentOperator,
+    myjs.ast.AssignmentExpression);
   ASSIGNMENT_OPERATORS.forEach(function(op) {
     syntax.getRule('AssignmentOperator')
-      .addProd(punctValue(op));
+      .addProd(punctValue(op))
+      .setHandler(assignmentBuilder);
   });
 
   // <OperatorExpression>
@@ -975,11 +980,19 @@ function buildStandardSyntax() {
   }
 
   // <InfixToken>
-  //   -> ... infix operators ...
-  //   -> ... infix keywords ...
-  INFIX_OPERATORS.forEach(function(op) {
+  //   -> ... binary operators ...
+  //   -> ... binary keywords ...
+  var binaryBuilder = infixBuilder(myjs.ast.BinaryOperator,
+    myjs.ast.BinaryExpression);
+  BINARY_OPERATORS.forEach(function(op) {
     syntax.getRule('InfixToken')
-      .addProd(punctValue(op));
+      .addProd(punctValue(op))
+      .setHandler(binaryBuilder);
+  });
+  BINARY_KEYWORDS.forEach(function(word) {
+    syntax.getRule('InfixToken')
+      .addProd(keywordValue(word))
+      .setHandler(binaryBuilder);
   });
   var logicBuilder = infixBuilder(myjs.ast.LogicalOperator,
     myjs.ast.LogicalExpression);

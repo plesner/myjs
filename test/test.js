@@ -321,7 +321,7 @@ function runTokenTest(expected, source) {
 registerTest(testTokenizing);
 function testTokenizing() {
   runTokenTest(['=', '==', '===', '===', '='], '= == === ====');
-  runTokenTest(['!', '!=', '!==', '!===', '!===', '='], '! != !== !=== !====');
+  runTokenTest(['!', '!=', '!==', '!==', '=', '!==', '=='], '! != !== !=== !====');
   runTokenTest(['>', '>>', '>>>', '>>>', '>'], '> >> >>> >>>>');
   runTokenTest(['<', '<<', '<<', '<', '<<', '<<'], '< << <<< <<<<');
   runTokenTest(['>', '>=', '>>=', '>>>=', '>>>', '>='], '> >= >>= >>>= >>>>=');
@@ -411,6 +411,18 @@ function ury(op, arg, pre) {
     argument: arg};
 }
 
+function bin(left, op, right) {
+  var opAst = {type: 'BinaryOperator', token: op};
+  return {type: 'BinaryExpression', operator: opAst, left: left,
+    right: right};
+}
+
+function ass(left, op, right) {
+  var opAst = {type: 'AssignmentOperator', token: op};
+  return {type: 'AssignmentExpression', operator: opAst, left: left,
+    right: right};
+}
+
 function preu(op, arg) {
   return upd(op, arg, true);
 }
@@ -471,8 +483,8 @@ function testConditionalExpressionParsing() {
   exprCheck("a ? b : c", cond(id("a"), id("b"), id("c")));
 }
 
-registerTest(testUnaryOperatorParsing);
-function testUnaryOperatorParsing() {
+registerTest(testUnaryExpressionParsing);
+function testUnaryExpressionParsing() {
   exprCheck("!a", ury("!", id("a"), true));
   exprCheck("-a", ury("-", id("a"), true));
   exprCheck("~a", ury("~", id("a"), true));
@@ -480,6 +492,45 @@ function testUnaryOperatorParsing() {
   exprCheck("typeof a", ury("typeof", id("a"), true));
   exprCheck("void a", ury("void", id("a"), true));
   exprCheck("delete a", ury("delete", id("a"), true));
+}
+
+registerTest(testBinaryExpressionParsing);
+function testBinaryExpressionParsing() {
+  exprCheck("a==b", bin(id("a"), "==", id("b")));
+  exprCheck("a!=b", bin(id("a"), "!=", id("b")));
+  exprCheck("a===b", bin(id("a"), "===", id("b")));
+  exprCheck("a!==b", bin(id("a"), "!==", id("b")));
+  exprCheck("a<b", bin(id("a"), "<", id("b")));
+  exprCheck("a<=b", bin(id("a"), "<=", id("b")));
+  exprCheck("a>b", bin(id("a"), ">", id("b")));
+  exprCheck("a>=b", bin(id("a"), ">=", id("b")));
+  exprCheck("a<<b", bin(id("a"), "<<", id("b")));
+  exprCheck("a>>b", bin(id("a"), ">>", id("b")));
+  exprCheck("a>>>b", bin(id("a"), ">>>", id("b")));
+  exprCheck("a+b", bin(id("a"), "+", id("b")));
+  exprCheck("a-b", bin(id("a"), "-", id("b")));
+  exprCheck("a*b", bin(id("a"), "*", id("b")));
+  exprCheck("a/b", bin(id("a"), "/", id("b")));
+  exprCheck("a%b", bin(id("a"), "%", id("b")));
+  exprCheck("a|b", bin(id("a"), "|", id("b")));
+  exprCheck("a^b", bin(id("a"), "^", id("b")));
+  exprCheck("a instanceof b", bin(id("a"), "instanceof", id("b")));
+}
+
+registerTest(testAssignmentExpression);
+function testAssignmentExpression() {
+  exprCheck("a=b", ass(id("a"), "=", id("b")));
+  exprCheck("a+=b", ass(id("a"), "+=", id("b")));
+  exprCheck("a-=b", ass(id("a"), "-=", id("b")));
+  exprCheck("a*=b", ass(id("a"), "*=", id("b")));
+  exprCheck("a/=b", ass(id("a"), "/=", id("b")));
+  exprCheck("a%=b", ass(id("a"), "%=", id("b")));
+  exprCheck("a<<=b", ass(id("a"), "<<=", id("b")));
+  exprCheck("a>>=b", ass(id("a"), ">>=", id("b")));
+  exprCheck("a>>>=b", ass(id("a"), ">>>=", id("b")));
+  exprCheck("a|=b", ass(id("a"), "|=", id("b")));
+  exprCheck("a^=b", ass(id("a"), "^=", id("b")));
+  exprCheck("a&=b", ass(id("a"), "&=", id("b")));
 }
 
 myjs.test.getAllTests = function() {
