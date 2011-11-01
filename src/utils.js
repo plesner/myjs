@@ -21,8 +21,8 @@ goog.provide('myjs.utils');
  * @param {*} args an array-like object to convert.
  * @return {Array} an array containing the elements of the given argument.
  */
-myjs.utils.toArray = function(args) {
-  return Array.prototype.slice.call(args);
+myjs.utils.toArray = function(args, start) {
+  return Array.prototype.slice.call(args, start);
 };
 
 /**

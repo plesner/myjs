@@ -1125,7 +1125,7 @@ function buildStandardSyntax() {
   };
 
   GetElementSuffix.prototype.wrapPlain = function(atom) {
-    return new myjs.ast.GetElementExpression(atom, this.value);
+    return new myjs.ast.MemberExpression(atom, this.value, true);
   };
 
   function GetPropertySuffix(name) {
@@ -1137,7 +1137,7 @@ function buildStandardSyntax() {
   };
 
   GetPropertySuffix.prototype.wrapPlain = function(atom) {
-    return new myjs.ast.GetPropertyExpression(atom, this.name);
+    return new myjs.ast.MemberExpression(atom, new myjs.ast.Identifier(this.name), false);
   };
 
   function ArgumentsSuffix(args) {

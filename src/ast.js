@@ -334,10 +334,10 @@ myjs.ast.NewExpression = function(constructor, args) {
   this.args = args;
 };
 
-myjs.ast.CallExpression = function(callee, args) {
+myjs.ast.CallExpression = function(callee, arguments) {
   this.type = 'CallExpression';
   this.callee = callee;
-  this.args = args;
+  this.arguments = arguments;
 };
 
 myjs.ast.MemberExpression = function(object, property, computed) {
@@ -678,54 +678,6 @@ myjs.ast.FunctionExpression.prototype.unparse = function(out) {
   out.string('function ').string(this.name).string('(')
     .strings(this.params, ', ').string(') {').indent().newline()
     .nodes(this.body).deindent().string('}');
-};
-
-myjs.ast.GetPropertyExpression = function(base, member) {
-  this.base = base;
-  this.member = member;
-};
-goog.inherits(myjs.ast.GetPropertyExpression, myjs.ast.Expression);
-
-myjs.ast.GetPropertyExpression.prototype.translate = function() {
-  return new myjs.ast.GetPropertyExpression(this.base.translate(),
-    this.member);
-};
-
-myjs.ast.GetPropertyExpression.prototype.unparse = function(out) {
-  out.string('(').node(this.base).string(')').string('.')
-    .string(this.member);
-};
-
-myjs.ast.GetElementExpression = function(base, key) {
-  this.base = base;
-  this.key = key;
-};
-goog.inherits(myjs.ast.GetElementExpression, myjs.ast.Expression);
-
-myjs.ast.GetElementExpression.prototype.translate = function() {
-  return new myjs.ast.GetElementExpression(this.base.translate(),
-    this.key.translate());
-};
-
-myjs.ast.GetElementExpression.prototype.unparse = function(out) {
-  out.string('(').node(this.base).string(')[').string('.')
-    .node(this.key).string(']');
-};
-
-myjs.ast.CallExpression = function(base, args) {
-  this.base = base;
-  this.args = args;
-};
-goog.inherits(myjs.ast.CallExpression, myjs.ast.Expression);
-
-myjs.ast.CallExpression.prototype.translate = function() {
-  return new myjs.ast.CallExpression(this.base.translate(),
-    translateAll(this.args));
-};
-
-myjs.ast.CallExpression.prototype.unparse = function(out) {
-  out.string('(').node(this.base).string(')(')
-    .nodes(this.args, ', ').string(')');
 };
 
 myjs.ast.NewExpression = function(base, args) {

@@ -431,6 +431,18 @@ function posu(arg, op) {
   return upd(op, arg, false);
 }
 
+function call(fun, var_args) {
+  return {type: 'CallExpression', callee: fun, arguments: toArray(arguments, 1)};
+}
+
+function get(obj, prop) {
+  return {type: 'MemberExpression', object: obj, property: id(prop), computed: false};
+}
+
+function mem(obj, prop) {
+  return {type: 'MemberExpression', object: obj, property: prop, computed: true};
+}
+
 registerTest(testLiteralParsing);
 function testLiteralParsing() {
   exprCheck("1", lit(1));
@@ -517,8 +529,8 @@ function testBinaryExpressionParsing() {
   exprCheck("a instanceof b", bin(id("a"), "instanceof", id("b")));
 }
 
-registerTest(testAssignmentExpression);
-function testAssignmentExpression() {
+registerTest(testAssignmentExpressionParsing);
+function testAssignmentExpressionParsing() {
   exprCheck("a=b", ass(id("a"), "=", id("b")));
   exprCheck("a+=b", ass(id("a"), "+=", id("b")));
   exprCheck("a-=b", ass(id("a"), "-=", id("b")));
@@ -531,6 +543,25 @@ function testAssignmentExpression() {
   exprCheck("a|=b", ass(id("a"), "|=", id("b")));
   exprCheck("a^=b", ass(id("a"), "^=", id("b")));
   exprCheck("a&=b", ass(id("a"), "&=", id("b")));
+}
+
+registerTest(testCallExpressionParsing);
+function testCallExpressionParsing() {
+  exprCheck("a()", call(id("a")));
+  exprCheck("a(1)", call(id("a"), lit(1)));
+  exprCheck("a(1, 2)", call(id("a"), lit(1), lit(2)));
+  exprCheck("a(1, 2, 3)", call(id("a"), lit(1), lit(2), lit(3)));
+  exprCheck("a(1)(2)(3)", call(call(call(id("a"), lit(1)), lit(2)), lit(3)));
+}
+
+registerTest(testMemberExpressionParsing);
+function testMemberExpressionParsing() {
+  exprCheck("a.b", get(id("a"), "b"));
+  exprCheck("c.d.e", get(get(id("c"), "d"), "e"));
+  exprCheck("a[4]", mem(id("a"), lit(4)));
+  exprCheck("a[5][6]", mem(mem(id("a"), lit(5)), lit(6)));
+  exprCheck("x.y[7].z[8]", mem(get(mem(get(id("x"), "y"), lit(7)), "z"),
+    lit(8)));
 }
 
 myjs.test.getAllTests = function() {
