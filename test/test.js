@@ -453,9 +453,12 @@ function mem(obj, prop) {
     computed: true};
 }
 
+function gfun(type, name, params, body) {
+  return {type: type, id: name || null, params: params.map(id), body: body};
+}
+
 function fun(name, params, body) {
-  return {type: 'FunctionExpression', id: name || null, params: params.map(id),
-    body: body};
+  return gfun('FunctionExpression', name, params, body);
 }
 
 registerTest(testLiteralParsing);
@@ -660,6 +663,23 @@ function fin(left, right, body) {
   return {type: 'ForInStatement', left: left, right: right, body: body};
 }
 
+function swc(disc, var_args) {
+  return {type: 'SwitchStatement', discriminant: disc,
+    cases: toArray(arguments, 1)};
+}
+
+function cse(test, var_args) {
+  return {type: 'SwitchCase', test: test, consequent: toArray(arguments, 1)};
+}
+
+function vas(decls) {
+  return {type: 'VariableDeclaration', declarations: toArray(arguments)};
+}
+
+function vdc(name, init) {
+  return {type: 'VariableDeclarator', id: id(name), init: init || null};
+}
+
 registerTest(testExpressionStatementParsing);
 function testExpressionStatementParsing() {
   stmtCheck("1;", exp(lit(1)));
@@ -719,9 +739,69 @@ function testForStatementParsing() {
   stmtCheck("for (;;1) x;", fr(null, null, lit(1), exp(id("x"))));
   stmtCheck("for (1;2;3) x;", fr(lit(1), lit(2), lit(3), exp(id("x"))));
   stmtCheck("for (x;true;) x;", fr(id("x"), lit(true), null, exp(id("x"))));
+  stmtCheck("for (var x;true;) x;", fr(vas(vdc("x")), lit(true), null, exp(id("x"))));
+  stmtCheck("for (var x, y;true;) x;", fr(vas(vdc("x"), vdc("y")), lit(true),
+    null, exp(id("x"))));
   // For-in
   stmtCheck("for (x in y) s;", fin(id("x"), id("y"), exp(id("s"))));
+  stmtCheck("for (var x in y) s;", fin(vdc("x"), id("y"), exp(id("s"))));
   stmtCheck("for (x.y in y) s;", fin(get(id("x"), "y"), id("y"), exp(id("s"))));
+}
+
+registerTest(testSwitchStatementParsing);
+function testSwitchStatementParsing() {
+  stmtCheck("switch (x) { }", swc(id("x")));
+  stmtCheck("switch (x) { case 1: break; }", swc(id("x"), cse(lit(1), brk())));
+  stmtCheck("switch (x) { case 1: 4; 3; }", swc(id("x"), cse(lit(1),
+    exp(lit(4)), exp(lit(3)))));
+  stmtCheck("switch (x) { case 1: break; case 2: continue; }", swc(id("x"),
+    cse(lit(1), brk()), cse(lit(2), cnt())));
+  stmtCheck("switch (x) { case 1: break; default: continue; }", swc(id("x"),
+    cse(lit(1), brk()), cse(null, cnt())));
+  stmtCheck("switch (x) { default: continue; }", swc(id("x"),
+    cse(null, cnt())));
+}
+
+registerTest(testVariableStatementParsing);
+function testVariableStatementParsing() {
+  stmtCheck("var i = 0;", vas(vdc("i", lit(0))));
+  stmtCheck("var i;", vas(vdc("i")));
+  stmtCheck("var i, j;", vas(vdc("i"), vdc("j")));
+  stmtCheck("var i, j, k;", vas(vdc("i"), vdc("j"), vdc("k")));
+  stmtCheck("var i = 0, j, k;", vas(vdc("i", lit(0)), vdc("j"), vdc("k")));
+  stmtCheck("var i, j = 1, k;", vas(vdc("i"), vdc("j", lit(1)), vdc("k")));
+  stmtCheck("var i, j, k = 2;", vas(vdc("i"), vdc("j"), vdc("k", lit(2))));
+}
+
+var elmParser = getFragmentParser("SourceElement");
+function elmCheck(source, expected) {
+  assertEquals(alphaJson(elmParser(source)), alphaJson(expected));
+}
+
+function fdc(name, params, body) {
+  return gfun('FunctionDeclaration', name, params, body);
+}
+
+registerTest(testSourceElementParsing);
+function testSourceElementParsing() {
+  elmCheck("function foo() { }", fdc(id("foo"), [], bck()));
+  elmCheck("function foo(a) { }", fdc(id("foo"), ["a"], bck()));
+  elmCheck("function foo(a, b) { }", fdc(id("foo"), ["a", "b"], bck()));
+}
+
+var progParser = getFragmentParser("Program");
+function progCheck(source, expected) {
+  assertEquals(alphaJson(progParser(source)), alphaJson(expected));
+}
+
+function prg(var_args) {
+  return {type: 'Program', elements: toArray(arguments)};
+}
+
+registerTest(testProgramParsing);
+function testProgramParsing() {
+  progCheck("function foo() { }", prg(fdc(id("foo"), [], bck())));
+  progCheck("var x = 0;", prg(vas(vdc("x", lit(0)))));
 }
 
 myjs.test.getAllTests = function() {

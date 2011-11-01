@@ -664,11 +664,7 @@ function applyInfixFunctions(items) {
   for (i = items.length - 3; i >= 0; i -= 2) {
     var next = items[i];
     var op = items[i + 1];
-    if (typeof op != "function") {
-      console.log(op);
-    } else {
-      result = op(next, result);
-    }
+    result = op(next, result);
   }
   return result;
 }
@@ -754,10 +750,10 @@ function buildStandardSyntax() {
     .addProd(nonterm('Statement'));
 
   // <FunctionDeclaration>
-  //   -> "function" $Identifier "(" <FormalParameterList> ")" "{"
+  //   -> "function" <Identifier> "(" <FormalParameterList> ")" "{"
   //      <FunctionBody> "}"
   syntax.getRule('FunctionDeclaration')
-    .addProd(keyword('function'), value('Identifier'), punct('('),
+    .addProd(keyword('function'), nonterm('Identifier'), punct('('),
       nonterm('FormalParameterList'), punct(')'), punct('{'),
       nonterm('FunctionBody'), punct('}'))
     .setConstructor(myjs.ast.FunctionDeclaration);
@@ -805,11 +801,15 @@ function buildStandardSyntax() {
     .setConstructor(myjs.ast.BlockStatement);
 
   // <VariableStatement>
-  //   -> "var" <VariableDeclaration> +: "," ";"
+  //   -> "var" <VariableDeclarationList> ";"
   syntax.getRule('VariableStatement')
-    .addProd(keyword('var'), plus(nonterm('VariableDeclaration'), punct(',')),
-      punct(';'))
-    .setConstructor(myjs.ast.VariableStatement);
+    .addProd(keyword('var'), nonterm('VariableDeclarationList'), punct(';'));
+
+  // <VariableDeclarationList>
+  //   -> <VariableDeclaration> +: ","
+  syntax.getRule('VariableDeclarationList')
+    .addProd(plus(nonterm('VariableDeclaration'), punct(',')))
+    .setConstructor(myjs.ast.VariableDeclaration);
 
   // <ExpressionStatement>
   //   -> <Expression> ";"
@@ -827,7 +827,7 @@ function buildStandardSyntax() {
   // <IterationStatement>
   //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
   //   -> "while" "(" <Expression> ")" <Statement>
-  //   -> "for" "(" "var" <VariableDeclaration> ";" <Expression>? ";"
+  //   -> "for" "(" "var" <VariableDeclarationList> ";" <Expression>? ";"
   //      <Expression>? ")" <Statement>
   //   -> "for" "(" <Expression>? ";" <Expression>? ";" <Expression>? ")"
   //      <Statement>
@@ -842,7 +842,7 @@ function buildStandardSyntax() {
       nonterm('Statement'))
     .setConstructor(myjs.ast.WhileStatement)
     .addProd(keyword('for'), punct('('), keyword('var'),
-      nonterm('VariableDeclaration'), punct(';'),
+      nonterm('VariableDeclarationList'), punct(';'),
       option(nonterm('Expression')), punct(';'),
       option(nonterm('Expression')), punct(')'), nonterm('Statement'))
     .setConstructor(myjs.ast.ForStatement)
@@ -926,11 +926,11 @@ function buildStandardSyntax() {
     .addProd(keyword('finally'), nonterm('Block'));
 
   // <VariableDeclaration>
-  //   -> $Identifier ("=" <AssignmentExpression>)?
+  //   -> <Identifier> ("=" <AssignmentExpression>)?
   syntax.getRule('VariableDeclaration')
-    .addProd(value('Identifier'), option(punct('='),
+    .addProd(nonterm('Identifier'), option(punct('='),
       nonterm('AssignmentExpression')))
-    .setConstructor(myjs.ast.VariableDeclaration);
+    .setConstructor(myjs.ast.VariableDeclarator);
 
   // <ReturnStatement>
   //   -> "return" <Expression>? ";"
