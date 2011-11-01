@@ -843,8 +843,6 @@ function buildStandardSyntax() {
     .setConstructor(myjs.ast.BlockStatement);
 
   // <Statement>
-  //   -> <Block>
-  //   -> <VariableStatement>
   //   -> <IfStatement>
   //   -> <IterationStatement>
   //   -> <ReturnStatement>
@@ -854,8 +852,6 @@ function buildStandardSyntax() {
   //   -> <ThrowStatement>
   //   -> <TryStatement>
   syntax.getRule('Statement')
-    .addProd(nonterm('Block'))
-    .addProd(nonterm('VariableStatement'))
     .addProd(nonterm('IfStatement'))
     .addProd(nonterm('IterationStatement'))
     .addProd(nonterm('ReturnStatement'))
@@ -864,17 +860,6 @@ function buildStandardSyntax() {
     .addProd(nonterm('SwitchStatement'))
     .addProd(nonterm('ThrowStatement'))
     .addProd(nonterm('TryStatement'));
-
-  // <Block>
-  //   -> "{" <Statement>* "}"
-  syntax.getRule('Block')
-    .addProd(punct('{'), star(nonterm('Statement')), punct('}'))
-    .setConstructor(myjs.ast.BlockStatement);
-
-  // <VariableStatement>
-  //   -> "var" <VariableDeclarationList> ";"
-  syntax.getRule('VariableStatement')
-    .addProd(keyword('var'), nonterm('VariableDeclarationList'), punct(';'));
 
   // <IfStatement>
   //   -> "if" "(" <Expression> ")" <Statement> ("else" <Statement>)?
@@ -1284,62 +1269,6 @@ function buildStandardSyntax() {
       punct(']'))
     .setConstructor(myjs.ast.ArrayExpression);
 
-  // <Literal>
-  //   -> <NumericLiteral>
-  //   -> <StringLiteral>
-  //   -> <RegularExpressionLiteral>
-  //   -> <BooleanLiteral>
-  syntax.getRule('Literal')
-    .addProd(nonterm('NumericLiteral'))
-    .addProd(nonterm('StringLiteral'))
-    .addProd(nonterm('RegularExpressionLiteral'))
-    .setConstructor(myjs.ast.Literal)
-    .addProd(nonterm('BooleanLiteral'));
-
-  // <Identifier>
-  //   -> $Identifier
-  syntax.getRule("Identifier")
-    .addProd(value("Identifier"))
-    .setConstructor(myjs.ast.Identifier);
-
-  // <StringLiteral>
-  //   -> $StringLiteral
-  syntax.getRule("StringLiteral")
-    .addProd(value('StringLiteral'))
-    .setConstructor(convertLiteral(stripString));
-
-  // <NumericLiteral>
-  //   -> $NumericLiteral
-  syntax.getRule('NumericLiteral')
-    .addProd(value('NumericLiteral'))
-    .setConstructor(convertLiteral(Number));
-
-  // <BooleanLiteral>
-  //   -> "true"
-  //   -> "false"
-  syntax.getRule('BooleanLiteral')
-    .addProd(keyword('true'))
-    .setHandler(function () { return new myjs.ast.Literal(true); })
-    .addProd(keyword('false'))
-    .setConstructor(function () { return new myjs.ast.Literal(false); });
-
-  /**
-   * Strips the delimiters off a string.
-   */
-  function stripString(str) {
-    return str.substring(1, str.length - 1);
-  }
-
-  /**
-   * Returns a function that first converts its argument using the given
-   * converter and then wraps the result in a literal.
-   */
-  function convertLiteral(converter) {
-    return function (token) {
-      return new myjs.ast.Literal(converter(token));
-    };
-  }
-
   // <RegularExpressionLiteral>
   //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
   syntax.getRule('RegularExpressionLiteral')
@@ -1351,30 +1280,52 @@ function buildStandardSyntax() {
 myjs.UnparseContext = function(dialect) {
   this.dialect = dialect;
   this.handlers = dialect.getNodeHandlers();
+  this.hasPendingNewline = false;
   this.text = [];
+};
+
+myjs.UnparseContext.prototype.newline = function() {
+  this.hasPendingNewline = true;
 };
 
 myjs.UnparseContext.prototype.node = function(ast) {
   var type = ast.type;
   var handler = this.handlers[type];
-  if (!handler) {
-    throw new myjs.Error('Unknown node type "' + type + '".');
+  if (handler) {
+    handler.unparse(this, ast);
+  } else {
+    this.write("#<" + type + ">");
   }
-  handler.unparse(this, ast);
+  return this;
 };
 
-myjs.UnparseContext.prototype.nodes = function(asts) {
-  asts.forEach(function(ast) {
-    this.node(ast);
-  }.bind(this));
+myjs.UnparseContext.prototype.nodes = function(asts, opt_separator) {
+  var i;
+  for (i = 0; i < asts.length; i++) {
+    if (opt_separator && (i > 0)) {
+      this.write(opt_separator);
+    }
+    this.node(asts[i]);
+  }
+  return this;
+};
+
+myjs.UnparseContext.prototype.flushNewline = function() {
+  if (this.hasPendingNewline) {
+    this.hasPendingNewline = false;
+    this.text.push("\n");
+  }
 };
 
 myjs.UnparseContext.prototype.write = function(str) {
+  this.flushNewline();
   this.text.push(str);
+  return this;
 };
 
 myjs.UnparseContext.prototype.flush = function() {
-  return this.text.join();
+  this.flushNewline();
+  return this.text.join("");
 };
 
 myjs.Dialect.prototype.unparse = function(ast) {
@@ -1397,7 +1348,8 @@ function registerBuiltInDialects() {
   myjs.registerDialect(new myjs.Dialect('default')
     .addFragment('myjs.Program')
     .addFragment('myjs.Statement')
-    .addFragment('myjs.Declaration'));
+    .addFragment('myjs.Declaration')
+    .addFragment('myjs.Core'));
 }
 
 registerBuiltInDialects();

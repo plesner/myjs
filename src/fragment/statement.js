@@ -26,12 +26,17 @@ myjs.ast.ExpressionStatement = function(expression) {
   this.expression = expression;
 };
 
+myjs.ast.BlockStatement = function(body) {
+  this.type = 'BlockStatement';
+  this.body = body;
+};
+
 (function () {
 
   function ExpressionStatementHandler() { }
 
   ExpressionStatementHandler.prototype.unparse = function(context, ast) {
-    context.write("expr;");
+    context.node(ast.expression).write(";").newline();
   };
 
   function getSyntax() {
@@ -40,14 +45,30 @@ myjs.ast.ExpressionStatement = function(expression) {
 
     // <Statement>
     //   -> <ExpressionStatement>
+    //   -> <Block>
+    //   -> <VariableStatement>
     syntax.getRule('Statement')
-      .addProd(f.nonterm('ExpressionStatement'));
+      .addProd(f.nonterm('ExpressionStatement'))
+      .addProd(f.nonterm('Block'))
+      .addProd(f.nonterm('VariableStatement'));
 
     // <ExpressionStatement>
     //   -> <Expression> ";"
     syntax.getRule('ExpressionStatement')
       .addProd(f.nonterm('Expression'), f.punct(';'))
       .setConstructor(myjs.ast.ExpressionStatement);
+
+    // <Block>
+    //   -> "{" <Statement>* "}"
+    syntax.getRule('Block')
+      .addProd(f.punct('{'), f.star(f.nonterm('Statement')), f.punct('}'))
+      .setConstructor(myjs.ast.BlockStatement);
+
+    // <VariableStatement>
+    //   -> "var" <VariableDeclarationList> ";"
+    syntax.getRule('VariableStatement')
+      .addProd(f.keyword('var'), f.nonterm('VariableDeclarationList'),
+        f.punct(';'));
 
     return syntax;
   }

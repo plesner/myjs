@@ -43,14 +43,23 @@ myjs.ast.VariableDeclarator = function(id, init) {
 
   function VariableDeclarationHandler() { }
 
-  VariableDeclarationHandler.prototype.unparse = function(context, node) {
-    context.write("var;");
+  VariableDeclarationHandler.prototype.unparse = function(context, ast) {
+    context.write("var ").nodes(ast.declarations, ",").newline();
   };
 
   function FunctionDeclarationHandler() { }
 
-  FunctionDeclarationHandler.prototype.unparse = function(context, node) {
+  FunctionDeclarationHandler.prototype.unparse = function(context, ast) {
     context.write("fun;");
+  };
+
+  function VariableDeclaratorHandler() { }
+
+  VariableDeclaratorHandler.prototype.unparse = function(context, ast) {
+    context.node(ast.id);
+    if (ast.init) {
+      context.write(" = ").node(ast.init);
+    }
   };
 
   function getSyntax() {
@@ -90,6 +99,7 @@ myjs.ast.VariableDeclarator = function(id, init) {
   var fragment = new myjs.Fragment('myjs.Declaration')
     .setSyntaxProvider(getSyntax)
     .addNodeHandler('VariableDeclaration', new VariableDeclarationHandler())
+    .addNodeHandler('VariableDeclarator', new VariableDeclaratorHandler())
     .addNodeHandler('FunctionDeclaration', new FunctionDeclarationHandler());
 
   myjs.registerFragment(fragment);

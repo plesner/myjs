@@ -89,11 +89,6 @@ myjs.ast.EmptyStatement = function() {
   this.type = 'EmptyStatement';
 };
 
-myjs.ast.BlockStatement = function(body) {
-  this.type = 'BlockStatement';
-  this.body = body;
-};
-
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.type = 'IfStatement';
   this.test = test;
@@ -306,14 +301,4 @@ myjs.ast.MemberExpression = function(object, property, computed) {
   this.object = object;
   this.property = property;
   this.computed = computed;
-};
-
-myjs.ast.Identifier = function(name) {
-  this.type = 'Identifier';
-  this.name = name;
-};
-
-myjs.ast.Literal = function(value) {
-  this.type = 'Literal';
-  this.value = value;
 };
