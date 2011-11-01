@@ -40,24 +40,20 @@ myjs.ast.ExpressionStatement = function(expression) {
   this.expression = expression;
 };
 
+myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
+  context.node(this.expression).write(";").newline();
+};
+
 myjs.ast.BlockStatement = function(body) {
   this.type = 'BlockStatement';
   this.body = body;
 };
 
+myjs.ast.BlockStatement.prototype.unparse = function(context) {
+  context.write("{").indent().newline().nodes(this.body).deindent().write("}");
+};
+
 (function () {
-
-  function ExpressionStatementHandler() { }
-
-  ExpressionStatementHandler.prototype.unparse = function(context, ast) {
-    context.node(ast.expression).write(";").newline();
-  };
-
-  function BlockStatementHandler() { }
-
-  BlockStatementHandler.prototype.unparse = function(context, ast) {
-    context.write("{").indent().newline().nodes(ast.body).deindent().write("}");
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -95,8 +91,8 @@ myjs.ast.BlockStatement = function(body) {
 
   var fragment = new myjs.Fragment('myjs.Statement')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('ExpressionStatement', new ExpressionStatementHandler())
-    .addNodeHandler('BlockStatement', new BlockStatementHandler());
+    .registerType('ExpressionStatement', myjs.ast.ExpressionStatement)
+    .registerType('BlockStatement', myjs.ast.BlockStatement);
 
   myjs.registerFragment(fragment);
 

@@ -26,6 +26,14 @@ myjs.ast.ReturnStatement = function(argument) {
   this.argument = argument;
 };
 
+myjs.ast.ReturnStatement.prototype.unparse = function(context) {
+  context.write('return');
+  if (this.argument) {
+    context.write(' ').node(this.argument);
+  }
+  context.write(';').newline();
+};
+
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.type = 'IfStatement';
   this.test = test;
@@ -50,16 +58,6 @@ myjs.ast.ContinueStatement = function(label) {
 };
 
 (function () {
-
-  function ReturnStatementHandler() { }
-
-  ReturnStatementHandler.prototype.unparse = function(context, ast) {
-    context.write('return');
-    if (ast.argument) {
-      context.write(' ').node(ast.argument);
-    }
-    context.write(';').newline();
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -110,7 +108,7 @@ myjs.ast.ContinueStatement = function(label) {
 
   var fragment = new myjs.Fragment('myjs.Control')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('ReturnStatement', new ReturnStatementHandler());
+    .registerType('ReturnStatement', myjs.ast.ReturnStatement);
 
   myjs.registerFragment(fragment);
 

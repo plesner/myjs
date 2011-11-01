@@ -92,7 +92,7 @@ myjs.Dialect = function(name) {
   this.keywords = null;
   this.punctuators = null;
   this.settings = null;
-  this.nodeHandlers = null;
+  this.types = null;
 };
 
 /**
@@ -169,20 +169,20 @@ myjs.Dialect.prototype.getSyntax = function() {
 };
 
 /**
- * Returns a map from node handler names to handler objects.
+ * Returns a map from type names to constructor functions.
  */
-myjs.Dialect.prototype.getNodeHandlers = function() {
-  if (!this.nodeHandlers) {
-    this.nodeHandlers = {};
+myjs.Dialect.prototype.getTypes = function() {
+  if (!this.types) {
+    this.types = {};
     this.fragments.forEach(function(fragName) {
       var frag = myjs.getFragment(fragName);
-      var handlers = frag.getNodeHandlers();
-      Object.keys(handlers).forEach(function(name) {
-        this.nodeHandlers[name] = handlers[name];
+      var types = frag.getTypes();
+      Object.keys(types).forEach(function(name) {
+        this.types[name] = types[name];
       }.bind(this));
     }.bind(this));
   }
-  return this.nodeHandlers;
+  return this.types;
 };
 
 /**
@@ -302,7 +302,7 @@ myjs.Fragment = function(name) {
   this.name = name;
   this.syntaxProvider = null;
   this.syntax = null;
-  this.nodeHandlers = {};
+  this.types = {};
 };
 
 myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
@@ -310,16 +310,13 @@ myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
   return this;
 };
 
-/**
- * Adds a node handler for the given type of syntax tree node.
- */
-myjs.Fragment.prototype.addNodeHandler = function(name, handler) {
-  this.nodeHandlers[name] = handler;
+myjs.Fragment.prototype.registerType = function(name, constructor) {
+  this.types[name] = constructor;
   return this;
 };
 
-myjs.Fragment.prototype.getNodeHandlers = function() {
-  return this.nodeHandlers;
+myjs.Fragment.prototype.getTypes = function() {
+  return this.types;
 };
 
 /**
@@ -881,7 +878,7 @@ function buildStandardSyntax() {
 
 myjs.UnparseContext = function(dialect) {
   this.dialect = dialect;
-  this.handlers = dialect.getNodeHandlers();
+  this.types = dialect.getTypes();
   this.hasPendingNewline = false;
   this.indentLevel = 0;
   this.text = [];
@@ -904,12 +901,12 @@ myjs.UnparseContext.prototype.newline = function() {
 
 myjs.UnparseContext.prototype.node = function(ast) {
   var type = ast.type;
-  var handler = this.handlers[type];
-  if (handler) {
-    handler.unparse(this, ast);
-  } else {
-    this.write("#<" + type + ">");
+  var typeCons = this.types[type];
+  if (typeCons) {
+    typeCons.prototype.unparse.call(ast, this);
+    return this;
   }
+  this.write("#<" + type + ">");
   return this;
 };
 

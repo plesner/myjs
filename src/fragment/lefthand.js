@@ -27,10 +27,20 @@ myjs.ast.NewExpression = function(constructor, arguments) {
   this.arguments = arguments;
 };
 
+myjs.ast.NewExpression.prototype.unparse = function(context) {
+  context.write('new (').node(this.constructor).write(')(')
+    .nodes(this.arguments, ', ').write(')');
+};
+
 myjs.ast.CallExpression = function(callee, arguments) {
   this.type = 'CallExpression';
   this.callee = callee;
   this.arguments = arguments;
+};
+
+myjs.ast.CallExpression.prototype.unparse = function(context) {
+  context.write("(").node(this.callee).write(")(")
+    .nodes(this.arguments, ", ").write(")");
 };
 
 myjs.ast.MemberExpression = function(object, property, computed) {
@@ -40,32 +50,16 @@ myjs.ast.MemberExpression = function(object, property, computed) {
   this.computed = computed;
 };
 
+myjs.ast.MemberExpression.prototype.unparse = function(context) {
+  if (this.computed) {
+    context.write("(").node(this.object).write(")[").node(this.property)
+      .write("]");
+  } else {
+    context.write("(").node(this.object).write(").").node(this.property);
+  }
+};
+
 (function () {
-
-  function CallExpressionHandler() { }
-
-  CallExpressionHandler.prototype.unparse = function(context, ast) {
-    context.write("(").node(ast.callee).write(")(").nodes(ast.arguments, ", ")
-      .write(")");
-  };
-
-  function MemberExpressionHandler() { }
-
-  MemberExpressionHandler.prototype.unparse = function(context, ast) {
-    if (ast.computed) {
-      context.write("(").node(ast.object).write(")[").node(ast.property)
-        .write("]");
-    } else {
-      context.write("(").node(ast.object).write(").").node(ast.property);
-    }
-  };
-
-  function NewExpressionHandler() { }
-
-  NewExpressionHandler.prototype.unparse = function(context, ast) {
-    context.write('new (').node(ast.constructor).write(')(')
-      .nodes(ast.arguments, ', ').write(')');
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -173,9 +167,9 @@ myjs.ast.MemberExpression = function(object, property, computed) {
 
   var fragment = new myjs.Fragment('myjs.LeftHandSide')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('CallExpression', new CallExpressionHandler())
-    .addNodeHandler('MemberExpression', new MemberExpressionHandler())
-    .addNodeHandler('NewExpression', new NewExpressionHandler());
+    .registerType('CallExpression', myjs.ast.CallExpression)
+    .registerType('MemberExpression', myjs.ast.MemberExpression)
+    .registerType('NewExpression', myjs.ast.NewExpression);
 
   myjs.registerFragment(fragment);
 

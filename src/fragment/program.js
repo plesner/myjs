@@ -42,13 +42,11 @@ myjs.ast.Program = function(body) {
   this.elements = body;
 };
 
+myjs.ast.Program.prototype.unparse = function(context) {
+  context.nodes(this.elements);
+};
+
 (function () {
-
-  function ProgramHandler() { }
-
-  ProgramHandler.prototype.unparse = function(context, node) {
-    context.nodes(node.elements);
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -72,7 +70,7 @@ myjs.ast.Program = function(body) {
 
   var fragment = new myjs.Fragment('myjs.Program')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('Program', new ProgramHandler());
+    .registerType('Program', myjs.ast.Program);
 
   myjs.registerFragment(fragment);
 

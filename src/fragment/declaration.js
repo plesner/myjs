@@ -28,9 +28,18 @@ myjs.ast.FunctionDeclaration = function(id, params, body) {
   this.body = body;
 };
 
+myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
+  context.write("function ").node(this.id).write("(").nodes(this.params, ", ")
+    .write(")").node(this.body).newline();
+};
+
 myjs.ast.VariableDeclaration = function(declarations) {
   this.type = 'VariableDeclaration';
   this.declarations = declarations;
+};
+
+myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
+  context.write("var ").nodes(this.declarations, ", ").write(";").newline();
 };
 
 myjs.ast.VariableDeclarator = function(id, init) {
@@ -39,29 +48,14 @@ myjs.ast.VariableDeclarator = function(id, init) {
   this.init = init;
 };
 
+myjs.ast.VariableDeclarator.prototype.unparse = function(context) {
+  context.node(this.id);
+  if (this.init) {
+    context.write(" = ").node(this.init);
+  }
+};
+
 (function () {
-
-  function VariableDeclarationHandler() { }
-
-  VariableDeclarationHandler.prototype.unparse = function(context, ast) {
-    context.write("var ").nodes(ast.declarations, ", ").write(";").newline();
-  };
-
-  function FunctionDeclarationHandler() { }
-
-  FunctionDeclarationHandler.prototype.unparse = function(context, ast) {
-    context.write("function ").node(ast.id).write("(").nodes(ast.params, ", ")
-      .write(")").node(ast.body).newline();
-  };
-
-  function VariableDeclaratorHandler() { }
-
-  VariableDeclaratorHandler.prototype.unparse = function(context, ast) {
-    context.node(ast.id);
-    if (ast.init) {
-      context.write(" = ").node(ast.init);
-    }
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -99,9 +93,9 @@ myjs.ast.VariableDeclarator = function(id, init) {
 
   var fragment = new myjs.Fragment('myjs.Declaration')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('VariableDeclaration', new VariableDeclarationHandler())
-    .addNodeHandler('VariableDeclarator', new VariableDeclaratorHandler())
-    .addNodeHandler('FunctionDeclaration', new FunctionDeclarationHandler());
+    .registerType('VariableDeclaration', myjs.ast.VariableDeclaration)
+    .registerType('VariableDeclarator', myjs.ast.VariableDeclarator)
+    .registerType('FunctionDeclaration', myjs.ast.FunctionDeclaration);
 
   myjs.registerFragment(fragment);
 

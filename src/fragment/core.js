@@ -26,24 +26,20 @@ myjs.ast.Identifier = function(name) {
   this.name = name;
 };
 
+myjs.ast.Identifier.prototype.unparse = function(context) {
+ context.write(this.name);
+};
+
 myjs.ast.Literal = function(value) {
   this.type = 'Literal';
   this.value = value;
 };
 
+myjs.ast.Literal.prototype.unparse = function(context) {
+  context.write(JSON.stringify(this.value));
+};
+
 (function () {
-
-  function IdentifierHandler() { }
-
-  IdentifierHandler.prototype.unparse = function(context, ast) {
-    context.write(ast.name);
-  };
-
-  function LiteralHandler() { }
-
-  LiteralHandler.prototype.unparse = function(context, ast) {
-    context.write(JSON.stringify(ast.value));
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -110,8 +106,8 @@ myjs.ast.Literal = function(value) {
 
   var fragment = new myjs.Fragment('myjs.Core')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('Identifier', new IdentifierHandler())
-    .addNodeHandler('Literal', new LiteralHandler());
+    .registerType('Identifier', myjs.ast.Identifier)
+    .registerType('Literal', myjs.ast.Literal);
 
   myjs.registerFragment(fragment);
 

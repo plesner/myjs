@@ -101,15 +101,15 @@ myjs.ast.LogicalOperator = function(token) {
 
   function BinaryHandler() { }
 
-  BinaryHandler.prototype.unparse = function(context, ast) {
-    context.write("(").node(ast.left).write(")").node(ast.operator).write("(")
-      .node(ast.right).write(")");
+  BinaryHandler.prototype.unparse = function(context) {
+    context.write("(").node(this.left).write(")").node(this.operator).write("(")
+      .node(this.right).write(")");
   };
 
   function OperatorHandler() { }
 
-  OperatorHandler.prototype.unparse = function(context, ast) {
-    context.write(ast.token);
+  OperatorHandler.prototype.unparse = function(context) {
+    context.write(this.token);
   };
 
   function getSyntax() {
@@ -273,12 +273,10 @@ myjs.ast.LogicalOperator = function(token) {
     return syntax;
   }
 
-  var binaryHandler = new BinaryHandler();
-  var operatorHandler = new OperatorHandler();
   var fragment = new myjs.Fragment('myjs.Operators')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('AssignmentExpression', binaryHandler)
-    .addNodeHandler('AssignmentOperator', operatorHandler);
+    .registerType('AssignmentExpression', BinaryHandler)
+    .registerType('AssignmentOperator', OperatorHandler);
 
   myjs.registerFragment(fragment);
 

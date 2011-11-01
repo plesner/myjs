@@ -31,6 +31,10 @@ myjs.ast.ThisExpression.get = function () {
   return myjs.ast.ThisExpression.INSTANCE_;
 };
 
+myjs.ast.ThisExpression.prototype.unparse = function(context) {
+  context.write('this');
+};
+
 myjs.ast.ArrayExpression = function(elements) {
   this.type = 'ArrayExpression';
   this.elements = elements;
@@ -54,6 +58,15 @@ myjs.ast.FunctionExpression = function(id, params, body) {
   this.body = body;
 };
 
+myjs.ast.FunctionExpression.prototype.unparse = function(context) {
+  context.write('function ');
+  if (this.id) {
+    context.node(this.id);
+  }
+  context.write('(').nodes(this.params, ', ').write(') ').node(this.body)
+    .newline();
+};
+
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.type = 'ConditionalExpression';
   this.test = test;
@@ -62,23 +75,6 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
 };
 
 (function () {
-
-  function FunctionExpressionHandler() { }
-
-  FunctionExpressionHandler.prototype.unparse = function(context, ast) {
-    context.write('function ');
-    if (ast.id) {
-      context.node(ast.id);
-    }
-    context.write('(').nodes(ast.params, ', ').write(') ').node(ast.body)
-      .newline();
-  };
-
-  function ThisExpressionHandler() { }
-
-  ThisExpressionHandler.prototype.unparse = function(context, ast) {
-    context.write('this');
-  };
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -161,8 +157,8 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
 
   var fragment = new myjs.Fragment('myjs.Expression')
     .setSyntaxProvider(getSyntax)
-    .addNodeHandler('FunctionExpression', new FunctionExpressionHandler())
-    .addNodeHandler('ThisExpression', new ThisExpressionHandler());
+    .registerType('FunctionExpression', myjs.ast.FunctionExpression)
+    .registerType('ThisExpression', myjs.ast.ThisExpression);
 
   myjs.registerFragment(fragment);
 
