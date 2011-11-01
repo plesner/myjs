@@ -1117,97 +1117,6 @@ function buildStandardSyntax() {
       .setHandler(updateBuilder);
   });
 
-  // <LeftHandSideExpression>
-  //   -> "new"* <LeftHandSideAtom> <LeftHandSideSuffix>*
-  syntax.getRule('LeftHandSideExpression')
-    .addProd(star(keywordValue('new')), nonterm('LeftHandSideAtom'),
-      star(nonterm('LeftHandSideSuffix')))
-    .setHandler(buildLeftHandSideExpression);
-
-  function buildLeftHandSideExpression(news, atom, suffixes) {
-    var i, current = atom;
-    var newCount = news.length;
-    // Scan through the suffixes from left to right and apply them
-    // appropriately.
-    for (i = 0; i < suffixes.length; i++) {
-      var suffix = suffixes[i];
-      if (suffix.isArguments() && newCount > 0) {
-        // If this is argument suffix we match it with a "new" if there is
-        // one.
-        current = suffix.wrapNew(current);
-        newCount--;
-      } else {
-        // Otherwise we just apply the suffix and keep going.
-        current = suffix.wrapPlain(current);
-      }
-    }
-    // Any news that weren't matched by arguments have implicit empty
-    // arguments.
-    for (i = 0; i < newCount; i++) {
-      current = new ArgumentsSuffix([]).wrapNew(current);
-    }
-    return current;
-  }
-
-  // <LeftHandSideAtom>
-  //   -> <FunctionExpression>
-  //   -> <PrimaryExpression>
-  syntax.getRule('LeftHandSideAtom')
-    .addProd(nonterm('PrimaryExpression'))
-    .addProd(nonterm('FunctionExpression'));
-
-  // <LeftHandSideSuffix>
-  //   -> "[" <Expression> "]"
-  //   -> "." $Identifier
-  //   -> <Arguments>
-  syntax.getRule('LeftHandSideSuffix')
-    .addProd(punct('['), nonterm('Expression'), punct(']'))
-    .setConstructor(GetElementSuffix)
-    .addProd(punct('.'), value('Identifier'))
-    .setConstructor(GetPropertySuffix)
-    .addProd(nonterm('Arguments'))
-    .setConstructor(ArgumentsSuffix);
-
-  function GetElementSuffix(value) {
-    this.value = value;
-  }
-
-  GetElementSuffix.prototype.isArguments = function() {
-    return false;
-  };
-
-  GetElementSuffix.prototype.wrapPlain = function(atom) {
-    return new myjs.ast.MemberExpression(atom, this.value, true);
-  };
-
-  function GetPropertySuffix(name) {
-    this.name = name;
-  }
-
-  GetPropertySuffix.prototype.isArguments = function() {
-    return false;
-  };
-
-  GetPropertySuffix.prototype.wrapPlain = function(atom) {
-    return new myjs.ast.MemberExpression(atom, new myjs.ast.Identifier(this.name), false);
-  };
-
-  function ArgumentsSuffix(args) {
-    this.args = args;
-  }
-
-  ArgumentsSuffix.prototype.isArguments = function() {
-    return true;
-  };
-
-  ArgumentsSuffix.prototype.wrapPlain = function(atom) {
-    return new myjs.ast.CallExpression(atom, this.args);
-  };
-
-  ArgumentsSuffix.prototype.wrapNew = function(atom) {
-    return new myjs.ast.NewExpression(atom, this.args);
-  };
-
   // <FunctionExpression>
   //   -> "function" <Identifier>? "(" <FormalParameterList> ")" "{"
   //      <FunctionBody> "}"
@@ -1281,11 +1190,23 @@ myjs.UnparseContext = function(dialect) {
   this.dialect = dialect;
   this.handlers = dialect.getNodeHandlers();
   this.hasPendingNewline = false;
+  this.indentLevel = 0;
   this.text = [];
+};
+
+myjs.UnparseContext.prototype.indent = function() {
+  this.indentLevel++;
+  return this;
+};
+
+myjs.UnparseContext.prototype.deindent = function() {
+  this.indentLevel--;
+  return this;
 };
 
 myjs.UnparseContext.prototype.newline = function() {
   this.hasPendingNewline = true;
+  return this;
 };
 
 myjs.UnparseContext.prototype.node = function(ast) {
@@ -1314,6 +1235,9 @@ myjs.UnparseContext.prototype.flushNewline = function() {
   if (this.hasPendingNewline) {
     this.hasPendingNewline = false;
     this.text.push("\n");
+    for (var i = 0; i < this.indentLevel; i++) {
+      this.text.push("  ");
+    }
   }
 };
 
@@ -1349,7 +1273,8 @@ function registerBuiltInDialects() {
     .addFragment('myjs.Program')
     .addFragment('myjs.Statement')
     .addFragment('myjs.Declaration')
-    .addFragment('myjs.Core'));
+    .addFragment('myjs.Core')
+    .addFragment('myjs.LeftHandSide'));
 }
 
 registerBuiltInDialects();

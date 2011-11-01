@@ -283,22 +283,3 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.consequent = consequent;
   this.alternate = alternate;
 };
-
-myjs.ast.NewExpression = function(constructor, arguments) {
-  this.type = 'NewExpression';
-  this.constructor = constructor;
-  this.arguments = arguments;
-};
-
-myjs.ast.CallExpression = function(callee, arguments) {
-  this.type = 'CallExpression';
-  this.callee = callee;
-  this.arguments = arguments;
-};
-
-myjs.ast.MemberExpression = function(object, property, computed) {
-  this.type = 'MemberExpression';
-  this.object = object;
-  this.property = property;
-  this.computed = computed;
-};

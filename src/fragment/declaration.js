@@ -44,13 +44,14 @@ myjs.ast.VariableDeclarator = function(id, init) {
   function VariableDeclarationHandler() { }
 
   VariableDeclarationHandler.prototype.unparse = function(context, ast) {
-    context.write("var ").nodes(ast.declarations, ",").newline();
+    context.write("var ").nodes(ast.declarations, ", ").write(";").newline();
   };
 
   function FunctionDeclarationHandler() { }
 
   FunctionDeclarationHandler.prototype.unparse = function(context, ast) {
-    context.write("fun;");
+    context.write("function ").node(ast.id).write("(").nodes(ast.params, ", ")
+      .write(")").node(ast.body).newline();
   };
 
   function VariableDeclaratorHandler() { }
