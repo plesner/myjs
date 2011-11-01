@@ -328,10 +328,10 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.alternate = alternate;
 };
 
-myjs.ast.NewExpression = function(constructor, args) {
+myjs.ast.NewExpression = function(constructor, arguments) {
   this.type = 'NewExpression';
   this.constructor = constructor;
-  this.args = args;
+  this.arguments = arguments;
 };
 
 myjs.ast.CallExpression = function(callee, arguments) {
@@ -678,19 +678,4 @@ myjs.ast.FunctionExpression.prototype.unparse = function(out) {
   out.string('function ').string(this.name).string('(')
     .strings(this.params, ', ').string(') {').indent().newline()
     .nodes(this.body).deindent().string('}');
-};
-
-myjs.ast.NewExpression = function(base, args) {
-  this.base = base;
-  this.args = args;
-};
-goog.inherits(myjs.ast.NewExpression, myjs.ast.Expression);
-
-myjs.ast.NewExpression.prototype.translate = function() {
-  return new myjs.ast.NewExpression(this.base.translate(), translateAll(this.args));
-};
-
-myjs.ast.NewExpression.prototype.unparse = function(out) {
-  out.string('new (').node(this.base).string(')(')
-    .nodes(this.args, ', ').string(')');
 };

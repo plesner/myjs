@@ -435,6 +435,10 @@ function call(fun, var_args) {
   return {type: 'CallExpression', callee: fun, arguments: toArray(arguments, 1)};
 }
 
+function nw(cons, var_args) {
+  return {type: 'NewExpression', constructor: cons, arguments: toArray(arguments, 1)};
+}
+
 function get(obj, prop) {
   return {type: 'MemberExpression', object: obj, property: id(prop), computed: false};
 }
@@ -562,6 +566,17 @@ function testMemberExpressionParsing() {
   exprCheck("a[5][6]", mem(mem(id("a"), lit(5)), lit(6)));
   exprCheck("x.y[7].z[8]", mem(get(mem(get(id("x"), "y"), lit(7)), "z"),
     lit(8)));
+}
+
+registerTest(testNewExpressionParsing);
+function testNewExpressionParsing() {
+  exprCheck("new A", nw(id("A")));
+  exprCheck("new A()", nw(id("A")));
+  exprCheck("new A(1)", nw(id("A"), lit(1)));
+  exprCheck("new A(1, 2)", nw(id("A"), lit(1), lit(2)));
+  exprCheck("new a.b(1, 2)", nw(get(id("a"), "b"), lit(1), lit(2)));
+  exprCheck("new new A", nw(nw(id("A"))));
+  exprCheck("new new A(4)(5)", nw(nw(id("A"), lit(4)), lit(5)));
 }
 
 myjs.test.getAllTests = function() {
