@@ -45,7 +45,7 @@ myjs.ast.MemberExpression = function(object, property, computed) {
   function CallExpressionHandler() { }
 
   CallExpressionHandler.prototype.unparse = function(context, ast) {
-    context.write("(").node(ast.callee).write(")(").nodes(ast.arguments, ",")
+    context.write("(").node(ast.callee).write(")(").nodes(ast.arguments, ", ")
       .write(")");
   };
 
@@ -58,6 +58,13 @@ myjs.ast.MemberExpression = function(object, property, computed) {
     } else {
       context.write("(").node(ast.object).write(").").node(ast.property);
     }
+  };
+
+  function NewExpressionHandler() { }
+
+  NewExpressionHandler.prototype.unparse = function(context, ast) {
+    context.write('new (').node(ast.constructor).write(')(')
+      .nodes(ast.arguments, ', ').write(')');
   };
 
   function getSyntax() {
@@ -155,13 +162,20 @@ myjs.ast.MemberExpression = function(object, property, computed) {
       return new myjs.ast.NewExpression(atom, this.args);
     };
 
+    // <Arguments>
+    //   -> "(" <AssignmentExpression> *: "," ")"
+    syntax.getRule('Arguments')
+      .addProd(f.punct('('), f.star(f.nonterm('AssignmentExpression'),
+        f.punct(',')), f.punct(')'));
+
     return syntax;
   }
 
   var fragment = new myjs.Fragment('myjs.LeftHandSide')
     .setSyntaxProvider(getSyntax)
     .addNodeHandler('CallExpression', new CallExpressionHandler())
-    .addNodeHandler('MemberExpression', new MemberExpressionHandler());
+    .addNodeHandler('MemberExpression', new MemberExpressionHandler())
+    .addNodeHandler('NewExpression', new NewExpressionHandler());
 
   myjs.registerFragment(fragment);
 

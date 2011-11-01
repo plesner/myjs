@@ -725,20 +725,6 @@ myjs.tokenize = function(source, settings) {
 };
 
 /**
- * Returns a function that will, given a list of values [x0, x1, ..., xn]
- * returns Cons(x0, Cons(x1, Cons(..., xn))).
- */
-function groupRight(Constructor) {
-  return function(items) {
-    var i, current = items[items.length - 1];
-    for (i = items.length - 2; i >= 0; i--) {
-      current = new Constructor(items[i], current);
-    }
-    return current;
-  };
-}
-
-/**
  * Returns a function that will, given a list of values
  * [x0, o0, x1, o1, ..., o_n-1, xn] returns
  * Cons(x0, o0, Cons(x1, o1, Cons(..., o_n-1, xn))).
@@ -753,20 +739,6 @@ function groupInfixRight(Constructor) {
     }
     return result;
   };
-}
-
-/**
- * Given a list of values, [x0, o0, x1, o1, ..., o_n-1, xn] returns
- * o0(x0, o1(x1, o2(x2, ..., xn))).
- */
-function applyInfixFunctions(items) {
-  var i, result = items[items.length - 1];
-  for (i = items.length - 3; i >= 0; i -= 2) {
-    var next = items[i];
-    var op = items[i + 1];
-    result = op(next, result);
-  }
-  return result;
 }
 
 /**
@@ -796,17 +768,6 @@ myjs.RegExpHandler.prototype.parse = function(context) {
   }
   return tokens;
 };
-
-var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
-  '>>=', '>>>=', '<<=', '/='];
-var BINARY_OPERATORS = ["==", "!=", "===", "!==", "<", "<=", ">", ">=",
-  "<<", ">>", ">>>", "+", "-", "*", "%", "|", "^", "/"];
-var BINARY_KEYWORDS = ["instanceof", "in"];
-var LOGICAL_OPERATORS = ['||', '&&'];
-var INFIX_KEYWORDS = ['instanceof'];
-var UNARY_OPERATORS = ['-', '+', '!', '~', '!'];
-var UNARY_KEYWORDS = ['typeof', 'void', 'delete'];
-var UPDATE_OPERATORS = ['++', '--'];
 
 var standardSyntaxCache = null;
 
@@ -975,209 +936,6 @@ function buildStandardSyntax() {
     .addProd(keyword('return'), option(nonterm('Expression')), punct(';'))
     .setConstructor(myjs.ast.ReturnStatement);
 
-  // <Expression>
-  //   -> <AssignmentExpression> +: ","
-  syntax.getRule('Expression')
-    .addProd(plus(nonterm('AssignmentExpression'), punct(',')))
-    .setHandler(groupRight(myjs.ast.SequenceExpression));
-
-  // <AssignmentExpression>
-  //   -> <OperatorExpression> +: <AssignmentOperator>
-  syntax.getRule('AssignmentExpression')
-    .addProd(plus(nonterm('ConditionalExpression'),
-      nonterm('AssignmentOperator')))
-    .setHandler(applyInfixFunctions);
-
-  // <ConditionalExpression>
-  //   -> <OperatorExpression> ("?" <OperatorExpression> ":"
-  //      <OperatorExpression>)?
-  syntax.getRule('ConditionalExpression')
-    .addProd(nonterm('OperatorExpression'), option(punct('?'),
-      nonterm('OperatorExpression'), punct(':'),
-      nonterm('OperatorExpression')))
-    .setHandler(buildConditional);
-
-  function buildConditional(cond, rest) {
-    if (!rest) {
-      return cond;
-    } else {
-      return new myjs.ast.ConditionalExpression(cond, rest[0], rest[1]);
-    }
-  }
-
-  // <AssignmentOperator>
-  //   -> ... assignment operators ...
-  var assignmentBuilder = infixBuilder(myjs.ast.AssignmentOperator,
-    myjs.ast.AssignmentExpression);
-  ASSIGNMENT_OPERATORS.forEach(function(op) {
-    syntax.getRule('AssignmentOperator')
-      .addProd(punctValue(op))
-      .setHandler(assignmentBuilder);
-  });
-
-  // <OperatorExpression>
-  //   <UnaryExpression> +: <InfixToken>
-  syntax.getRule('OperatorExpression')
-    .addProd(plus(nonterm('UnaryExpression'), nonterm('InfixToken')))
-    .setHandler(applyInfixFunctions);
-
-  // Who said higher-order functions weren't useful?
-  function infixBuilder(OpBuilder, AstBuilder) {
-    return function(op) { // Called during parsing.
-      var opAst = new OpBuilder(op);
-      return function(left, right) { // Called during post processing.
-        return new AstBuilder(left, opAst, right);
-      };
-    };
-  }
-
-  // <InfixToken>
-  //   -> ... binary operators ...
-  //   -> ... binary keywords ...
-  var binaryBuilder = infixBuilder(myjs.ast.BinaryOperator,
-    myjs.ast.BinaryExpression);
-  BINARY_OPERATORS.forEach(function(op) {
-    syntax.getRule('InfixToken')
-      .addProd(punctValue(op))
-      .setHandler(binaryBuilder);
-  });
-  BINARY_KEYWORDS.forEach(function(word) {
-    syntax.getRule('InfixToken')
-      .addProd(keywordValue(word))
-      .setHandler(binaryBuilder);
-  });
-  var logicBuilder = infixBuilder(myjs.ast.LogicalOperator,
-    myjs.ast.LogicalExpression);
-  LOGICAL_OPERATORS.forEach(function(op) {
-    syntax.getRule('InfixToken')
-      .addProd(punctValue(op))
-      .setHandler(logicBuilder);
-  });
-  INFIX_KEYWORDS.forEach(function(word) {
-    syntax.getRule('InfixToken')
-      .addProd(keywordValue(word));
-  });
-
-  // <UnaryExpression>
-  //   -> <PrefixToken>* <LeftHandSideExpression> <PostfixOperator>*
-  syntax.getRule('UnaryExpression')
-    .addProd(star(nonterm('PrefixToken')), nonterm('LeftHandSideExpression'),
-      star(nonterm('PostfixOperator')))
-    .setHandler(buildUnary);
-
-  function buildUnary(prefix, value, postfix) {
-    var i, current = value;
-    for (i = 0; i < postfix.length; i++) {
-      current = postfix[i](current, false);
-    }
-    for (i = prefix.length - 1; i >= 0; i--) {
-      current = prefix[i](current, true);
-    }
-    return current;
-  }
-
-  function unaryBuilder(OpBuilder, AstBuilder) {
-    return function(op) {
-      var opAst = new OpBuilder(op);
-      return function(value, isPrefix) {
-        return new AstBuilder(opAst, value, isPrefix);
-      };
-    };
-  }
-
-  // <PrefixToken>
-  //   -> ... update operators ...
-  //   -> ... unary keywords ...
-  //   -> ... unary operators ...
-  var updateBuilder = unaryBuilder(myjs.ast.UpdateOperator,
-    myjs.ast.UpdateExpression);
-  UPDATE_OPERATORS.forEach(function(op) {
-    syntax.getRule('PrefixToken')
-      .addProd(punctValue(op))
-      .setHandler(updateBuilder);
-  });
-  var unaryBuilder = unaryBuilder(myjs.ast.UnaryOperator,
-    myjs.ast.UnaryExpression);
-  UNARY_KEYWORDS.forEach(function(word) {
-    syntax.getRule('PrefixToken')
-      .addProd(keywordValue(word))
-      .setHandler(unaryBuilder);
-  });
-  UNARY_OPERATORS.forEach(function(op) {
-    syntax.getRule("PrefixToken")
-      .addProd(punctValue(op))
-      .setHandler(unaryBuilder);
-  });
-
-  // <PostfixOperator>
-  //   -> ... update operators ...
-  UPDATE_OPERATORS.forEach(function(op) {
-    syntax.getRule('PostfixOperator')
-      .addProd(punctValue(op))
-      .setHandler(updateBuilder);
-  });
-
-  // <FunctionExpression>
-  //   -> "function" <Identifier>? "(" <FormalParameterList> ")" "{"
-  //      <FunctionBody> "}"
-  syntax.getRule('FunctionExpression')
-    .addProd(keyword('function'), option(nonterm('Identifier')), punct('('),
-      nonterm('FormalParameterList'), punct(')'), punct('{'),
-      nonterm('FunctionBody'), punct('}'))
-    .setConstructor(myjs.ast.FunctionExpression);
-
-  // <Arguments>
-  //   -> "(" <AssignmentExpression> *: "," ")"
-  syntax.getRule('Arguments')
-    .addProd(punct('('), star(nonterm('AssignmentExpression'), punct(',')),
-      punct(')'));
-
-  // <PrimaryExpression>
-  //   -> $Identifier
-  //   -> <Literal>
-  //   -> <ArrayLiteral>
-  //   -> <ObjectLiteral>
-  //   -> "(" <Expression> ")"
-  syntax.getRule('PrimaryExpression')
-    .addProd(keyword('this'))
-    .setHandler(myjs.ast.ThisExpression.get)
-    .addProd(value('Identifier'))
-    .setConstructor(myjs.ast.Identifier)
-    .addProd(nonterm('Literal'))
-    .addProd(nonterm('ArrayLiteral'))
-    .addProd(nonterm('ObjectLiteral'))
-    .addProd(punct('('), nonterm('Expression'), punct(')'));
-
-  // <ObjectLiteral>
-  //   -> "{" <PropertyAssignment> *: "," "}"
-  syntax.getRule('ObjectLiteral')
-    .addProd(punct('{'), star(nonterm('PropertyAssignment'), punct(',')),
-      punct('}'))
-    .setConstructor(myjs.ast.ObjectExpression);
-
-  // <PropertyAssignment>
-  //   -> <PropertyName> ":" <AssignmentExpression>
-  syntax.getRule('PropertyAssignment')
-    .addProd(nonterm('PropertyName'), punct(':'),
-      nonterm('AssignmentExpression'))
-    .setConstructor(myjs.ast.ObjectProperty);
-
-  // <PropertyName>
-  //   -> <Identifier>
-  //   -> <StringLiteral>
-  //   -> <NumericLiteral>
-  syntax.getRule('PropertyName')
-    .addProd(nonterm('Identifier'))
-    .addProd(nonterm('StringLiteral'))
-    .addProd(nonterm('NumericLiteral'));
-
-  // <ArrayLiteral>
-  //   -> "[" <AssignmentExpression> *: "," "]"
-  syntax.getRule('ArrayLiteral')
-    .addProd(punct('['), star(nonterm('AssignmentExpression'), punct(',')),
-      punct(']'))
-    .setConstructor(myjs.ast.ArrayExpression);
-
   // <RegularExpressionLiteral>
   //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
   syntax.getRule('RegularExpressionLiteral')
@@ -1274,7 +1032,9 @@ function registerBuiltInDialects() {
     .addFragment('myjs.Statement')
     .addFragment('myjs.Declaration')
     .addFragment('myjs.Core')
-    .addFragment('myjs.LeftHandSide'));
+    .addFragment('myjs.LeftHandSide')
+    .addFragment('myjs.Operators')
+    .addFragment('myjs.Expression'));
 }
 
 registerBuiltInDialects();

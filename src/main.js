@@ -34,6 +34,8 @@ var FILES = [
   ['src/fragment/core.js'],
   ['src/fragment/declaration.js'],
   ['src/fragment/lefthand.js'],
+  ['src/fragment/operators.js'],
+  ['src/fragment/expression.js'],
   ['src/dialects/tedir.my.js']
 ];
 

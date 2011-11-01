@@ -52,5 +52,7 @@ hackRequire('src/fragment/statement.js');
 hackRequire('src/fragment/core.js');
 hackRequire('src/fragment/declaration.js');
 hackRequire('src/fragment/lefthand.js');
+hackRequire('src/fragment/operators.js');
+hackRequire('src/fragment/expression.js');
 hackRequire("test/framework.js")
 hackRequire("test/test.js")

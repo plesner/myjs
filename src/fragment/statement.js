@@ -21,6 +21,20 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * An empty statement, i.e., a solitary semicolon.
+ *
+ * @constructor
+ * @extends myjs.ast.Statement
+ */
+myjs.ast.EmptyStatement = function() {
+  /**
+   * "EmptyStatement"
+   * @const
+   */
+  this.type = 'EmptyStatement';
+};
+
 myjs.ast.ExpressionStatement = function(expression) {
   this.type = 'ExpressionStatement';
   this.expression = expression;
