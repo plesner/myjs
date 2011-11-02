@@ -18,6 +18,8 @@
 
 'use strict';
 
+var myjs = require('../myjs-0.1-node.js');
+
 /**
  * Returns true if this string starts with the given substring.
  *
@@ -32,13 +34,13 @@ String.prototype.startsWith = function(substr) {
   }
 };
 
-myjs.test.assertEquals = function(a, b) {
+module.exports.assertEquals = function(a, b) {
   if (a != b) {
     myjs.test.failComparison(a, b);
   }
 };
 
-myjs.test.assertTrue = function(value) {
+module.exports.assertTrue = function(value) {
   if (value) {
     return;
   } else {
@@ -46,17 +48,17 @@ myjs.test.assertTrue = function(value) {
   }
 };
 
-myjs.test.assertFalse = function(value) {
-  myjs.test.assertTrue(!value);
+module.exports.assertFalse = function(value) {
+  module.exports.assertTrue(!value);
 };
 
-myjs.test.failComparison = function(a, b) {
+module.exports.failComparison = function(a, b) {
   console.log(a);
   console.log(b);
   throw 'Error: ' + a + ' != ' + b;
 };
 
-myjs.test.compareLists = function(one, two) {
+module.exports.compareLists = function(one, two) {
   if (one === two)
     return true;
   if (Array.isArray(one) != Array.isArray(two))
@@ -67,7 +69,7 @@ myjs.test.compareLists = function(one, two) {
     var vOne = one[i];
     var vTwo = two[i];
     if (Array.isArray(vOne) && Array.isArray(vTwo)) {
-      if (!myjs.test.compareLists(vOne, vTwo))
+      if (!module.exports.compareLists(vOne, vTwo))
         return false;
     } else if (one[i] != two[i]) {
       return false;
@@ -76,16 +78,16 @@ myjs.test.compareLists = function(one, two) {
   return true;
 };
 
-myjs.test.assertListEquals = function(one, two) {
-  if (!myjs.test.compareLists(one, two)) {
-    myjs.test.failComparison(myjs.test.listToString(one),
-      myjs.test.listToString(two));
+module.exports.assertListEquals = function(one, two) {
+  if (!module.exports.compareLists(one, two)) {
+    module.exports.failComparison(module.exports.listToString(one),
+      module.exports.listToString(two));
   }
 };
 
-myjs.test.listToString = function(obj) {
+module.exports.listToString = function(obj) {
   if (Array.isArray(obj)) {
-    return '[' + obj.map(myjs.test.listToString).join(', ') + ']';
+    return '[' + obj.map(module.exports.listToString).join(', ') + ']';
   } else {
     return String(obj);
   }

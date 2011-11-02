@@ -15,7 +15,8 @@
 'use strict';
 
 var fs = require('fs');
-var myjs = require('./myjs-raw.js');
+var myjs = require('../myjs-0.1-node.js');
+myjs.test = require('../test/test.js');
 
 /**
  * All the files to test the parser on.

@@ -320,7 +320,7 @@ myjs.registerFragment = function(fragment) {
 
 myjs.getFragment = function(name) {
   if (!myjs.fragmentRegistry.hasOwnProperty(name)) {
-    throw new myjs.Error('Unknown dialect "' + name + '".');
+    throw new myjs.Error('Unknown fragment "' + name + '".');
   }
   return myjs.fragmentRegistry[name];
 };

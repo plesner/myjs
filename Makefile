@@ -1,9 +1,19 @@
 # Files that need to be part of the resulting library.
-SHARED_FILES=     \
-src/utils.js      \
-src/ast.js        \
-src/tedir.js      \
-src/my.js
+SHARED_FILES=               \
+src/utils.js                \
+src/ast.js                  \
+src/tedir.js                \
+src/my.js                   \
+src/fragment/control.js     \
+src/fragment/core.js        \
+src/fragment/declaration.js \
+src/fragment/exceptions.js  \
+src/fragment/expression.js  \
+src/fragment/iteration.js   \
+src/fragment/lefthand.js    \
+src/fragment/operators.js   \
+src/fragment/program.js     \
+src/fragment/statement.js
 
 NODE_LIB_FILES=   \
 $(SHARED_FILES)   \
@@ -47,7 +57,7 @@ $(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
 		  --js_output_file $(NODE_LIB)
 
 # Runs the tests using closure.
-test:		$(NODE_LIB_FILES)
+test:		$(NODE_LIB)
 		node src/main.js test
 
 # Lints all files

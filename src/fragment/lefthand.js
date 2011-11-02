@@ -21,10 +21,10 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
-myjs.ast.NewExpression = function(constructor, arguments) {
+myjs.ast.NewExpression = function(constructor, args) {
   this.type = 'NewExpression';
   this.constructor = constructor;
-  this.arguments = arguments;
+  this.arguments = args;
 };
 
 myjs.ast.NewExpression.prototype.unparse = function(context) {
@@ -32,10 +32,10 @@ myjs.ast.NewExpression.prototype.unparse = function(context) {
     .nodes(this.arguments, ', ').write(')');
 };
 
-myjs.ast.CallExpression = function(callee, arguments) {
+myjs.ast.CallExpression = function(callee, args) {
   this.type = 'CallExpression';
   this.callee = callee;
-  this.arguments = arguments;
+  this.arguments = args;
 };
 
 myjs.ast.CallExpression.prototype.unparse = function(context) {

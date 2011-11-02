@@ -40,6 +40,10 @@ myjs.ast.ArrayExpression = function(elements) {
   this.elements = elements;
 };
 
+myjs.ast.ArrayExpression.prototype.unparse = function(context) {
+  context.write('[').nodes(this.elements, ', ').write(']');
+};
+
 myjs.ast.ObjectExpression = function(properties) {
   this.type = 'ObjectExpression';
   this.properties = properties;
@@ -158,7 +162,8 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   var fragment = new myjs.Fragment('myjs.Expression')
     .setSyntaxProvider(getSyntax)
     .registerType('FunctionExpression', myjs.ast.FunctionExpression)
-    .registerType('ThisExpression', myjs.ast.ThisExpression);
+    .registerType('ThisExpression', myjs.ast.ThisExpression)
+    .registerType('ArrayExpression', myjs.ast.ArrayExpression);
 
   myjs.registerFragment(fragment);
 

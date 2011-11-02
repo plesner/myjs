@@ -16,6 +16,9 @@
  * Tests of tedir and myjs.
  */
 
+var myjs = require('../myjs-0.1-node.js');
+var framework = require('./framework.js');
+
 (function() {
 
 'use strict';
@@ -30,10 +33,10 @@ var token = myjs.factory.token;
 var value = myjs.factory.value;
 var toArray = myjs.utils.toArray;
 
-var assertTrue = myjs.test.assertTrue;
-var assertFalse = myjs.test.assertFalse;
-var assertEquals = myjs.test.assertEquals;
-var assertListEquals = myjs.test.assertListEquals;
+var assertTrue = framework.assertTrue;
+var assertFalse = framework.assertFalse;
+var assertEquals = framework.assertEquals;
+var assertListEquals = framework.assertListEquals;
 
 var allTests = [];
 function registerTest(fun) {
@@ -66,7 +69,7 @@ function testTrie() {
 }
 
 function getExpressionSyntax() {
-  var syntax = myjs.tedir.Syntax.create();
+  var syntax = myjs.Syntax.create();
 
   // <expr>
   //   -> <atom> +: "+"
@@ -804,7 +807,7 @@ function testProgramParsing() {
   progCheck("var x = 0;", prg(vas(vdc("x", lit(0)))));
 }
 
-myjs.test.getAllTests = function() {
+module.exports.getAllTests = function() {
   return allTests;
 };
 
