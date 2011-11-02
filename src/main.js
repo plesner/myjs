@@ -71,7 +71,6 @@ function parseAllFiles() {
       var origin = new myjs.tedir.SourceOrigin(name);
       var ast = dialect.parseSource(source, origin);
       var code = dialect.unparse(ast);
-      console.log(code);
       doNext();
     });
   }, function() {

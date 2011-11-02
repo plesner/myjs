@@ -78,6 +78,11 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.alternate = alternate;
 };
 
+myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
+  context.write('(').node(this.test).write(')?(').node(this.consequent)
+    .write('):(').node(this.alternate).write(')');
+};
+
 (function () {
 
   function getSyntax() {
@@ -163,7 +168,8 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
     .setSyntaxProvider(getSyntax)
     .registerType('FunctionExpression', myjs.ast.FunctionExpression)
     .registerType('ThisExpression', myjs.ast.ThisExpression)
-    .registerType('ArrayExpression', myjs.ast.ArrayExpression);
+    .registerType('ArrayExpression', myjs.ast.ArrayExpression)
+    .registerType('ConditionalExpression', myjs.ast.ConditionalExpression);
 
   myjs.registerFragment(fragment);
 

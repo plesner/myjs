@@ -27,10 +27,19 @@ myjs.ast.WhileStatement = function(test, body) {
   this.body = body;
 };
 
+myjs.ast.WhileStatement.prototype.unparse = function(context) {
+  context.write('while (').node(this.test).write(') ').node(this.body);
+};
+
 myjs.ast.DoWhileStatement = function(body, test) {
   this.type = 'DoWhileStatement';
   this.body = body;
   this.test = test;
+};
+
+myjs.ast.DoWhileStatement.prototype.unparse = function(context) {
+  context.write('do ').node(this.body).write(' while (').node(this.test)
+    .write(');');
 };
 
 myjs.ast.ForStatement = function(init, test, update, body) {
@@ -101,7 +110,9 @@ myjs.ast.ForInStatement = function(left, right, body) {
   }
 
   var fragment = new myjs.Fragment('myjs.Iteration')
-    .setSyntaxProvider(getSyntax);
+    .setSyntaxProvider(getSyntax)
+    .registerType('WhileStatement', myjs.ast.WhileStatement)
+    .registerType('DoWhileStatement', myjs.ast.DoWhileStatement);
 
   myjs.registerFragment(fragment);
 

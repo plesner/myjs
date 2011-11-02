@@ -1,12 +1,11 @@
 <html>
   <head><title>Tedir test</title></head>
-  <script src="../tools/library/closure/goog/base.js"></script>
-  <script src="../src/utils.js"></script>
-  <script src="../src/ast.js"></script>
-  <script src="../src/tedir.js"></script>
-  <script src="../src/my.js"></script>
-  <script src="../src/mimetype.js"></script>
-  <script src="framework.js"></script>
-  <script src="test.js"></script>
-  <body onload="runTedirTests()"></body>
+  <script src="../myjs-0.1.js"></script>
+  <script type="text/myjs" dialect="meta">
+var a = 2;
+var b = 4;
+var o = `(1 + ,(a + b));
+console.log(JSON.stringify(o));
+  </script>
+  <body></body>
 </html>

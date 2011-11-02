@@ -13,7 +13,8 @@ src/fragment/iteration.js   \
 src/fragment/lefthand.js    \
 src/fragment/operators.js   \
 src/fragment/program.js     \
-src/fragment/statement.js
+src/fragment/statement.js   \
+src/extensions/meta.js
 
 NODE_LIB_FILES=   \
 $(SHARED_FILES)   \

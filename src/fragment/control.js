@@ -41,6 +41,13 @@ myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.alternate = opt_alternate || null;
 };
 
+myjs.ast.IfStatement.prototype.unparse = function(context) {
+  context.write('if (').node(this.test).write(') ').node(this.consequent);
+  if (this.alternate) {
+    context.write(' else ').node(this.alternate);
+  }
+};
+
 myjs.ast.LabeledStatement = function(label, body) {
   this.type = 'LabeledStatement';
   this.label = label;
@@ -152,7 +159,8 @@ myjs.ast.SwitchCase = function(test, consequent) {
 
   var fragment = new myjs.Fragment('myjs.Control')
     .setSyntaxProvider(getSyntax)
-    .registerType('ReturnStatement', myjs.ast.ReturnStatement);
+    .registerType('ReturnStatement', myjs.ast.ReturnStatement)
+    .registerType('IfStatement', myjs.ast.IfStatement);
 
   myjs.registerFragment(fragment);
 

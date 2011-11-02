@@ -276,7 +276,11 @@ myjs.ast.LogicalOperator = function(token) {
   var fragment = new myjs.Fragment('myjs.Operators')
     .setSyntaxProvider(getSyntax)
     .registerType('AssignmentExpression', BinaryHandler)
-    .registerType('AssignmentOperator', OperatorHandler);
+    .registerType('AssignmentOperator', OperatorHandler)
+    .registerType('BinaryExpression', BinaryHandler)
+    .registerType('BinaryOperator', OperatorHandler)
+    .registerType('LogicalExpression', BinaryHandler)
+    .registerType('LogicalOperator', OperatorHandler);
 
   myjs.registerFragment(fragment);
 

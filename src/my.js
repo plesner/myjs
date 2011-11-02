@@ -83,6 +83,7 @@ myjs.dialectRegistry = {};
  */
 myjs.Dialect = function(name) {
   this.name = name;
+  this.parent = null;
   this.fragments = [];
   this.syntax = null;
   this.grammar = null;
@@ -112,6 +113,11 @@ myjs.Dialect.prototype.addFragment = function(var_args) {
   return this;
 };
 
+myjs.Dialect.prototype.extendsDialect = function(name) {
+  this.parent = name;
+  return this;
+};
+
 /**
  * Sets the start production to use.
  */
@@ -129,7 +135,9 @@ myjs.Dialect.prototype.getStart = function() {
  */
 myjs.Dialect.prototype.getSyntax = function() {
   if (!this.syntax) {
-    var syntax = myjs.Syntax.create();
+    var syntax = this.parent
+      ? myjs.getDialect(this.parent).getSyntax()
+      : myjs.Syntax.create();
     var fragments = this.fragments.map(function(name) {
       var fragment = myjs.getFragment(name);
       return fragment.getSyntax();
@@ -142,19 +150,29 @@ myjs.Dialect.prototype.getSyntax = function() {
   return this.syntax;
 };
 
+myjs.Dialect.joinObjects = function(objs) {
+  var result = {};
+  objs.forEach(function(obj) {
+    Object.keys(obj).forEach(function(key) {
+      result[key] = obj[key];
+    });
+  });
+  return result;
+};
+
 /**
  * Returns a map from type names to constructor functions.
  */
 myjs.Dialect.prototype.getTypes = function() {
   if (!this.types) {
-    this.types = {};
-    this.fragments.forEach(function(fragName) {
+    var types = this.fragments.map(function(fragName) {
       var frag = myjs.getFragment(fragName);
-      var types = frag.getTypes();
-      Object.keys(types).forEach(function(name) {
-        this.types[name] = types[name];
-      }.bind(this));
-    }.bind(this));
+      return frag.getTypes();
+    });
+    if (this.parent) {
+      types.push(myjs.getDialect(this.parent).getTypes());
+    }
+    this.types = myjs.Dialect.joinObjects(types);
   }
   return this.types;
 };
@@ -193,12 +211,7 @@ myjs.Dialect.prototype.translate = function(source, origin, trace) {
   if (trace) {
     return ast;
   }
-  // console.log(ast);
-  var postAst = ast.translate();
-  // console.log(postAst);
-  var text = unparse(postAst);
-  // console.log(text);
-  return text;
+  return this.unparse(ast);
 };
 
 /**
@@ -247,6 +260,12 @@ myjs.Dialect.prototype.calcTokenTypes = function() {
   });
   this.keywords = Object.keys(keywordMap).sort();
   this.punctuators = Object.keys(punctuatorMap).sort();
+};
+
+myjs.Dialect.prototype.unparse = function(ast) {
+  var context = new myjs.UnparseContext(this);
+  context.node(ast);
+  return context.flush();
 };
 
 /**
@@ -744,6 +763,17 @@ myjs.UnparseContext.prototype.nodes = function(asts, opt_separator) {
   return this;
 };
 
+myjs.UnparseContext.prototype.writes = function(strs, opt_separator) {
+  var i;
+  for (i = 0; i < strs.length; i++) {
+    if (opt_separator && (i > 0)) {
+      this.write(opt_separator);
+    }
+    this.write(strs[i]);
+  }
+  return this;
+};
+
 myjs.UnparseContext.prototype.flushNewline = function() {
   if (this.hasPendingNewline) {
     this.hasPendingNewline = false;
@@ -765,22 +795,6 @@ myjs.UnparseContext.prototype.flush = function() {
   return this.text.join("");
 };
 
-myjs.Dialect.prototype.unparse = function(ast) {
-  var context = new myjs.UnparseContext(this);
-  context.node(ast);
-  return context.flush();
-};
-
-function unparse(node) {
-  var settings = {
-    newline: '\n',
-    indent: '  '
-  };
-  var out = new myjs.ast.TextFormatter(settings);
-  node.unparse(out);
-  return out.flush();
-}
-
 function registerBuiltInDialects() {
   myjs.registerDialect(new myjs.Dialect('default')
     .addFragment('myjs.Program')
@@ -793,6 +807,9 @@ function registerBuiltInDialects() {
     .addFragment('myjs.Control')
     .addFragment('myjs.Iteration')
     .addFragment('myjs.Exceptions'));
+  myjs.registerDialect(new myjs.Dialect('meta')
+    .extendsDialect('default')
+    .addFragment('myjs.Meta'));
 }
 
 registerBuiltInDialects();
