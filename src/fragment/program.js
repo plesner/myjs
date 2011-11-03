@@ -46,7 +46,7 @@ myjs.ast.Program.prototype.unparse = function(context) {
   context.nodes(this.elements);
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

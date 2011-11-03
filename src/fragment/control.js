@@ -76,7 +76,7 @@ myjs.ast.SwitchCase = function(test, consequent) {
   this.consequent = consequent;
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

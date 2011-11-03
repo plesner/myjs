@@ -21,7 +21,7 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
-(function () {
+(function() {
 
   myjs.ast.QuoteExpression = function(value) {
     this.type = 'QuoteExpression';

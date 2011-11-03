@@ -57,7 +57,7 @@ myjs.ast.ForInStatement = function(left, right, body) {
   this.body = body;
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

@@ -41,7 +41,7 @@ myjs.ast.ExpressionStatement = function(expression) {
 };
 
 myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
-  context.node(this.expression).write(";").newline();
+  context.node(this.expression).write(';').newline();
 };
 
 myjs.ast.BlockStatement = function(body) {
@@ -50,10 +50,10 @@ myjs.ast.BlockStatement = function(body) {
 };
 
 myjs.ast.BlockStatement.prototype.unparse = function(context) {
-  context.write("{").indent().newline().nodes(this.body).deindent().write("}");
+  context.write('{').indent().newline().nodes(this.body).deindent().write('}');
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

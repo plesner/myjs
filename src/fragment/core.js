@@ -39,7 +39,7 @@ myjs.ast.Literal.prototype.unparse = function(context) {
   context.write(JSON.stringify(this.value));
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
@@ -47,8 +47,8 @@ myjs.ast.Literal.prototype.unparse = function(context) {
 
     // <Identifier>
     //   -> $Identifier
-    syntax.getRule("Identifier")
-      .addProd(f.value("Identifier"))
+    syntax.getRule('Identifier')
+      .addProd(f.value('Identifier'))
       .setConstructor(myjs.ast.Identifier);
 
     // <Literal>
@@ -75,14 +75,14 @@ myjs.ast.Literal.prototype.unparse = function(context) {
      * converter and then wraps the result in a literal.
      */
     function convertLiteral(converter) {
-      return function (token) {
+      return function(token) {
         return new myjs.ast.Literal(converter(token));
       };
     }
 
     // <StringLiteral>
     //   -> $StringLiteral
-    syntax.getRule("StringLiteral")
+    syntax.getRule('StringLiteral')
       .addProd(f.value('StringLiteral'))
       .setConstructor(convertLiteral(stripString));
 
@@ -97,9 +97,9 @@ myjs.ast.Literal.prototype.unparse = function(context) {
     //   -> "false"
     syntax.getRule('BooleanLiteral')
       .addProd(f.keyword('true'))
-      .setHandler(function () { return new myjs.ast.Literal(true); })
+      .setHandler(function() { return new myjs.ast.Literal(true); })
       .addProd(f.keyword('false'))
-      .setConstructor(function () { return new myjs.ast.Literal(false); });
+      .setConstructor(function() { return new myjs.ast.Literal(false); });
 
     /**
      * Custom expression used to parse regular expressions.

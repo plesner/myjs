@@ -86,13 +86,13 @@ myjs.ast.LogicalOperator = function(token) {
   this.token = token;
 };
 
-(function () {
+(function() {
 
   var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
     '>>=', '>>>=', '<<=', '/='];
-  var BINARY_OPERATORS = ["==", "!=", "===", "!==", "<", "<=", ">", ">=",
-    "<<", ">>", ">>>", "+", "-", "*", "%", "|", "^", "/"];
-  var BINARY_KEYWORDS = ["instanceof", "in"];
+  var BINARY_OPERATORS = ['==', '!=', '===', '!==', '<', '<=', '>', '>=',
+    '<<', '>>', '>>>', '+', '-', '*', '%', '|', '^', '/'];
+  var BINARY_KEYWORDS = ['instanceof', 'in'];
   var LOGICAL_OPERATORS = ['||', '&&'];
   var INFIX_KEYWORDS = ['instanceof'];
   var UNARY_OPERATORS = ['-', '+', '!', '~', '!'];
@@ -102,8 +102,8 @@ myjs.ast.LogicalOperator = function(token) {
   function BinaryHandler() { }
 
   BinaryHandler.prototype.unparse = function(context) {
-    context.write("(").node(this.left).write(")").node(this.operator).write("(")
-      .node(this.right).write(")");
+    context.write('(').node(this.left).write(')').node(this.operator).write('(')
+      .node(this.right).write(')');
   };
 
   function OperatorHandler() { }
@@ -257,7 +257,7 @@ myjs.ast.LogicalOperator = function(token) {
         .setHandler(unaryBuilder);
     });
     UNARY_OPERATORS.forEach(function(op) {
-      syntax.getRule("PrefixToken")
+      syntax.getRule('PrefixToken')
         .addProd(f.punctValue(op))
         .setHandler(unaryBuilder);
     });

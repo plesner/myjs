@@ -39,8 +39,8 @@ myjs.ast.CallExpression = function(callee, args) {
 };
 
 myjs.ast.CallExpression.prototype.unparse = function(context) {
-  context.write("(").node(this.callee).write(")(")
-    .nodes(this.arguments, ", ").write(")");
+  context.write('(').node(this.callee).write(')(')
+    .nodes(this.arguments, ', ').write(')');
 };
 
 myjs.ast.MemberExpression = function(object, property, computed) {
@@ -52,14 +52,14 @@ myjs.ast.MemberExpression = function(object, property, computed) {
 
 myjs.ast.MemberExpression.prototype.unparse = function(context) {
   if (this.computed) {
-    context.write("(").node(this.object).write(")[").node(this.property)
-      .write("]");
+    context.write('(').node(this.object).write(')[').node(this.property)
+      .write(']');
   } else {
-    context.write("(").node(this.object).write(").").node(this.property);
+    context.write('(').node(this.object).write(').').node(this.property);
   }
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

@@ -39,7 +39,7 @@ myjs.ast.CatchClause = function(param, body) {
   this.body = body;
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

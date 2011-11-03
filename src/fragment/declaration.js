@@ -29,8 +29,8 @@ myjs.ast.FunctionDeclaration = function(id, params, body) {
 };
 
 myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
-  context.write("function ").node(this.id).write("(").nodes(this.params, ", ")
-    .write(")").node(this.body).newline();
+  context.write('function ').node(this.id).write('(').nodes(this.params, ', ')
+    .write(')').node(this.body).newline();
 };
 
 myjs.ast.VariableDeclaration = function(declarations) {
@@ -39,7 +39,7 @@ myjs.ast.VariableDeclaration = function(declarations) {
 };
 
 myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
-  context.write("var ").nodes(this.declarations, ", ").write(";").newline();
+  context.write('var ').nodes(this.declarations, ', ').write(';').newline();
 };
 
 myjs.ast.VariableDeclarator = function(id, init) {
@@ -51,11 +51,11 @@ myjs.ast.VariableDeclarator = function(id, init) {
 myjs.ast.VariableDeclarator.prototype.unparse = function(context) {
   context.node(this.id);
   if (this.init) {
-    context.write(" = ").node(this.init);
+    context.write(' = ').node(this.init);
   }
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();

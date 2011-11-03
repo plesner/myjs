@@ -22,8 +22,8 @@
 goog.provide('myjs');
 
 goog.require('myjs.ast');
-goog.require('myjs.utils');
 goog.require('myjs.tedir');
+goog.require('myjs.utils');
 
 myjs.factory = {};
 Object.keys(myjs.tedir.factory).forEach(function(key) {
@@ -748,7 +748,7 @@ myjs.UnparseContext.prototype.node = function(ast) {
     typeCons.prototype.unparse.call(ast, this);
     return this;
   }
-  this.write("#<" + type + ">");
+  this.write('#<' + type + '>');
   return this;
 };
 
@@ -777,9 +777,9 @@ myjs.UnparseContext.prototype.writes = function(strs, opt_separator) {
 myjs.UnparseContext.prototype.flushNewline = function() {
   if (this.hasPendingNewline) {
     this.hasPendingNewline = false;
-    this.text.push("\n");
+    this.text.push('\n');
     for (var i = 0; i < this.indentLevel; i++) {
-      this.text.push("  ");
+      this.text.push('  ');
     }
   }
 };
@@ -792,7 +792,7 @@ myjs.UnparseContext.prototype.write = function(str) {
 
 myjs.UnparseContext.prototype.flush = function() {
   this.flushNewline();
-  return this.text.join("");
+  return this.text.join('');
 };
 
 function registerBuiltInDialects() {

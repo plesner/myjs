@@ -121,7 +121,7 @@ function getFragmentParser(start) {
   var dialect = myjs.getDialect('default');
   var parser = new myjs.tedir.Parser(dialect.getSyntax());
   var settings = dialect.getSettings();
-  return function (source) {
+  return function(source) {
     var tokens = myjs.tokenize(source, settings);
     return parser.parse(start, tokens);
   };
@@ -355,18 +355,18 @@ function testTokenizing() {
 
 function alphaJson(obj) {
   if (Array.isArray(obj)) {
-    return "[" + obj.map(alphaJson).join(",") + "]";
-  } else if (!obj || typeof obj != "object") {
+    return '[' + obj.map(alphaJson).join(',') + ']';
+  } else if (!obj || typeof obj != 'object') {
     return JSON.stringify(obj);
-  } else if (typeof obj == "object") {
-    var parts = Object.keys(obj).sort().map(function (key) {
-      return alphaJson(key) + ":" + alphaJson(obj[key]);
+  } else if (typeof obj == 'object') {
+    var parts = Object.keys(obj).sort().map(function(key) {
+      return alphaJson(key) + ':' + alphaJson(obj[key]);
     });
-    return "{" + parts.join(",") + "}";
+    return '{' + parts.join(',') + '}';
   }
 }
 
-var exprParser = getFragmentParser("Expression");
+var exprParser = getFragmentParser('Expression');
 function exprCheck(source, expected) {
   assertEquals(alphaJson(exprParser(source)), alphaJson(expected));
 }
@@ -466,148 +466,148 @@ function fun(name, params, body) {
 
 registerTest(testLiteralParsing);
 function testLiteralParsing() {
-  exprCheck("1", lit(1));
-  exprCheck("true", lit(true));
-  exprCheck("false", lit(false));
-  exprCheck("'foo'", lit("foo"));
-  exprCheck("\"foo\"", lit("foo"));
-  exprCheck("[1, 2, 3]", arr(lit(1), lit(2), lit(3)));
-  exprCheck("[1]", arr(lit(1)));
-  exprCheck("[]", arr());
-  exprCheck("{}", obj());
-  exprCheck("{foo: 1}", obj(
-    prop(id("foo"), lit(1))));
-  exprCheck("{foo: 1, bar: 2}", obj(
-    prop(id("foo"), lit(1)),
-    prop(id("bar"), lit(2))));
+  exprCheck('1', lit(1));
+  exprCheck('true', lit(true));
+  exprCheck('false', lit(false));
+  exprCheck("'foo'", lit('foo'));
+  exprCheck('\"foo\"', lit('foo'));
+  exprCheck('[1, 2, 3]', arr(lit(1), lit(2), lit(3)));
+  exprCheck('[1]', arr(lit(1)));
+  exprCheck('[]', arr());
+  exprCheck('{}', obj());
+  exprCheck('{foo: 1}', obj(
+    prop(id('foo'), lit(1))));
+  exprCheck('{foo: 1, bar: 2}', obj(
+    prop(id('foo'), lit(1)),
+    prop(id('bar'), lit(2))));
 }
 
 registerTest(testSimpleExpressionParsing);
 function testSimpleExpressionParsing() {
-  exprCheck("this", ths());
-  exprCheck("foo", id("foo"));
-  exprCheck("(foo)", id("foo"));
+  exprCheck('this', ths());
+  exprCheck('foo', id('foo'));
+  exprCheck('(foo)', id('foo'));
 }
 
 registerTest(testUpdateExpressionParsing);
 function testUpdateExpressionParsing() {
-  exprCheck("++a", preu("++", id("a")));
-  exprCheck("++ ++ a", preu("++", preu("++", id("a"))));
-  exprCheck("++ -- a", preu("++", preu("--", id("a"))));
-  exprCheck("-- ++ a", preu("--", preu("++", id("a"))));
-  exprCheck("a++", posu(id("a"), "++"));
-  exprCheck("a ++ ++", posu(posu(id("a"), "++"), "++"));
-  exprCheck("a ++ --", posu(posu(id("a"), "++"), "--"));
-  exprCheck("a -- ++", posu(posu(id("a"), "--"), "++"));
+  exprCheck('++a', preu('++', id('a')));
+  exprCheck('++ ++ a', preu('++', preu('++', id('a'))));
+  exprCheck('++ -- a', preu('++', preu('--', id('a'))));
+  exprCheck('-- ++ a', preu('--', preu('++', id('a'))));
+  exprCheck('a++', posu(id('a'), '++'));
+  exprCheck('a ++ ++', posu(posu(id('a'), '++'), '++'));
+  exprCheck('a ++ --', posu(posu(id('a'), '++'), '--'));
+  exprCheck('a -- ++', posu(posu(id('a'), '--'), '++'));
   // Postfix binds tighter than prefix.
-  exprCheck("++a--", preu("++", posu(id("a"), "--")));
-  exprCheck("--++a--++", preu("--", preu("++",
-    posu(posu(id("a"), "--"), "++"))));
+  exprCheck('++a--', preu('++', posu(id('a'), '--')));
+  exprCheck('--++a--++', preu('--', preu('++',
+    posu(posu(id('a'), '--'), '++'))));
 }
 
 registerTest(testLogicalExpressionParsing);
 function testLogicalExpressionParsing() {
-  exprCheck("true || false", log(lit(true), "||", lit(false)));
-  exprCheck("true && false", log(lit(true), "&&", lit(false)));
+  exprCheck('true || false', log(lit(true), '||', lit(false)));
+  exprCheck('true && false', log(lit(true), '&&', lit(false)));
 }
 
 registerTest(testConditionalExpressionParsing);
 function testConditionalExpressionParsing() {
-  exprCheck("a ? b : c", cond(id("a"), id("b"), id("c")));
+  exprCheck('a ? b : c', cond(id('a'), id('b'), id('c')));
 }
 
 registerTest(testUnaryExpressionParsing);
 function testUnaryExpressionParsing() {
-  exprCheck("!a", ury("!", id("a"), true));
-  exprCheck("-a", ury("-", id("a"), true));
-  exprCheck("~a", ury("~", id("a"), true));
-  exprCheck("+a", ury("+", id("a"), true));
-  exprCheck("typeof a", ury("typeof", id("a"), true));
-  exprCheck("void a", ury("void", id("a"), true));
-  exprCheck("delete a", ury("delete", id("a"), true));
+  exprCheck('!a', ury('!', id('a'), true));
+  exprCheck('-a', ury('-', id('a'), true));
+  exprCheck('~a', ury('~', id('a'), true));
+  exprCheck('+a', ury('+', id('a'), true));
+  exprCheck('typeof a', ury('typeof', id('a'), true));
+  exprCheck('void a', ury('void', id('a'), true));
+  exprCheck('delete a', ury('delete', id('a'), true));
 }
 
 registerTest(testBinaryExpressionParsing);
 function testBinaryExpressionParsing() {
-  exprCheck("a==b", bin(id("a"), "==", id("b")));
-  exprCheck("a!=b", bin(id("a"), "!=", id("b")));
-  exprCheck("a===b", bin(id("a"), "===", id("b")));
-  exprCheck("a!==b", bin(id("a"), "!==", id("b")));
-  exprCheck("a<b", bin(id("a"), "<", id("b")));
-  exprCheck("a<=b", bin(id("a"), "<=", id("b")));
-  exprCheck("a>b", bin(id("a"), ">", id("b")));
-  exprCheck("a>=b", bin(id("a"), ">=", id("b")));
-  exprCheck("a<<b", bin(id("a"), "<<", id("b")));
-  exprCheck("a>>b", bin(id("a"), ">>", id("b")));
-  exprCheck("a>>>b", bin(id("a"), ">>>", id("b")));
-  exprCheck("a+b", bin(id("a"), "+", id("b")));
-  exprCheck("a-b", bin(id("a"), "-", id("b")));
-  exprCheck("a*b", bin(id("a"), "*", id("b")));
-  exprCheck("a/b", bin(id("a"), "/", id("b")));
-  exprCheck("a%b", bin(id("a"), "%", id("b")));
-  exprCheck("a|b", bin(id("a"), "|", id("b")));
-  exprCheck("a^b", bin(id("a"), "^", id("b")));
-  exprCheck("a instanceof b", bin(id("a"), "instanceof", id("b")));
-  exprCheck("a in b", bin(id("a"), "in", id("b")));
+  exprCheck('a==b', bin(id('a'), '==', id('b')));
+  exprCheck('a!=b', bin(id('a'), '!=', id('b')));
+  exprCheck('a===b', bin(id('a'), '===', id('b')));
+  exprCheck('a!==b', bin(id('a'), '!==', id('b')));
+  exprCheck('a<b', bin(id('a'), '<', id('b')));
+  exprCheck('a<=b', bin(id('a'), '<=', id('b')));
+  exprCheck('a>b', bin(id('a'), '>', id('b')));
+  exprCheck('a>=b', bin(id('a'), '>=', id('b')));
+  exprCheck('a<<b', bin(id('a'), '<<', id('b')));
+  exprCheck('a>>b', bin(id('a'), '>>', id('b')));
+  exprCheck('a>>>b', bin(id('a'), '>>>', id('b')));
+  exprCheck('a+b', bin(id('a'), '+', id('b')));
+  exprCheck('a-b', bin(id('a'), '-', id('b')));
+  exprCheck('a*b', bin(id('a'), '*', id('b')));
+  exprCheck('a/b', bin(id('a'), '/', id('b')));
+  exprCheck('a%b', bin(id('a'), '%', id('b')));
+  exprCheck('a|b', bin(id('a'), '|', id('b')));
+  exprCheck('a^b', bin(id('a'), '^', id('b')));
+  exprCheck('a instanceof b', bin(id('a'), 'instanceof', id('b')));
+  exprCheck('a in b', bin(id('a'), 'in', id('b')));
 }
 
 registerTest(testAssignmentExpressionParsing);
 function testAssignmentExpressionParsing() {
-  exprCheck("a=b", ass(id("a"), "=", id("b")));
-  exprCheck("a+=b", ass(id("a"), "+=", id("b")));
-  exprCheck("a-=b", ass(id("a"), "-=", id("b")));
-  exprCheck("a*=b", ass(id("a"), "*=", id("b")));
-  exprCheck("a/=b", ass(id("a"), "/=", id("b")));
-  exprCheck("a%=b", ass(id("a"), "%=", id("b")));
-  exprCheck("a<<=b", ass(id("a"), "<<=", id("b")));
-  exprCheck("a>>=b", ass(id("a"), ">>=", id("b")));
-  exprCheck("a>>>=b", ass(id("a"), ">>>=", id("b")));
-  exprCheck("a|=b", ass(id("a"), "|=", id("b")));
-  exprCheck("a^=b", ass(id("a"), "^=", id("b")));
-  exprCheck("a&=b", ass(id("a"), "&=", id("b")));
+  exprCheck('a=b', ass(id('a'), '=', id('b')));
+  exprCheck('a+=b', ass(id('a'), '+=', id('b')));
+  exprCheck('a-=b', ass(id('a'), '-=', id('b')));
+  exprCheck('a*=b', ass(id('a'), '*=', id('b')));
+  exprCheck('a/=b', ass(id('a'), '/=', id('b')));
+  exprCheck('a%=b', ass(id('a'), '%=', id('b')));
+  exprCheck('a<<=b', ass(id('a'), '<<=', id('b')));
+  exprCheck('a>>=b', ass(id('a'), '>>=', id('b')));
+  exprCheck('a>>>=b', ass(id('a'), '>>>=', id('b')));
+  exprCheck('a|=b', ass(id('a'), '|=', id('b')));
+  exprCheck('a^=b', ass(id('a'), '^=', id('b')));
+  exprCheck('a&=b', ass(id('a'), '&=', id('b')));
 }
 
 registerTest(testCallExpressionParsing);
 function testCallExpressionParsing() {
-  exprCheck("a()", call(id("a")));
-  exprCheck("a(1)", call(id("a"), lit(1)));
-  exprCheck("a(1, 2)", call(id("a"), lit(1), lit(2)));
-  exprCheck("a(1, 2, 3)", call(id("a"), lit(1), lit(2), lit(3)));
-  exprCheck("a(1)(2)(3)", call(call(call(id("a"), lit(1)), lit(2)), lit(3)));
+  exprCheck('a()', call(id('a')));
+  exprCheck('a(1)', call(id('a'), lit(1)));
+  exprCheck('a(1, 2)', call(id('a'), lit(1), lit(2)));
+  exprCheck('a(1, 2, 3)', call(id('a'), lit(1), lit(2), lit(3)));
+  exprCheck('a(1)(2)(3)', call(call(call(id('a'), lit(1)), lit(2)), lit(3)));
 }
 
 registerTest(testMemberExpressionParsing);
 function testMemberExpressionParsing() {
-  exprCheck("a.b", get(id("a"), "b"));
-  exprCheck("c.d.e", get(get(id("c"), "d"), "e"));
-  exprCheck("a[4]", mem(id("a"), lit(4)));
-  exprCheck("a[5][6]", mem(mem(id("a"), lit(5)), lit(6)));
-  exprCheck("x.y[7].z[8]", mem(get(mem(get(id("x"), "y"), lit(7)), "z"),
+  exprCheck('a.b', get(id('a'), 'b'));
+  exprCheck('c.d.e', get(get(id('c'), 'd'), 'e'));
+  exprCheck('a[4]', mem(id('a'), lit(4)));
+  exprCheck('a[5][6]', mem(mem(id('a'), lit(5)), lit(6)));
+  exprCheck('x.y[7].z[8]', mem(get(mem(get(id('x'), 'y'), lit(7)), 'z'),
     lit(8)));
 }
 
 registerTest(testNewExpressionParsing);
 function testNewExpressionParsing() {
-  exprCheck("new A", nw(id("A")));
-  exprCheck("new A()", nw(id("A")));
-  exprCheck("new A(1)", nw(id("A"), lit(1)));
-  exprCheck("new A(1, 2)", nw(id("A"), lit(1), lit(2)));
-  exprCheck("new a.b(1, 2)", nw(get(id("a"), "b"), lit(1), lit(2)));
-  exprCheck("new new A", nw(nw(id("A"))));
-  exprCheck("new new A(4)(5)", nw(nw(id("A"), lit(4)), lit(5)));
+  exprCheck('new A', nw(id('A')));
+  exprCheck('new A()', nw(id('A')));
+  exprCheck('new A(1)', nw(id('A'), lit(1)));
+  exprCheck('new A(1, 2)', nw(id('A'), lit(1), lit(2)));
+  exprCheck('new a.b(1, 2)', nw(get(id('a'), 'b'), lit(1), lit(2)));
+  exprCheck('new new A', nw(nw(id('A'))));
+  exprCheck('new new A(4)(5)', nw(nw(id('A'), lit(4)), lit(5)));
 }
 
 registerTest(testFunctionExpressionParsing);
 function testFunctionExpressionParsing() {
-  exprCheck("function () { }", fun(null, [], bck()));
-  exprCheck("function (a) { }", fun(null, ["a"], bck()));
-  exprCheck("function (a, b) { }", fun(null, ["a", "b"], bck()));
-  exprCheck("function (a, b, c) { }", fun(null, ["a", "b", "c"], bck()));
-  exprCheck("function yutz(a, b, c) { }", fun(id("yutz"), ["a", "b", "c"],
+  exprCheck('function () { }', fun(null, [], bck()));
+  exprCheck('function (a) { }', fun(null, ['a'], bck()));
+  exprCheck('function (a, b) { }', fun(null, ['a', 'b'], bck()));
+  exprCheck('function (a, b, c) { }', fun(null, ['a', 'b', 'c'], bck()));
+  exprCheck('function yutz(a, b, c) { }', fun(id('yutz'), ['a', 'b', 'c'],
     bck()));
 }
 
-var stmtParser = getFragmentParser("Statement");
+var stmtParser = getFragmentParser('Statement');
 function stmtCheck(source, expected) {
   assertEquals(alphaJson(stmtParser(source)), alphaJson(expected));
 }
@@ -685,98 +685,98 @@ function vdc(name, init) {
 
 registerTest(testExpressionStatementParsing);
 function testExpressionStatementParsing() {
-  stmtCheck("1;", exp(lit(1)));
-  stmtCheck("1 + 2;", exp(bin(lit(1), "+", lit(2))));
+  stmtCheck('1;', exp(lit(1)));
+  stmtCheck('1 + 2;', exp(bin(lit(1), '+', lit(2))));
 }
 
 registerTest(testBlockStatementParsing);
 function testBlockStatementParsing() {
-  stmtCheck("{}", bck());
-  stmtCheck("{1;}", bck(exp(lit(1))));
-  stmtCheck("{1; 2;}", bck(exp(lit(1)), exp(lit(2))));
+  stmtCheck('{}', bck());
+  stmtCheck('{1;}', bck(exp(lit(1))));
+  stmtCheck('{1; 2;}', bck(exp(lit(1)), exp(lit(2))));
 }
 
 registerTest(testIfStatementParsing);
 function testIfStatementParsing() {
-  stmtCheck("if (1) 2; else 3;", ift(lit(1), exp(lit(2)), exp(lit(3))));
-  stmtCheck("if (1) 2;", ift(lit(1), exp(lit(2))));
+  stmtCheck('if (1) 2; else 3;', ift(lit(1), exp(lit(2)), exp(lit(3))));
+  stmtCheck('if (1) 2;', ift(lit(1), exp(lit(2))));
 }
 
 registerTest(testTryStatementParsing);
 function testTryStatementParsing() {
-  stmtCheck("try {} catch (a) {}", ty(bck(), cth("a", bck())));
-  stmtCheck("try {1;} catch (a) {2;}", ty(bck(exp(lit(1))), cth("a",
+  stmtCheck('try {} catch (a) {}', ty(bck(), cth('a', bck())));
+  stmtCheck('try {1;} catch (a) {2;}', ty(bck(exp(lit(1))), cth('a',
     bck(exp(lit(2))))));
-  stmtCheck("try {} finally {}", ty(bck(), null, bck()));
-  stmtCheck("try {3;} finally {4;}", ty(bck(exp(lit(3))), null,
+  stmtCheck('try {} finally {}', ty(bck(), null, bck()));
+  stmtCheck('try {3;} finally {4;}', ty(bck(exp(lit(3))), null,
     bck(exp(lit(4)))));
-  stmtCheck("try {} catch (a) {} finally {}", ty(bck(), cth("a", bck()),
+  stmtCheck('try {} catch (a) {} finally {}', ty(bck(), cth('a', bck()),
     bck()));
 }
 
 registerTest(testSimpleStatementParsing);
 function testSimpleStatementParsing() {
-  stmtCheck("break;", brk());
-  stmtCheck("break foo;", brk("foo"));
-  stmtCheck("continue;", cnt());
-  stmtCheck("continue foo;", cnt("foo"));
-  stmtCheck("return;", ret());
-  stmtCheck("return foo;", ret(id("foo")));
-  stmtCheck("return 4;", ret(lit(4)));
-  stmtCheck("throw foo;", thr(id("foo")));
-  stmtCheck("throw 4;", thr(lit(4)));
+  stmtCheck('break;', brk());
+  stmtCheck('break foo;', brk('foo'));
+  stmtCheck('continue;', cnt());
+  stmtCheck('continue foo;', cnt('foo'));
+  stmtCheck('return;', ret());
+  stmtCheck('return foo;', ret(id('foo')));
+  stmtCheck('return 4;', ret(lit(4)));
+  stmtCheck('throw foo;', thr(id('foo')));
+  stmtCheck('throw 4;', thr(lit(4)));
 }
 
 registerTest(testWhileStatementParsing);
 function testWhileStatementParsing() {
-  stmtCheck("while (a) b;", whl(id("a"), exp(id("b"))));
-  stmtCheck("do a; while (b);", dow(exp(id("a")), id("b")));
+  stmtCheck('while (a) b;', whl(id('a'), exp(id('b'))));
+  stmtCheck('do a; while (b);', dow(exp(id('a')), id('b')));
 }
 
 registerTest(testForStatementParsing);
 function testForStatementParsing() {
   // Three-clause
-  stmtCheck("for (;;) x;", fr(null, null, null, exp(id("x"))));
-  stmtCheck("for (1;;) x;", fr(lit(1), null, null, exp(id("x"))));
-  stmtCheck("for (;1;) x;", fr(null, lit(1), null, exp(id("x"))));
-  stmtCheck("for (;;1) x;", fr(null, null, lit(1), exp(id("x"))));
-  stmtCheck("for (1;2;3) x;", fr(lit(1), lit(2), lit(3), exp(id("x"))));
-  stmtCheck("for (x;true;) x;", fr(id("x"), lit(true), null, exp(id("x"))));
-  stmtCheck("for (var x;true;) x;", fr(vas(vdc("x")), lit(true), null, exp(id("x"))));
-  stmtCheck("for (var x, y;true;) x;", fr(vas(vdc("x"), vdc("y")), lit(true),
-    null, exp(id("x"))));
+  stmtCheck('for (;;) x;', fr(null, null, null, exp(id('x'))));
+  stmtCheck('for (1;;) x;', fr(lit(1), null, null, exp(id('x'))));
+  stmtCheck('for (;1;) x;', fr(null, lit(1), null, exp(id('x'))));
+  stmtCheck('for (;;1) x;', fr(null, null, lit(1), exp(id('x'))));
+  stmtCheck('for (1;2;3) x;', fr(lit(1), lit(2), lit(3), exp(id('x'))));
+  stmtCheck('for (x;true;) x;', fr(id('x'), lit(true), null, exp(id('x'))));
+  stmtCheck('for (var x;true;) x;', fr(vas(vdc('x')), lit(true), null, exp(id('x'))));
+  stmtCheck('for (var x, y;true;) x;', fr(vas(vdc('x'), vdc('y')), lit(true),
+    null, exp(id('x'))));
   // For-in
-  stmtCheck("for (x in y) s;", fin(id("x"), id("y"), exp(id("s"))));
-  stmtCheck("for (var x in y) s;", fin(vdc("x"), id("y"), exp(id("s"))));
-  stmtCheck("for (x.y in y) s;", fin(get(id("x"), "y"), id("y"), exp(id("s"))));
+  stmtCheck('for (x in y) s;', fin(id('x'), id('y'), exp(id('s'))));
+  stmtCheck('for (var x in y) s;', fin(vdc('x'), id('y'), exp(id('s'))));
+  stmtCheck('for (x.y in y) s;', fin(get(id('x'), 'y'), id('y'), exp(id('s'))));
 }
 
 registerTest(testSwitchStatementParsing);
 function testSwitchStatementParsing() {
-  stmtCheck("switch (x) { }", swc(id("x")));
-  stmtCheck("switch (x) { case 1: break; }", swc(id("x"), cse(lit(1), brk())));
-  stmtCheck("switch (x) { case 1: 4; 3; }", swc(id("x"), cse(lit(1),
+  stmtCheck('switch (x) { }', swc(id('x')));
+  stmtCheck('switch (x) { case 1: break; }', swc(id('x'), cse(lit(1), brk())));
+  stmtCheck('switch (x) { case 1: 4; 3; }', swc(id('x'), cse(lit(1),
     exp(lit(4)), exp(lit(3)))));
-  stmtCheck("switch (x) { case 1: break; case 2: continue; }", swc(id("x"),
+  stmtCheck('switch (x) { case 1: break; case 2: continue; }', swc(id('x'),
     cse(lit(1), brk()), cse(lit(2), cnt())));
-  stmtCheck("switch (x) { case 1: break; default: continue; }", swc(id("x"),
+  stmtCheck('switch (x) { case 1: break; default: continue; }', swc(id('x'),
     cse(lit(1), brk()), cse(null, cnt())));
-  stmtCheck("switch (x) { default: continue; }", swc(id("x"),
+  stmtCheck('switch (x) { default: continue; }', swc(id('x'),
     cse(null, cnt())));
 }
 
 registerTest(testVariableStatementParsing);
 function testVariableStatementParsing() {
-  stmtCheck("var i = 0;", vas(vdc("i", lit(0))));
-  stmtCheck("var i;", vas(vdc("i")));
-  stmtCheck("var i, j;", vas(vdc("i"), vdc("j")));
-  stmtCheck("var i, j, k;", vas(vdc("i"), vdc("j"), vdc("k")));
-  stmtCheck("var i = 0, j, k;", vas(vdc("i", lit(0)), vdc("j"), vdc("k")));
-  stmtCheck("var i, j = 1, k;", vas(vdc("i"), vdc("j", lit(1)), vdc("k")));
-  stmtCheck("var i, j, k = 2;", vas(vdc("i"), vdc("j"), vdc("k", lit(2))));
+  stmtCheck('var i = 0;', vas(vdc('i', lit(0))));
+  stmtCheck('var i;', vas(vdc('i')));
+  stmtCheck('var i, j;', vas(vdc('i'), vdc('j')));
+  stmtCheck('var i, j, k;', vas(vdc('i'), vdc('j'), vdc('k')));
+  stmtCheck('var i = 0, j, k;', vas(vdc('i', lit(0)), vdc('j'), vdc('k')));
+  stmtCheck('var i, j = 1, k;', vas(vdc('i'), vdc('j', lit(1)), vdc('k')));
+  stmtCheck('var i, j, k = 2;', vas(vdc('i'), vdc('j'), vdc('k', lit(2))));
 }
 
-var elmParser = getFragmentParser("SourceElement");
+var elmParser = getFragmentParser('SourceElement');
 function elmCheck(source, expected) {
   assertEquals(alphaJson(elmParser(source)), alphaJson(expected));
 }
@@ -787,12 +787,12 @@ function fdc(name, params, body) {
 
 registerTest(testSourceElementParsing);
 function testSourceElementParsing() {
-  elmCheck("function foo() { }", fdc(id("foo"), [], bck()));
-  elmCheck("function foo(a) { }", fdc(id("foo"), ["a"], bck()));
-  elmCheck("function foo(a, b) { }", fdc(id("foo"), ["a", "b"], bck()));
+  elmCheck('function foo() { }', fdc(id('foo'), [], bck()));
+  elmCheck('function foo(a) { }', fdc(id('foo'), ['a'], bck()));
+  elmCheck('function foo(a, b) { }', fdc(id('foo'), ['a', 'b'], bck()));
 }
 
-var progParser = getFragmentParser("Program");
+var progParser = getFragmentParser('Program');
 function progCheck(source, expected) {
   assertEquals(alphaJson(progParser(source)), alphaJson(expected));
 }
@@ -803,8 +803,8 @@ function prg(var_args) {
 
 registerTest(testProgramParsing);
 function testProgramParsing() {
-  progCheck("function foo() { }", prg(fdc(id("foo"), [], bck())));
-  progCheck("var x = 0;", prg(vas(vdc("x", lit(0)))));
+  progCheck('function foo() { }', prg(fdc(id('foo'), [], bck())));
+  progCheck('var x = 0;', prg(vas(vdc('x', lit(0)))));
 }
 
 module.exports.getAllTests = function() {

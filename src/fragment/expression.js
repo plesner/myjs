@@ -27,7 +27,7 @@ myjs.ast.ThisExpression = function() {
 
 myjs.ast.ThisExpression.INSTANCE_ = new myjs.ast.ThisExpression();
 
-myjs.ast.ThisExpression.get = function () {
+myjs.ast.ThisExpression.get = function() {
   return myjs.ast.ThisExpression.INSTANCE_;
 };
 
@@ -83,7 +83,7 @@ myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
     .write('):(').node(this.alternate).write(')');
 };
 
-(function () {
+(function() {
 
   function getSyntax() {
     var syntax = myjs.Syntax.create();
