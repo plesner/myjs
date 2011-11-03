@@ -86,8 +86,6 @@ function getExpressionSyntax() {
   return syntax;
 }
 
-var DEFAULT_SETTINGS = new myjs.TokenizerSettings(['a', 'b', 'c', 'for'],
-  myjs.getDialect('default').getPunctuators());
 /**
  * Given a syntax and a start production, returns a function that can be
  * called with the expected output and a source and that will test that
@@ -103,7 +101,7 @@ function getParserTestRunner(syntax, startOpt) {
   var start = startOpt || 'start';
   return function(expected, source) {
     var parser = new myjs.tedir.Parser(syntax);
-    var tokens = myjs.tokenize(source, DEFAULT_SETTINGS);
+    var tokens = myjs.getDialect('default').tokenize(source);
     if (typeof expected == 'function') {
       try {
         parser.parse(start, tokens);
@@ -122,7 +120,7 @@ function getFragmentParser(start) {
   var parser = new myjs.tedir.Parser(dialect.getSyntax());
   var settings = dialect.getSettings();
   return function(source) {
-    var tokens = myjs.tokenize(source, settings);
+    var tokens = dialect.tokenize(source);
     return parser.parse(start, tokens);
   };
 }
@@ -143,13 +141,13 @@ function testTokenValues() {
   var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
-    .addProd(token('a'))
-    .addProd(value('b'))
+    .addProd(token('for'))
+    .addProd(value('in'))
     .addProd(ignore(value('[')));
 
   var run = getParserTestRunner(syntax);
-  run(null, 'a');
-  run('b', 'b');
+  run(null, 'for');
+  run('in', 'in');
   run(null, '[');
 }
 
@@ -164,23 +162,23 @@ function testSequences() {
   var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
-    .addProd(token('?'), seq(token('a')))
-    .addProd(token(','), seq(value('a')))
-    .addProd(token('['), seq(value('a'), value('b')))
-    .addProd(token(']'), seq(token('a'), value('b')))
-    .addProd(token('('), seq(value('a'), token('b')))
-    .addProd(token(')'), seq(token('a'), token('b')))
-    .addProd(token('{'), seq(token('a'), token('b'), token('c')))
-    .addProd(token('}'), seq(value('a'), token('b'), value('c')));
+    .addProd(token('?'), seq(token('for')))
+    .addProd(token(','), seq(value('for')))
+    .addProd(token('['), seq(value('for'), value('in')))
+    .addProd(token(']'), seq(token('for'), value('in')))
+    .addProd(token('('), seq(value('for'), token('in')))
+    .addProd(token(')'), seq(token('for'), token('in')))
+    .addProd(token('{'), seq(token('for'), token('in'), token('do')))
+    .addProd(token('}'), seq(value('for'), token('in'), value('do')));
 
   var run = getParserTestRunner(syntax);
-  run(null, '? a');
-  run('a', ', a');
-  run(['a', 'b'], '[ a b');
-  run('b', '] a b');
-  run('a', '( a b');
-  run(null, ') a b');
-  run(['a', 'c'], '} a b c');
+  run(null, '? for');
+  run('for', ', for');
+  run(['for', 'in'], '[ for in');
+  run('in', '] for in');
+  run('for', '( for in');
+  run(null, ') for in');
+  run(['for', 'do'], '} for in do');
 }
 
 registerTest(testNestedSequences);
@@ -188,14 +186,14 @@ function testNestedSequences() {
   var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
-    .addProd(token('?'), seq(value('a'), seq(value('b'), value('c'))))
-    .addProd(token(','), seq(value('a'), seq(token('b'), value('c'))))
-    .addProd(token('['), seq(value('a'), seq(token('b'), token('c'))));
+    .addProd(token('?'), seq(value('for'), seq(value('in'), value('do'))))
+    .addProd(token(','), seq(value('for'), seq(token('in'), value('do'))))
+    .addProd(token('['), seq(value('for'), seq(token('in'), token('do'))));
 
   var run = getParserTestRunner(syntax);
-  run(['a', ['b', 'c']], '? a b c');
-  run(['a', 'c'], ', a b c');
-  run('a', '[ a b c');
+  run(['for', ['in', 'do']], '? for in do');
+  run(['for', 'do'], ', for in do');
+  run('for', '[ for in do');
 }
 
 registerTest(testRepeatValues);
@@ -203,35 +201,35 @@ function testRepeatValues() {
   var syntax = myjs.tedir.Syntax.create();
 
   syntax.getRule('start')
-    .addProd(token('['), star(value('a'), value('b')))
-    .addProd(token(']'), star(token('a'), value('b')))
-    .addProd(token('('), star(value('a'), token('b')))
-    .addProd(token(')'), star(token('a'), token('b')));
+    .addProd(token('['), star(value('for'), value('in')))
+    .addProd(token(']'), star(token('for'), value('in')))
+    .addProd(token('('), star(value('for'), token('in')))
+    .addProd(token(')'), star(token('for'), token('in')));
 
   var run = getParserTestRunner(syntax);
   run([], '[');
-  run(['a'], '[ a');
-  run(['a', 'b', 'a'], '[ a b a');
-  run(['a', 'b', 'a', 'b', 'a'], '[ a b a b a');
-  run(myjs.tedir.SyntaxError, '[ a b');
+  run(['for'], '[ for');
+  run(['for', 'in', 'for'], '[ for in for');
+  run(['for', 'in', 'for', 'in', 'for'], '[ for in for in for');
+  run(myjs.tedir.SyntaxError, '[ for in');
 
   run([], ']');
-  run([], '] a');
-  run(['b'], '] a b a');
-  run(['b', 'b'], '] a b a b a');
-  run(myjs.tedir.SyntaxError, '] a b');
+  run([], '] for');
+  run(['in'], '] for in for');
+  run(['in', 'in'], '] for in for in for');
+  run(myjs.tedir.SyntaxError, '] for in');
 
   run([], '(');
-  run(['a'], '( a');
-  run(['a', 'a'], '( a b a');
-  run(['a', 'a', 'a'], '( a b a b a');
-  run(myjs.tedir.SyntaxError, '( a b');
+  run(['for'], '( for');
+  run(['for', 'for'], '( for in for');
+  run(['for', 'for', 'for'], '( for in for in for');
+  run(myjs.tedir.SyntaxError, '( for in');
 
   run([], ')');
-  run([], ') a');
-  run([], ') a b a');
-  run([], ') a b a b a');
-  run(myjs.tedir.SyntaxError, ') a b');
+  run([], ') for');
+  run([], ') for in for');
+  run([], ') for in for in for');
+  run(myjs.tedir.SyntaxError, ') for in');
 }
 
 registerTest(testInvoker);
@@ -307,7 +305,7 @@ function testInvoker() {
 }
 
 function runTokenTest(expected, source) {
-  var elements = myjs.tokenize(source, DEFAULT_SETTINGS);
+  var elements = myjs.getDialect('default').tokenize(source);
   var tokens = [];
   elements.forEach(function(element) {
     if (!element.isSoft()) {

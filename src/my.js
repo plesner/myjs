@@ -202,8 +202,22 @@ myjs.Dialect.prototype.getSettings = function() {
 myjs.Dialect.prototype.parseSource = function(source, origin, trace) {
   var grammar = this.getGrammar();
   var parser = new myjs.tedir.Parser(grammar);
-  var tokens = myjs.tokenize(source, this.getSettings());
+  var tokens = this.tokenize(source);
   return parser.parse(this.getStart(), tokens, origin, trace);
+};
+
+/**
+ * Returns the tokens of a piece of JavaScript source code, tokenized
+ * according to the tokens of this dialect.
+ */
+myjs.Dialect.prototype.tokenize = function(source) {
+  var stream = new myjs.Scanner(source, this.getSettings());
+  var tokens = [];
+  while (stream.hasMore()) {
+    var next = stream.scanToken();
+    tokens.push(next);
+  }
+  return tokens;
 };
 
 myjs.Dialect.prototype.translate = function(source, origin, trace) {
@@ -263,7 +277,7 @@ myjs.Dialect.prototype.calcTokenTypes = function() {
 };
 
 myjs.Dialect.prototype.unparse = function(ast) {
-  var context = new myjs.UnparseContext(this);
+  var context = new myjs.SourceStream(this);
   context.node(ast);
   return context.flush();
 };
@@ -706,19 +720,12 @@ myjs.Scanner.prototype.scanBlockComment = function() {
 };
 
 /**
- * Returns the tokens of a piece of JavaScript source code.
+ * Context object passed to ast nodes when unparsing.
+ *
+ * @param {myjs.Dialect} dialect the dialect to use to resolve nodes.
+ * @constructor
  */
-myjs.tokenize = function(source, settings) {
-  var stream = new myjs.Scanner(source, settings);
-  var tokens = [];
-  while (stream.hasMore()) {
-    var next = stream.scanToken();
-    tokens.push(next);
-  }
-  return tokens;
-};
-
-myjs.UnparseContext = function(dialect) {
+myjs.SourceStream = function(dialect) {
   this.dialect = dialect;
   this.types = dialect.getTypes();
   this.hasPendingNewline = false;
@@ -726,22 +733,44 @@ myjs.UnparseContext = function(dialect) {
   this.text = [];
 };
 
-myjs.UnparseContext.prototype.indent = function() {
+/**
+ * Increase the indentation level one step.
+ *
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.indent = function() {
   this.indentLevel++;
   return this;
 };
 
-myjs.UnparseContext.prototype.deindent = function() {
+/**
+ * Decrease the indentation level one step.
+ *
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.deindent = function() {
   this.indentLevel--;
   return this;
 };
 
-myjs.UnparseContext.prototype.newline = function() {
+/**
+ * Schedule a newline with indentation to be printed before the next hard
+ * string is written.
+ *
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.newline = function() {
   this.hasPendingNewline = true;
   return this;
 };
 
-myjs.UnparseContext.prototype.node = function(ast) {
+/**
+ * Recursively unparse the given ast node.
+ *
+ * @param {myjs.ast.Node} ast the node to unparse.
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.node = function(ast) {
   var type = ast.type;
   var typeCons = this.types[type];
   if (typeCons) {
@@ -752,7 +781,15 @@ myjs.UnparseContext.prototype.node = function(ast) {
   return this;
 };
 
-myjs.UnparseContext.prototype.nodes = function(asts, opt_separator) {
+/**
+ * Recursively unparse the given list of ast nodes.
+ *
+ * @param {Array.<myjs.ast.Node>} asts the nodes to unparse.
+ * @param {string=} opt_separator optional separator string to print between
+ *   the nodes.
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.nodes = function(asts, opt_separator) {
   var i;
   for (i = 0; i < asts.length; i++) {
     if (opt_separator && (i > 0)) {
@@ -763,7 +800,15 @@ myjs.UnparseContext.prototype.nodes = function(asts, opt_separator) {
   return this;
 };
 
-myjs.UnparseContext.prototype.writes = function(strs, opt_separator) {
+/**
+ * Add a list of strings to this stream.
+ *
+ * @param {Array.<string>} strs the strings to add.
+ * @param {string=} opt_separator optional separator string to print between
+ *   the strings.
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.writes = function(strs, opt_separator) {
   var i;
   for (i = 0; i < strs.length; i++) {
     if (opt_separator && (i > 0)) {
@@ -774,7 +819,11 @@ myjs.UnparseContext.prototype.writes = function(strs, opt_separator) {
   return this;
 };
 
-myjs.UnparseContext.prototype.flushNewline = function() {
+/**
+ * Check if there is a pending newline to flush and flush it if there is.
+ * @private
+ */
+myjs.SourceStream.prototype.flushNewline_ = function() {
   if (this.hasPendingNewline) {
     this.hasPendingNewline = false;
     this.text.push('\n');
@@ -784,32 +833,42 @@ myjs.UnparseContext.prototype.flushNewline = function() {
   }
 };
 
-myjs.UnparseContext.prototype.write = function(str) {
-  this.flushNewline();
+/**
+ * Adds a single string to the output of this stream.
+ *
+ * @param {string} str the string to add.
+ * @return {myjs.SourceStream} this object, for chaining.
+ */
+myjs.SourceStream.prototype.write = function(str) {
+  this.flushNewline_();
   this.text.push(str);
   return this;
 };
 
-myjs.UnparseContext.prototype.flush = function() {
-  this.flushNewline();
+/**
+ * Flush any newlines and return the contents as a string.
+ *
+ * @return {string} the contents of this stream.
+ */
+myjs.SourceStream.prototype.flush = function() {
+  this.flushNewline_();
   return this.text.join('');
 };
 
-function registerBuiltInDialects() {
-  myjs.registerDialect(new myjs.Dialect('default')
-    .addFragment('myjs.Program')
-    .addFragment('myjs.Statement')
-    .addFragment('myjs.Declaration')
-    .addFragment('myjs.Core')
-    .addFragment('myjs.LeftHandSide')
-    .addFragment('myjs.Operators')
-    .addFragment('myjs.Expression')
-    .addFragment('myjs.Control')
-    .addFragment('myjs.Iteration')
-    .addFragment('myjs.Exceptions'));
-  myjs.registerDialect(new myjs.Dialect('meta')
-    .extendsDialect('default')
-    .addFragment('myjs.Meta'));
-}
+// Register the default dialect.
+myjs.registerDialect(new myjs.Dialect('default')
+  .addFragment('myjs.Program')
+  .addFragment('myjs.Statement')
+  .addFragment('myjs.Declaration')
+  .addFragment('myjs.Core')
+  .addFragment('myjs.LeftHandSide')
+  .addFragment('myjs.Operators')
+  .addFragment('myjs.Expression')
+  .addFragment('myjs.Control')
+  .addFragment('myjs.Iteration')
+  .addFragment('myjs.Exceptions'));
 
-registerBuiltInDialects();
+// Register the meta language dialect.
+myjs.registerDialect(new myjs.Dialect('meta')
+  .extendsDialect('default')
+  .addFragment('myjs.Meta'));
