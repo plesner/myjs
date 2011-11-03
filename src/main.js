@@ -69,8 +69,7 @@ function parseAllFiles() {
     fs.readFile(name, 'utf8', function(error, source) {
       console.log("Parsing " + name);
       var origin = new myjs.tedir.SourceOrigin(name);
-      var ast = dialect.parseSource(source, origin);
-      var code = dialect.unparse(ast);
+      dialect.translate(source, origin);
       doNext();
     });
   }, function() {

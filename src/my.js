@@ -13,8 +13,8 @@
 // limitations under the License.
 
 /**
- * Implementation of the javascript parser and processor, delegating the actual
- * parsing to the tedir library.
+ * @fileoverview Implementation of the javascript parser and processor,
+ * delegating the actual parsing to the tedir library.
  */
 
 'use strict';
@@ -25,42 +25,92 @@ goog.require('myjs.ast');
 goog.require('myjs.tedir');
 goog.require('myjs.utils');
 
+/**
+ * @inheritDoc
+ */
 myjs.factory = {};
 Object.keys(myjs.tedir.factory).forEach(function(key) {
   myjs.factory[key] = myjs.tedir.factory[key];
 });
 
+/**
+ * @inheritDoc
+ */
 myjs.Syntax = myjs.tedir.Syntax;
 
+/**
+ * Creates a new ignored-punctuator expression, matching the punctuator with
+ * the given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal matching the given punctuator.
+ */
 myjs.factory.punct = function(name) {
-  return myjs.factory.ignore(myjs.tedir.factory.token(name, PUNCTUATOR_MARKER));
+  return myjs.factory.ignore(myjs.tedir.factory.token(name,
+    myjs.Dialect.PUNCTUATOR_MARKER_));
 };
 
+/**
+ * Creates a new punctuator-with-value expression, matching the punctuator with
+ * the given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal matching the given punctuator.
+ */
 myjs.factory.punctValue = function(name) {
-  return myjs.tedir.factory.token(name, PUNCTUATOR_MARKER);
+  return myjs.tedir.factory.token(name, myjs.Dialect.PUNCTUATOR_MARKER_);
 };
 
+/**
+ * Creates a new ignored-terminal expression, matching the token with the
+ * given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal with the given name.
+ */
 myjs.factory.token = function(name) {
   return myjs.factory.ignore(myjs.tedir.factory.token(name, null));
 };
 
+/**
+ * Creates a new ignored-keyword expression, matching the keyword with the
+ * given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal matching the given keyword.
+ */
 myjs.factory.keyword = function(name) {
-  return myjs.factory.ignore(myjs.tedir.factory.token(name, KEYWORD_MARKER));
+  return myjs.factory.ignore(myjs.tedir.factory.token(name,
+    myjs.Dialect.KEYWORD_MARKER_));
 };
 
+/**
+ * Creates a new keyword-with-value expression, matching the keyword with the
+ * given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal matching the given keyword.
+ */
 myjs.factory.keywordValue = function(name) {
-  return myjs.tedir.factory.token(name, KEYWORD_MARKER);
+  return myjs.tedir.factory.token(name, myjs.Dialect.KEYWORD_MARKER_);
 };
 
+/**
+ * Creates a new terminal-with-value expression, matching the token with the
+ * given name.
+ *
+ * @param {string} name the terminal name to match.
+ * @return {myjs.tedir.Expression} a terminal with the given name.
+ */
 myjs.factory.value = function(name) {
   return myjs.tedir.factory.token(name, null);
 };
 
-var KEYWORD_MARKER = 'keyword';
-var PUNCTUATOR_MARKER = 'punctuator';
-
 /**
  * Signals an error condition in tedir.
+ *
+ * @param {string} message An error message.
+ * @constructor
  */
 myjs.Error = function(message) {
   if (Error.captureStackTrace) {
@@ -69,17 +119,18 @@ myjs.Error = function(message) {
   this.message = message;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.Error.prototype.toString = function() {
   return 'myjs.Error: ' + this.message;
 };
 
 /**
- * A map from dialect name to dialect object.
- */
-myjs.dialectRegistry = {};
-
-/**
  * A description of a javascript dialect.
+ *
+ * @param {string} name the name of this dialect.
+ * @constructor
  */
 myjs.Dialect = function(name) {
   this.name = name;
@@ -95,7 +146,15 @@ myjs.Dialect = function(name) {
 };
 
 /**
+ * A map from dialect name to dialect object.
+ * @private
+ */
+myjs.Dialect.registry_ = {};
+
+/**
  * Returns the name that identifies this dialect.
+ *
+ * @return {string} the name of this dialect.
  */
 myjs.Dialect.prototype.getName = function() {
   return this.name;
@@ -104,6 +163,9 @@ myjs.Dialect.prototype.getName = function() {
 /**
  * Adds one or more fragment names to the list of fragments to include in
  * this dialect.
+ *
+ * @param {myjs.Fragment...} var_args the fragments to include.
+ * @return {myjs.Dialect} this dialect, for chaining.
  */
 myjs.Dialect.prototype.addFragment = function(var_args) {
   var i;
@@ -113,6 +175,12 @@ myjs.Dialect.prototype.addFragment = function(var_args) {
   return this;
 };
 
+/**
+ * Sets the name of this dialect's parent dialect.
+ *
+ * @param {string} name the name of this dialect's parent dialect.
+ * @return {myjs.Dialect} this dialect, for chaining.
+ */
 myjs.Dialect.prototype.extendsDialect = function(name) {
   this.parent = name;
   return this;
@@ -120,27 +188,38 @@ myjs.Dialect.prototype.extendsDialect = function(name) {
 
 /**
  * Sets the start production to use.
+ *
+ * @param {string} value the name of this dialect's start nonterm.
+ * @return {myjs.Dialect} this dialect, for chaining.
  */
 myjs.Dialect.prototype.setStart = function(value) {
   this.start = value;
   return this;
 };
 
-myjs.Dialect.prototype.getStart = function() {
+/**
+ * Returns the start nonterm for this dialect.
+ *
+ * @return {string} the name of this dialect's start nonterm.
+ * @private
+ */
+myjs.Dialect.prototype.getStart_ = function() {
   return this.start;
 };
 
 /**
  * Returns this dialect's syntax, building it if necessary.
+ *
+ * @return {myjs.tedir.Syntax} this dialect's syntax.
+ * @private
  */
-myjs.Dialect.prototype.getSyntax = function() {
+myjs.Dialect.prototype.getSyntax_ = function() {
   if (!this.syntax) {
-    var syntax = this.parent
-      ? myjs.getDialect(this.parent).getSyntax()
-      : myjs.Syntax.create();
+    var syntax = this.parent ?
+      myjs.getDialect(this.parent).getSyntax_() : myjs.Syntax.create();
     var fragments = this.fragments.map(function(name) {
       var fragment = myjs.getFragment(name);
-      return fragment.getSyntax();
+      return fragment.getSyntax_();
     });
     if (fragments.length > 0) {
       syntax = syntax.compose(fragments);
@@ -150,7 +229,15 @@ myjs.Dialect.prototype.getSyntax = function() {
   return this.syntax;
 };
 
-myjs.Dialect.joinObjects = function(objs) {
+/**
+ * Given a set of objects, returns one object that for each key in one of the
+ * input maps maps to that key's value in the input map.
+ *
+ * @param {Array.<Object>} objs an array of input maps.
+ * @return {Object} the union of the input maps.
+ * @private
+ */
+myjs.Dialect.joinObjects_ = function(objs) {
   var result = {};
   objs.forEach(function(obj) {
     Object.keys(obj).forEach(function(key) {
@@ -162,56 +249,79 @@ myjs.Dialect.joinObjects = function(objs) {
 
 /**
  * Returns a map from type names to constructor functions.
+ *
+ * @return {Object.<string, Function>} this dialect's type map.
+ * @private
  */
-myjs.Dialect.prototype.getTypes = function() {
+myjs.Dialect.prototype.getTypes_ = function() {
   if (!this.types) {
     var types = this.fragments.map(function(fragName) {
       var frag = myjs.getFragment(fragName);
-      return frag.getTypes();
+      return frag.getTypes_();
     });
     if (this.parent) {
-      types.push(myjs.getDialect(this.parent).getTypes());
+      types.push(myjs.getDialect(this.parent).getTypes_());
     }
-    this.types = myjs.Dialect.joinObjects(types);
+    this.types = myjs.Dialect.joinObjects_(types);
   }
   return this.types;
 };
 
 /**
- * Returns this dialect's grammar.
+ * Returns this dialect's grammar, calculating it the first time this method
+ * is called.
+ *
+ * @return {myjs.tedir.Grammar} the grammar for this dialect.
+ * @private
  */
-myjs.Dialect.prototype.getGrammar = function() {
+myjs.Dialect.prototype.getGrammar_ = function() {
   if (!this.grammar) {
-    this.grammar = this.getSyntax().asGrammar();
+    this.grammar = this.getSyntax_().asGrammar();
   }
   return this.grammar;
 };
 
-myjs.Dialect.prototype.getSettings = function() {
+/**
+ * Returns the scanner settings for this dialect.
+ *
+ * @return {myjs.ScannerSettings_} the scanner settings for this dialect.
+ * @private
+ */
+myjs.Dialect.prototype.getScannerSettings_ = function() {
   if (!this.settings) {
-    var keywords = this.getKeywords();
-    var punctuators = this.getPunctuators();
-    this.settings = new myjs.TokenizerSettings(keywords, punctuators);
+    var keywords = this.getKeywords_();
+    var punctuators = this.getPunctuators_();
+    this.settings = new myjs.ScannerSettings_(keywords, punctuators);
   }
   return this.settings;
 };
 
 /**
  * Parses the given source, returning a syntax tree.
+ *
+ * @param {string} source source code in this dialect.
+ * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
+ * @param {boolean} trace true if parsing should be traced.
+ * @return {Object} the syntax tree for the given source.
+ * @private
  */
-myjs.Dialect.prototype.parseSource = function(source, origin, trace) {
-  var grammar = this.getGrammar();
+myjs.Dialect.prototype.parse_ = function(source, origin, trace) {
+  var grammar = this.getGrammar_();
   var parser = new myjs.tedir.Parser(grammar);
-  var tokens = this.tokenize(source);
-  return parser.parse(this.getStart(), tokens, origin, trace);
+  var tokens = this.tokenize_(source);
+  return parser.parse(this.getStart_(), tokens, origin, trace);
 };
 
 /**
  * Returns the tokens of a piece of JavaScript source code, tokenized
  * according to the tokens of this dialect.
+ *
+ * @param {string} source source code to tokenize.
+ * @return {Array.<myjs.tedir.Token>} the input as tokens.
+ * @private
  */
-myjs.Dialect.prototype.tokenize = function(source) {
-  var stream = new myjs.Scanner(source, this.getSettings());
+myjs.Dialect.prototype.tokenize_ = function(source) {
+  var stream = new myjs.Scanner_(source, this.getScannerSettings_());
   var tokens = [];
   while (stream.hasMore()) {
     var next = stream.scanToken();
@@ -220,48 +330,78 @@ myjs.Dialect.prototype.tokenize = function(source) {
   return tokens;
 };
 
+/**
+ * Translates source code written in this dialect to plain javascript.
+ *
+ * @param {string} source source code in this dialect.
+ * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
+ * @param {boolean} trace true if parsing should be traced.
+ * @return {string} plain javascript translation of the source.
+ */
 myjs.Dialect.prototype.translate = function(source, origin, trace) {
-  var ast = this.parseSource(source, origin, trace);
+  var ast = this.parse_(source, origin, trace);
   if (trace) {
     return ast;
   }
-  return this.unparse(ast);
+  return this.unparse_(ast);
 };
 
 /**
  * Returns the set of keywords used by this dialect.
+ *
+ * @return {Array.<string>} the keywords for this dialect.
+ * @private
  */
-myjs.Dialect.prototype.getKeywords = function() {
+myjs.Dialect.prototype.getKeywords_ = function() {
   if (!this.keywords) {
-    this.calcTokenTypes();
+    this.calcTokenTypes_();
   }
   return this.keywords;
 };
 
 /**
  * Returns the set of punctuators used by this dialect.
+ *
+ * @return {Array.<string>} the punctuators for this dialect.
+ * @private
  */
-myjs.Dialect.prototype.getPunctuators = function() {
+myjs.Dialect.prototype.getPunctuators_ = function() {
   if (!this.punctuators) {
-    this.calcTokenTypes();
+    this.calcTokenTypes_();
   }
   return this.punctuators;
 };
 
 /**
+ * Marker used to identify keyword tokens.
+ * @private
+ * @const
+ */
+myjs.Dialect.KEYWORD_MARKER_ = 'keyword';
+
+/**
+ * Marker used to identify punctuator tokens.
+ * @private
+ * @const
+ */
+myjs.Dialect.PUNCTUATOR_MARKER_ = 'punctuator';
+
+/**
  * Scans the grammar and extracts a sorted list of all keywords and
  * punctuators, storing them in the appropriate fields.
+ *
+ * @private
  */
-myjs.Dialect.prototype.calcTokenTypes = function() {
+myjs.Dialect.prototype.calcTokenTypes_ = function() {
   var keywordMap = {};
   var punctuatorMap = {};
   function visitNode(node) {
     if (node.getType() == 'TOKEN') {
       switch (node.getKind()) {
-      case KEYWORD_MARKER:
+      case myjs.Dialect.KEYWORD_MARKER_:
         keywordMap[node.value] = true;
         break;
-      case PUNCTUATOR_MARKER:
+      case myjs.Dialect.PUNCTUATOR_MARKER_:
         punctuatorMap[node.value] = true;
         break;
       }
@@ -269,41 +409,54 @@ myjs.Dialect.prototype.calcTokenTypes = function() {
       node.forEachChild(visitNode);
     }
   }
-  this.getSyntax().forEachRule(function(name, value) {
+  this.getSyntax_().forEachRule(function(name, value) {
     visitNode(value);
   });
   this.keywords = Object.keys(keywordMap).sort();
   this.punctuators = Object.keys(punctuatorMap).sort();
 };
 
-myjs.Dialect.prototype.unparse = function(ast) {
+/**
+ * Formats the given ast as source code and returns it as a string.
+ *
+ * @param {Object} ast the ast node to unparse.
+ * @return {string} the source code as a string.
+ * @private
+ */
+myjs.Dialect.prototype.unparse_ = function(ast) {
   var context = new myjs.SourceStream(this);
   context.node(ast);
-  return context.flush();
+  return context.flush_();
 };
 
 /**
  * Adds the given dialect to the set known by myjs.
+ *
+ * @param {myjs.Dialect} dialect the dialect to register.
  */
 myjs.registerDialect = function(dialect) {
-  myjs.dialectRegistry[dialect.getName()] = dialect;
+  myjs.Dialect.registry_[dialect.getName()] = dialect;
 };
 
 /**
- * Returns the specified named dialect, or null if it doesn't exist.
+ * Returns the dialect registered under the given name.
+ *
+ * @param {string} name the dialect name.
+ * @return {myjs.Fragment} the dialect with the given name.
  */
 myjs.getDialect = function(name) {
-  return myjs.dialectRegistry[name];
+  if (!myjs.Dialect.registry_.hasOwnProperty(name)) {
+    throw new myjs.Error('Unknown dialect "' + name + '".');
+  }
+  return myjs.Dialect.registry_[name];
 };
-
-/**
- * A map from fragment name to fragment object.
- */
-myjs.fragmentRegistry = {};
 
 /**
  * A (potentially incomplete) fragment of syntax that defines how a type
  * of syntax should be parsed and processed.
+ *
+ * @param {string} name the unique name of this fragment.
+ * @constructor
  */
 myjs.Fragment = function(name) {
   this.name = name;
@@ -312,24 +465,54 @@ myjs.Fragment = function(name) {
   this.types = {};
 };
 
+/**
+ * A map from fragment names to fragment objects.
+ *
+ * @private
+ */
+myjs.Fragment.registry_ = {};
+
+/**
+ * Sets the syntax provider function for this fragment. This function will be
+ * called to build the syntax if this fragment is used.
+ *
+ * @param {Function} syntaxProvider function to call to get the syntax.
+ * @return {myjs.Fragment} this fragment, for chaining.
+ */
 myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
   this.syntaxProvider = syntaxProvider;
   return this;
 };
 
+/**
+ * Registers the given constructor as the type for the given ast node type.
+ *
+ * @param {string} name the node type name.
+ * @param {Function} constructor the associated constructor.
+ * @return {myjs.Fragment} this fragment, for chaining.
+ */
 myjs.Fragment.prototype.registerType = function(name, constructor) {
   this.types[name] = constructor;
   return this;
 };
 
-myjs.Fragment.prototype.getTypes = function() {
+/**
+ * Returns the type map for this fragment.
+ *
+ * @return {Object.<string,Function>} the type map for this fragment.
+ * @private
+ */
+myjs.Fragment.prototype.getTypes_ = function() {
   return this.types;
 };
 
 /**
- * Builds and returns the syntax for this fragment.
+ * Builds (first time) and returns the syntax for this fragment.
+ *
+ * @return {myjs.tedir.Syntax} the syntax for this fragment.
+ * @private
  */
-myjs.Fragment.prototype.getSyntax = function() {
+myjs.Fragment.prototype.getSyntax_ = function() {
   if (!this.syntax) {
     var value = (this.syntaxProvider)();
     if (!value) {
@@ -342,38 +525,61 @@ myjs.Fragment.prototype.getSyntax = function() {
 
 /**
  * Returns the name of this fragment.
+ *
+ * @return {string} the name of this fragment.
  */
 myjs.Fragment.prototype.getName = function() {
   return this.name;
 };
 
+/**
+ * Registers the given fragment under its name in the fragment registry.
+ *
+ * @param {myjs.Fragment} fragment the fragment to register.
+ */
 myjs.registerFragment = function(fragment) {
-  myjs.fragmentRegistry[fragment.getName()] = fragment;
+  myjs.Fragment.registry_[fragment.getName()] = fragment;
 };
 
+/**
+ * Returns the fragment registered under the given name.
+ *
+ * @param {string} name the fragment name.
+ * @return {myjs.Fragment} the fragment with the given name.
+ */
 myjs.getFragment = function(name) {
-  if (!myjs.fragmentRegistry.hasOwnProperty(name)) {
+  if (!myjs.Fragment.registry_.hasOwnProperty(name)) {
     throw new myjs.Error('Unknown fragment "' + name + '".');
   }
-  return myjs.fragmentRegistry[name];
+  return myjs.Fragment.registry_[name];
 };
 
 /**
  * A "hard" token with a string value.
+ *
+ * @param {string} value the value of this token.
+ * @param {string=} opt_type the type of this token. If none is specified
+ *   the value will be used.
+ * @constructor
+ * @extends myjs.tedir.Token
+ * @private
  */
-myjs.HardToken = function(value, typeOpt) {
+myjs.HardToken_ = function(value, opt_type) {
   this.value = value;
-  this.type = typeOpt || value;
+  this.type = opt_type || value;
 };
 
 /**
- * Is this a soft non-semantic token?
+ * @inheritDoc
  */
-myjs.HardToken.prototype.isSoft = function() {
+myjs.HardToken_.prototype.isSoft = function() {
   return false;
 };
 
-myjs.HardToken.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.HardToken_.prototype.toString = function() {
   if (this.value != this.type) {
     return '[' + this.type + ':' + this.value + ']';
   } else {
@@ -384,54 +590,101 @@ myjs.HardToken.prototype.toString = function() {
 /**
  * A "soft" piece of ether that doesn't affect parsing but which we need
  * to keep around to be able to unparse the code again.
+ *
+ * @param {string} value the value of this token.
+ * @constructor
+ * @extends myjs.tedir.Token
+ * @private
  */
-myjs.SoftToken = function(value) {
+myjs.SoftToken_ = function(value) {
   this.value = value;
 };
 
-myjs.SoftToken.prototype.toString = function() {
+/**
+ * @inheritDoc
+ */
+myjs.SoftToken_.prototype.toString = function() {
   return '(' + this.value + ')';
 };
 
-myjs.SoftToken.prototype.isSoft = function() {
+/**
+ * @inheritDoc
+ */
+myjs.SoftToken_.prototype.isSoft = function() {
   return true;
 };
 
-myjs.TokenizerSettings = function(keywords, punctuation) {
+/**
+ * A collection of settings that control how a scanner tokenizes input.
+ *
+ * @param {Array.<string>} keywords a list of keywords.
+ * @param {Array.<string>} punctuation a list of punctuation tokens.
+ * @constructor
+ * @private
+ */
+myjs.ScannerSettings_ = function(keywords, punctuation) {
   this.keywords = {};
   keywords.forEach(function(word) {
     this.keywords[word] = true;
   }.bind(this));
-  this.punctuation = myjs.Trie.build(punctuation);
+  this.punctuation = myjs.Trie_.build(punctuation);
 };
 
-myjs.TokenizerSettings.prototype.isKeyword = function(word) {
+/**
+ * Returns true if the given string is a keyword for these settings.
+ *
+ * @param {string} word the word to test.
+ * @return {boolean} true iff the given word is a keyword.
+ */
+myjs.ScannerSettings_.prototype.isKeyword = function(word) {
   return this.keywords.hasOwnProperty(word);
 };
 
-myjs.TokenizerSettings.prototype.isPunctuation = function(chr) {
+/**
+ * Returns true if the given character occurs in any punctuation string for
+ * these settings.
+ *
+ * @param {string} chr the character to test.
+ * @return {boolean} true iff the character occurs in a punctuation string.
+ */
+myjs.ScannerSettings_.prototype.isPunctuation = function(chr) {
   return this.punctuation.get(chr);
 };
 
-myjs.TokenizerSettings.prototype.getPunctuation = function() {
+/**
+ * Returns the punctuation trie for these settings.
+ *
+ * @return {myjs.Trie_} a trie recognizing these settings' punctuation.
+ */
+myjs.ScannerSettings_.prototype.getPunctuation = function() {
   return this.punctuation;
 };
 
-myjs.Trie = function(map) {
+/**
+ * A simple object-as-map based trie.
+ *
+ * @param {Object.<string,myjs.Trie_>} map Map from characters to subtries.
+ * @constructor
+ * @private
+ */
+myjs.Trie_ = function(map) {
   this.map = map;
 };
 
 /**
  * A singleton empty trie.
  */
-myjs.Trie.EMPTY = new myjs.Trie({});
+myjs.Trie_.EMPTY = new myjs.Trie_({});
 
 /**
  * Returns a trie that matches on the given set of strings.
+ *
+ * @param {Array.<string>} strings the strings to recognize.
+ * @return {myjs.Trie_} a trie that recognizes the given strings.
  */
-myjs.Trie.build = function(strings) {
+myjs.Trie_.build = function(strings) {
   if (strings.length == 0) {
-    return myjs.Trie.EMPTY;
+    return myjs.Trie_.EMPTY;
   }
   var firstToRest = {};
   strings.forEach(function(string) {
@@ -446,110 +699,156 @@ myjs.Trie.build = function(strings) {
   });
   var subTries = {};
   Object.keys(firstToRest).forEach(function(chr) {
-    subTries[chr] = myjs.Trie.build(firstToRest[chr]);
+    subTries[chr] = myjs.Trie_.build(firstToRest[chr]);
   });
-  return new myjs.Trie(subTries);
+  return new myjs.Trie_(subTries);
 };
 
-myjs.Trie.prototype.get = function(chr) {
+/**
+ * Returns the subtrie of this trie for the given character.
+ *
+ * @param {string} chr the character to look up.
+ * @return {?myjs.Trie_} the subtrie or null if there is none.
+ */
+myjs.Trie_.prototype.get = function(chr) {
   return this.map[chr];
 };
 
 /**
  * A simple stream that provides the contents of a string one char at a
  * time.
+ *
+ * @param {string} source the source code to scan.
+ * @param {myjs.ScannerSettings_} settings the token settings to use.
+ * @constructor
+ * @private
  */
-myjs.Scanner = function(source, settings) {
+myjs.Scanner_ = function(source, settings) {
   this.settings = settings;
   this.source = source;
   this.cursor = 0;
 };
 
-myjs.Scanner.prototype.getCurrent = function() {
+/**
+ * Returns the current character.
+ *
+ * @return {string} the current character.
+ */
+myjs.Scanner_.prototype.getCurrent = function() {
   return this.source[this.cursor];
 };
 
-myjs.Scanner.prototype.getLookahead = function() {
+/**
+ * Returns the current lookahead character.
+ *
+ * @return {string} the character after the current one.
+ */
+myjs.Scanner_.prototype.getLookahead = function() {
   return this.source[this.cursor + 1];
 };
 
 /**
  * Does this character stream have more characters?
+ *
+ * @return {boolean} true iff there is at least one character left.
  */
-myjs.Scanner.prototype.hasMore = function() {
+myjs.Scanner_.prototype.hasMore = function() {
   return this.cursor < this.source.length;
 };
 
-myjs.Scanner.prototype.hasLookahead = function() {
+/**
+ * Returns true if there is at least one character left in the input
+ * past the current character.
+ *
+ * @return {boolean} true iff there is at least two characters left.
+ */
+myjs.Scanner_.prototype.hasLookahead = function() {
   return (this.cursor + 1) < this.source.length;
 };
 
 /**
  * Advances the stream to the next character.
  */
-myjs.Scanner.prototype.advance = function() {
+myjs.Scanner_.prototype.advance = function() {
   this.cursor++;
 };
 
 /**
  * Advance the specified amount if possible but not past the end of the
  * input.
+ *
+ * @param {number} amount the number of chars to advance.
  */
-myjs.Scanner.prototype.advanceIfPossible = function(amount) {
+myjs.Scanner_.prototype.advanceIfPossible = function(amount) {
   this.cursor = Math.min(this.cursor + amount, this.source.length);
 };
 
 /**
- * Advances the stream to the next character and returns it.
- */
-myjs.Scanner.prototype.advanceAndGet = function() {
-  this.cursor++;
-  return this.getCurrent();
-};
-
-/**
  * Returns the current character offset.
+ *
+ * @return {number} the 0-based offset of the current character.
  */
-myjs.Scanner.prototype.getCursor = function() {
+myjs.Scanner_.prototype.getCursor = function() {
   return this.cursor;
 };
 
 /**
  * Returns the part of the input between 'start' and 'end'.
+ *
+ * @param {number} start the start point.
+ * @param {number} end the end point.
+ * @return {string} the substring of the input between start and end.
  */
-myjs.Scanner.prototype.getPart = function(start, end) {
+myjs.Scanner_.prototype.getPart = function(start, end) {
   return this.source.substring(start, end);
 };
 
 /**
  * Is the given string a single character of whitespace?
+ *
+ * @param {string} c the character to check.
+ * @return {boolean} is c a whitespace character?
  */
-function isWhiteSpace(c) {
+myjs.Scanner_.isWhiteSpace = function(c) {
   return (/\s/).test(c);
-}
+};
 
-function isDigit(c) {
+/**
+ * Is this character a legal digit?
+ *
+ * @param {string} c the character to check.
+ * @return {boolean} is c a digit?
+ */
+myjs.Scanner_.isDigit = function(c) {
   return (/[\d]/).test(c);
-}
+};
 
 /**
  * Is this character allowed as the first in an identifier?
+ *
+ * @param {string} c the character to check.
+ * @return {boolean} is c legal as the start of an identifier?
  */
-function isIdentifierStart(c) {
+myjs.Scanner_.isIdentifierStart = function(c) {
   return (/[\w]/).test(c);
-}
+};
 
 /**
  * Is this character allowed as the first in an identifier?
+ *
+ * @param {string} c the character to check.
+ * @return {boolean} is c legal as part of an identifier?
  */
-function isIdentifierPart(c) {
+myjs.Scanner_.isIdentifierPart = function(c) {
   return (/[\w\d]/).test(c);
-}
+};
 
 /**
  * Extracts the next JavaScript token from the given stream.
+ *
+ * @return {myjs.tedir.Token} the next token.
  */
-myjs.Scanner.prototype.scanToken = function() {
+myjs.Scanner_.prototype.scanToken = function() {
   var c = this.getCurrent();
   switch (c) {
   case '\"':
@@ -568,93 +867,73 @@ myjs.Scanner.prototype.scanToken = function() {
       return this.advanceAndYield('/');
     }
   }
-  if (isWhiteSpace(c)) {
+  if (myjs.Scanner_.isWhiteSpace(c)) {
     return this.scanWhiteSpace();
   } else if (this.settings.isPunctuation(c)) {
     return this.scanPunctuation();
-  } else if (isDigit(c)) {
+  } else if (myjs.Scanner_.isDigit(c)) {
     return this.scanNumber(c);
-  } else if (isIdentifierStart(c)) {
+  } else if (myjs.Scanner_.isIdentifierStart(c)) {
     return this.scanIdentifier(c);
   } else {
     this.advance();
-    return new myjs.SoftToken(c, c);
+    return new myjs.SoftToken_(c, c);
   }
 };
 
 /**
- * Doesn't advance but just returns a token with the given contents.
- */
-myjs.Scanner.prototype.justYield = function(value, typeOpt) {
-  return new myjs.HardToken(value, typeOpt);
-};
-
-/**
- * Skips over the current character and returns a token with the given
+ * Skips over the current character and returns a hard token with the given
  * contents.
+ *
+ * @param {string} value the token value.
+ * @param {string=} opt_type an optional token type.
+ * @return {myjs.HardToken_} a hard token with the given value/type.
  */
-myjs.Scanner.prototype.advanceAndYield = function(value, typeOpt) {
+myjs.Scanner_.prototype.advanceAndYield = function(value, opt_type) {
   this.advance();
-  return new myjs.HardToken(value, typeOpt);
-};
-
-/**
- * Skips over the current character and if the next character matches
- * the given 'match' skips another and return 'ifMatch', otherwise
- * doesn't skip but just returns 'ifNoMatch'.
- */
-myjs.Scanner.prototype.checkAndYield = function(match, ifMatch, ifNoMatch) {
-  if (this.advanceAndGet() == match) {
-    this.advance();
-    return new myjs.HardToken(ifMatch);
-  } else {
-    return new myjs.HardToken(ifNoMatch);
-  }
-};
-
-/**
- * If the next character is 'single', returns onDouble, otherwise if the
- * next is equality returns onAssignment, otherwise returns single.
- */
-myjs.Scanner.prototype.doubleOrAssignment = function(single, onDouble,
-    onAssignment) {
-  switch (this.advanceAndGet()) {
-  case single:
-    return this.advanceAndYield(onDouble);
-  case '=':
-    return this.advanceAndYield(onAssignment);
-  default:
-    return this.justYield(single);
-  }
+  return new myjs.HardToken_(value, opt_type);
 };
 
 /**
  * Scans a single block of whitespace.
+ *
+ * @return {myjs.SoftToken_} a soft token containing the whitespace.
  */
-myjs.Scanner.prototype.scanWhiteSpace = function() {
+myjs.Scanner_.prototype.scanWhiteSpace = function() {
   var start = this.getCursor();
-  while (this.hasMore() && isWhiteSpace(this.getCurrent())) {
+  while (this.hasMore() && myjs.Scanner_.isWhiteSpace(this.getCurrent())) {
     this.advance();
   }
   var end = this.getCursor();
-  return new myjs.SoftToken(this.getPart(start, end));
+  return new myjs.SoftToken_(this.getPart(start, end));
 };
 
-myjs.Scanner.prototype.scanIdentifier = function() {
+/**
+ * Scans past an identifier.
+ *
+ * @return {myjs.HardToken_} a hard token containing the string value.
+ */
+myjs.Scanner_.prototype.scanIdentifier = function() {
   var start = this.getCursor();
-  while (this.hasMore() && isIdentifierPart(this.getCurrent())) {
+  while (this.hasMore() && myjs.Scanner_.isIdentifierPart(this.getCurrent())) {
     this.advance();
   }
   var end = this.getCursor();
   var value = this.getPart(start, end);
   if (this.settings.isKeyword(value)) {
-    return new myjs.HardToken(value);
+    return new myjs.HardToken_(value);
   } else {
-    return new myjs.HardToken(value, 'Identifier');
+    return new myjs.HardToken_(value, 'Identifier');
   }
 };
 
-myjs.Scanner.prototype.scanPunctuation = function() {
+/**
+ * Scans past a piece of punctuation, taking the longest substring that
+ * matches a string in the settings' punctuation set.
+ *
+ * @return {myjs.HardToken_} a hard token containing the string value.
+ */
+myjs.Scanner_.prototype.scanPunctuation = function() {
   var start = this.getCursor();
   var chr = this.getCurrent();
   var current = this.settings.getPunctuation();
@@ -666,20 +945,31 @@ myjs.Scanner.prototype.scanPunctuation = function() {
   } while (current && this.hasMore());
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken(value);
+  return new myjs.HardToken_(value);
 };
 
-myjs.Scanner.prototype.scanNumber = function() {
+/**
+ * Scans past a number token.
+ *
+ * @return {myjs.HardToken_} a hard token containing the string value.
+ */
+myjs.Scanner_.prototype.scanNumber = function() {
   var start = this.getCursor();
-  while (this.hasMore() && isDigit(this.getCurrent())) {
+  while (this.hasMore() && myjs.Scanner_.isDigit(this.getCurrent())) {
     this.advance();
   }
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken(value, 'NumericLiteral');
+  return new myjs.HardToken_(value, 'NumericLiteral');
 };
 
-myjs.Scanner.prototype.scanString = function() {
+/**
+ * Scans past a string token.
+ *
+ * @return {myjs.HardToken_} a hard token containing the string value with
+ *   the quotes.
+ */
+myjs.Scanner_.prototype.scanString = function() {
   var start = this.getCursor();
   var first = this.getCurrent();
   this.advance();
@@ -693,10 +983,15 @@ myjs.Scanner.prototype.scanString = function() {
   this.advanceIfPossible(1);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken(value, 'StringLiteral');
+  return new myjs.HardToken_(value, 'StringLiteral');
 };
 
-myjs.Scanner.prototype.scanEndOfLineComment = function() {
+/**
+ * Scans past an end-of-line comment.
+ *
+ * @return {myjs.SoftToken_} a soft token containing the comment.
+ */
+myjs.Scanner_.prototype.scanEndOfLineComment = function() {
   var start = this.getCursor();
   while (this.hasMore() && (this.getCurrent() != '\n')) {
     this.advance();
@@ -704,10 +999,15 @@ myjs.Scanner.prototype.scanEndOfLineComment = function() {
   this.advanceIfPossible(1);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.SoftToken(value);
+  return new myjs.SoftToken_(value);
 };
 
-myjs.Scanner.prototype.scanBlockComment = function() {
+/**
+ * Scans past a block comment.
+ *
+ * @return {myjs.SoftToken_} a soft token containing the comment.
+ */
+myjs.Scanner_.prototype.scanBlockComment = function() {
   var start = this.getCursor();
   while (this.hasLookahead() &&
     (this.getCurrent() != '*' || this.getLookahead() != '/')) {
@@ -716,7 +1016,7 @@ myjs.Scanner.prototype.scanBlockComment = function() {
   this.advanceIfPossible(2);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.SoftToken(value);
+  return new myjs.SoftToken_(value);
 };
 
 /**
@@ -727,7 +1027,7 @@ myjs.Scanner.prototype.scanBlockComment = function() {
  */
 myjs.SourceStream = function(dialect) {
   this.dialect = dialect;
-  this.types = dialect.getTypes();
+  this.types = dialect.getTypes_();
   this.hasPendingNewline = false;
   this.indentLevel = 0;
   this.text = [];
@@ -849,8 +1149,9 @@ myjs.SourceStream.prototype.write = function(str) {
  * Flush any newlines and return the contents as a string.
  *
  * @return {string} the contents of this stream.
+ * @private
  */
-myjs.SourceStream.prototype.flush = function() {
+myjs.SourceStream.prototype.flush_ = function() {
   this.flushNewline_();
   return this.text.join('');
 };
