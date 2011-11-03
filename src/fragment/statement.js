@@ -22,7 +22,7 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
- * An empty statement, i.e., a solitary semicolon.
+ * An empty statement, i.e, a solitary semicolon.
  *
  * @constructor
  * @extends myjs.ast.Statement
@@ -35,20 +35,61 @@ myjs.ast.EmptyStatement = function() {
   this.type = 'EmptyStatement';
 };
 
+/**
+ * An expression statement, i.e, a statement consisting of a single
+ * expression.
+ *
+ * @param {myjs.ast.Expression} expression the expression.
+ * @constructor
+ * @extends myjs.ast.Statement
+ */
 myjs.ast.ExpressionStatement = function(expression) {
+  /**
+   * "ExpressionStatement"
+   * @const
+   */
   this.type = 'ExpressionStatement';
+
+  /**
+   * The expression.
+   *
+   * @type {myjs.ast.Expression}
+   */
   this.expression = expression;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
   context.node(this.expression).write(';').newline();
 };
 
+/**
+ * A block statement, i.e, a sequence of statements surrounded by braces.
+ *
+ * @param {myjs.ast.Statement} body the statements in the sequence.
+ * @constructor
+ * @extends myjs.ast.Statement
+ */
 myjs.ast.BlockStatement = function(body) {
+  /**
+   * "BlockStatement"
+   * @const
+   */
   this.type = 'BlockStatement';
+
+  /**
+   * The statements in the sequence.
+   *
+   * @type {Array.<myjs.ast.Statement>}
+   */
   this.body = body;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.BlockStatement.prototype.unparse = function(context) {
   context.write('{').indent().newline().nodes(this.body).deindent().write('}');
 };

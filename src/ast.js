@@ -74,3 +74,11 @@ myjs.ast.Function = function(id, params, body) {
  * @extends myjs.ast.Node
  */
 myjs.ast.Statement = function() { };
+
+/**
+ * Any expression.
+ *
+ * @constructor
+ * @extends myjs.ast.Node
+ */
+myjs.ast.Expression = function() { };

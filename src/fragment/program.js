@@ -42,6 +42,9 @@ myjs.ast.Program = function(body) {
   this.elements = body;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.Program.prototype.unparse = function(context) {
   context.nodes(this.elements);
 };
