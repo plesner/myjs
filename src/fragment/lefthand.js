@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.NewExpression = function(constructor, args) {
   this.type = 'NewExpression';
   this.constructor = constructor;
@@ -32,6 +35,9 @@ myjs.ast.NewExpression.prototype.unparse = function(context) {
     .nodes(this.arguments, ', ').write(')');
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.CallExpression = function(callee, args) {
   this.type = 'CallExpression';
   this.callee = callee;
@@ -43,6 +49,9 @@ myjs.ast.CallExpression.prototype.unparse = function(context) {
     .nodes(this.arguments, ', ').write(')');
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.MemberExpression = function(object, property, computed) {
   this.type = 'MemberExpression';
   this.object = object;

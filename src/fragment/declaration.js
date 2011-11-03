@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.FunctionDeclaration = function(id, params, body) {
   this.type = 'FunctionDeclaration';
   this.id = id;
@@ -33,6 +36,9 @@ myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
     .write(')').node(this.body).newline();
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.VariableDeclaration = function(declarations) {
   this.type = 'VariableDeclaration';
   this.declarations = declarations;
@@ -42,6 +48,9 @@ myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
   context.write('var ').nodes(this.declarations, ', ').write(';').newline();
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.VariableDeclarator = function(id, init) {
   this.type = 'VariableDeclarator';
   this.id = id;

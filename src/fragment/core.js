@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.Identifier = function(name) {
   this.type = 'Identifier';
   this.name = name;
@@ -30,6 +33,9 @@ myjs.ast.Identifier.prototype.unparse = function(context) {
  context.write(this.name);
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.Literal = function(value) {
   this.type = 'Literal';
   this.value = value;

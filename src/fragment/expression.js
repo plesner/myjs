@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.ThisExpression = function() {
   this.type = 'ThisExpression';
 };
@@ -35,6 +38,9 @@ myjs.ast.ThisExpression.prototype.unparse = function(context) {
   context.write('this');
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ArrayExpression = function(elements) {
   this.type = 'ArrayExpression';
   this.elements = elements;
@@ -44,17 +50,26 @@ myjs.ast.ArrayExpression.prototype.unparse = function(context) {
   context.write('[').nodes(this.elements, ', ').write(']');
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ObjectExpression = function(properties) {
   this.type = 'ObjectExpression';
   this.properties = properties;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ObjectProperty = function(key, value) {
   this.key = key;
   this.value = value;
 };
 
 
+/**
+ * @constructor
+ */
 myjs.ast.FunctionExpression = function(id, params, body) {
   this.type = 'FunctionExpression';
   this.id = id;
@@ -71,6 +86,9 @@ myjs.ast.FunctionExpression.prototype.unparse = function(context) {
     .newline();
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.type = 'ConditionalExpression';
   this.test = test;

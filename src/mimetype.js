@@ -22,6 +22,9 @@ goog.provide('myjs.mimetype');
 
 goog.require('myjs');
 
+/**
+ * @constructor
+ */
 myjs.mimetype.Error = function(message) {
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, myjs.mimetype.Error);

@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.ReturnStatement = function(argument) {
   this.type = 'ReturnStatement';
   this.argument = argument;
@@ -34,6 +37,9 @@ myjs.ast.ReturnStatement.prototype.unparse = function(context) {
   context.write(';').newline();
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.type = 'IfStatement';
   this.test = test;
@@ -48,28 +54,43 @@ myjs.ast.IfStatement.prototype.unparse = function(context) {
   }
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.LabeledStatement = function(label, body) {
   this.type = 'LabeledStatement';
   this.label = label;
   this.body = body;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.BreakStatement = function(label) {
   this.type = 'BreakStatement';
   this.label = label;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ContinueStatement = function(label) {
   this.type = 'ContinueStatement';
   this.label = label;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.SwitchStatement = function(discriminant, cases) {
   this.type = 'SwitchStatement';
   this.discriminant = discriminant;
   this.cases = cases;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.SwitchCase = function(test, consequent) {
   this.type = 'SwitchCase';
   this.test = test;

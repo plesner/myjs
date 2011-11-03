@@ -21,11 +21,17 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.ThrowStatement = function(argument) {
   this.type = 'ThrowStatement';
   this.argument = argument;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.TryStatement = function(block, handler, finalizer) {
   this.type = 'TryStatement';
   this.block = block;
@@ -33,6 +39,9 @@ myjs.ast.TryStatement = function(block, handler, finalizer) {
   this.finalizer = finalizer;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.CatchClause = function(param, body) {
   this.type = 'CatchClause';
   this.param = param;

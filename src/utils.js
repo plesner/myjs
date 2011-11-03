@@ -36,7 +36,7 @@ myjs.utils.toArray = function(args, start) {
  * Returns the parent constructor function for the given object.
  *
  * @param {Object} me the value to extract the constructor from.
- * @return {function} the parent constructor function.
+ * @return {Function} the parent constructor function.
  */
 myjs.utils.base = function(me) {
   return me.constructor.superClass_.constructor;

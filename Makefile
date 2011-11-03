@@ -39,6 +39,13 @@ VERSION=0.1
 WEB_LIB=myjs-$(VERSION).js
 NODE_LIB=myjs-$(VERSION)-node.js
 
+# Extra closure flags.
+CLOSURE_FLAGS=                             \
+  --compilation_level=SIMPLE_OPTIMIZATIONS \
+  --warning_level=VERBOSE                  \
+  --language_in=ECMASCRIPT5		   \
+  --externs src/externs.js
+
 # Builds the library and then tests it.
 all:		$(WEB_LIB) test
 
@@ -49,12 +56,14 @@ $(WEB_LIB):	$(WEB_LIB_FILES) tools/compiler tools/library
 		java -jar tools/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
 		  $(WEB_LIB_FILES:%=--js=%)                        \
+		  $(CLOSURE_FLAGS)                                 \
 		  --js_output_file $(WEB_LIB)
 
 $(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
 		java -jar tools/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
 		  $(NODE_LIB_FILES:%=--js=%)                       \
+		  $(CLOSURE_FLAGS)                                 \
 		  --js_output_file $(NODE_LIB)
 
 # Runs the tests using closure.

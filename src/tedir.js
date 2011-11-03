@@ -283,6 +283,15 @@ myjs.tedir.Expression = function() {
 };
 
 /**
+ * Invoke the visitor function for each child expression.
+ *
+ * @param {function(myjs.tedir.Expression):*} visitor the callback to invoke.
+ */
+myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
+  // ignore
+};
+
+/**
  * If the value of this expression is passed through a filter, how many
  * filter arguments does it correspond to?
  *
@@ -903,7 +912,7 @@ myjs.tedir.Invoker_ = function() { };
  * @param {number} arity how many arguments are we going to pass?
  * @param {boolean} isConstructor call the function as a constructor?
  * @param {function(...):*} fun the function to call.
- * @return {function{Array}:*} function that calls fun appropriately.
+ * @return {function(Array):*} function that calls fun appropriately.
  */
 myjs.tedir.Invoker_.forArity = function(arity, isConstructor, fun) {
   if (arity == -1) {
@@ -967,7 +976,7 @@ myjs.tedir.Invoker_.constructorForArity = function(Cons, arity) {
  *
  * @param {number} arity how many arguments should the function be called
  *   with?
- * @return {Function:function(Array):*} a function that, given a
+ * @return {function():function(Array):*} a function that, given a
  *   constructor function, returns a function that takes an array and calls
  *   the first function as a constructor with those arguments.
  */
@@ -1465,7 +1474,6 @@ var EOF_TOKEN = new myjs.tedir.Terminal_('eof');
  * Interface for token objects.
  *
  * @interface
- * @constructor
  */
 myjs.tedir.Token = function() { };
 

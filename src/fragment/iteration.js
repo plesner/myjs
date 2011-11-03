@@ -21,6 +21,9 @@
 goog.require('myjs');
 goog.require('myjs.ast');
 
+/**
+ * @constructor
+ */
 myjs.ast.WhileStatement = function(test, body) {
   this.type = 'WhileStatement';
   this.test = test;
@@ -31,6 +34,9 @@ myjs.ast.WhileStatement.prototype.unparse = function(context) {
   context.write('while (').node(this.test).write(') ').node(this.body);
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.DoWhileStatement = function(body, test) {
   this.type = 'DoWhileStatement';
   this.body = body;
@@ -42,6 +48,9 @@ myjs.ast.DoWhileStatement.prototype.unparse = function(context) {
     .write(');');
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ForStatement = function(init, test, update, body) {
   this.type = 'ForStatement';
   this.init = init;
@@ -50,6 +59,9 @@ myjs.ast.ForStatement = function(init, test, update, body) {
   this.body = body;
 };
 
+/**
+ * @constructor
+ */
 myjs.ast.ForInStatement = function(left, right, body) {
   this.type = 'ForInStatement';
   this.left = left;
