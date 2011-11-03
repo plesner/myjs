@@ -1180,7 +1180,8 @@ myjs.tedir.LiteralSyntax_.prototype.getRuleNames = function() {
 /**
  * @inheritDoc
  */
-myjs.tedir.LiteralSyntax_.prototype.getRule = function(name, opt_failIfMissing) {
+myjs.tedir.LiteralSyntax_.prototype.getRule = function(name,
+    opt_failIfMissing) {
   if (!(this.rules.hasOwnProperty(name))) {
     if (opt_failIfMissing) {
       throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');

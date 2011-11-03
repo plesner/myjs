@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /**
- * Test utilities.
+ * @fileoverview Test utilities.
  */
 
 'use strict';
@@ -34,12 +34,23 @@ String.prototype.startsWith = function(substr) {
   }
 };
 
+/**
+ * Fails if the two arguments are not equal.
+ *
+ * @param {*} a first value.
+ * @param {*} b second value.
+ */
 module.exports.assertEquals = function(a, b) {
   if (a != b) {
     myjs.test.failComparison(a, b);
   }
 };
 
+/**
+ * Fails the the given value isn't truthy.
+ *
+ * @param {*} value the value to check.
+ */
 module.exports.assertTrue = function(value) {
   if (value) {
     return;
@@ -48,16 +59,35 @@ module.exports.assertTrue = function(value) {
   }
 };
 
+/**
+ * Fails if the given value isn't falsy.
+ *
+ * @param {*} value the value to check.
+ */
 module.exports.assertFalse = function(value) {
   module.exports.assertTrue(!value);
 };
 
+/**
+ * Prints an error message that a is different from b and then
+ * throws an error.
+ *
+ * @param {*} a the first value.
+ * @param {*} b the second value.
+ */
 module.exports.failComparison = function(a, b) {
   console.log(a);
   console.log(b);
   throw 'Error: ' + a + ' != ' + b;
 };
 
+/**
+ * Compares two lists recursively.
+ *
+ * @param {Array} one the first array.
+ * @param {Array} two the second array.
+ * @return {boolean} true iff the two arrays are equal, recursively.
+ */
 module.exports.compareLists = function(one, two) {
   if (one === two)
     return true;
@@ -78,6 +108,12 @@ module.exports.compareLists = function(one, two) {
   return true;
 };
 
+/**
+ * Fails if the two given arrays are not recursively equal.
+ *
+ * @param {Array} one the first list.
+ * @param {Array} two the second list.
+ */
 module.exports.assertListEquals = function(one, two) {
   if (!module.exports.compareLists(one, two)) {
     module.exports.failComparison(module.exports.listToString(one),
@@ -85,6 +121,12 @@ module.exports.assertListEquals = function(one, two) {
   }
 };
 
+/**
+ * Converts an array to a string of the form [a, b, b], recursively.
+ *
+ * @param {*} obj an object to convert.
+ * @return {string} a string representation of the object.
+ */
 module.exports.listToString = function(obj) {
   if (Array.isArray(obj)) {
     return '[' + obj.map(module.exports.listToString).join(', ') + ']';

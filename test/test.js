@@ -324,7 +324,8 @@ function runTokenTest(expected, source) {
 registerTest(testTokenizing);
 function testTokenizing() {
   runTokenTest(['=', '==', '===', '===', '='], '= == === ====');
-  runTokenTest(['!', '!=', '!==', '!==', '=', '!==', '=='], '! != !== !=== !====');
+  runTokenTest(['!', '!=', '!==', '!==', '=', '!==', '=='],
+    '! != !== !=== !====');
   runTokenTest(['>', '>>', '>>>', '>>>', '>'], '> >> >>> >>>>');
   runTokenTest(['<', '<<', '<<', '<', '<<', '<<'], '< << <<< <<<<');
   runTokenTest(['>', '>=', '>>=', '>>>=', '>>>', '>='], '> >= >>= >>>= >>>>=');
@@ -397,7 +398,8 @@ function ths() {
 
 function upd(op, arg, pre) {
   var opAst = {type: 'UpdateOperator', token: op};
-  return {type: 'UpdateExpression', operator: opAst, argument: arg, prefix: pre};
+  return {type: 'UpdateExpression', operator: opAst, argument: arg,
+    prefix: pre};
 }
 
 function log(left, op, right) {
@@ -621,7 +623,8 @@ function bck(var_args) {
 }
 
 function ift(test, cons, alt) {
-  return {type: 'IfStatement', test: test, consequent: cons, alternate: (alt || null)};
+  return {type: 'IfStatement', test: test, consequent: cons,
+    alternate: (alt || null)};
 }
 
 function brk(lab) {
@@ -742,7 +745,8 @@ function testForStatementParsing() {
   stmtCheck('for (;;1) x;', fr(null, null, lit(1), exp(id('x'))));
   stmtCheck('for (1;2;3) x;', fr(lit(1), lit(2), lit(3), exp(id('x'))));
   stmtCheck('for (x;true;) x;', fr(id('x'), lit(true), null, exp(id('x'))));
-  stmtCheck('for (var x;true;) x;', fr(vas(vdc('x')), lit(true), null, exp(id('x'))));
+  stmtCheck('for (var x;true;) x;', fr(vas(vdc('x')), lit(true), null,
+    exp(id('x'))));
   stmtCheck('for (var x, y;true;) x;', fr(vas(vdc('x'), vdc('y')), lit(true),
     null, exp(id('x'))));
   // For-in

@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @fileoverview Misc utilities used by myjs.
+ */
+
+'use strict';
+
 goog.provide('myjs.utils');
 
 /**
@@ -19,6 +25,7 @@ goog.provide('myjs.utils');
  * array.
  *
  * @param {*} args an array-like object to convert.
+ * @param {number} start index of the first element to include in the result.
  * @return {Array} an array containing the elements of the given argument.
  */
 myjs.utils.toArray = function(args, start) {
