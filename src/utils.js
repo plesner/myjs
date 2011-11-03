@@ -24,12 +24,12 @@ goog.provide('myjs.utils');
  * Converts any array-like object (including arguments objects) to a proper
  * array.
  *
- * @param {*} args an array-like object to convert.
- * @param {number} start index of the first element to include in the result.
+ * @param {Object} args an array-like object to convert.
+ * @param {number=} opt_start index of the first element to include in the result.
  * @return {Array} an array containing the elements of the given argument.
  */
-myjs.utils.toArray = function(args, start) {
-  return Array.prototype.slice.call(args, start);
+myjs.utils.toArray = function(args, opt_start) {
+  return Array.prototype.slice.call(args, opt_start);
 };
 
 /**

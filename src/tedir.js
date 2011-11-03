@@ -50,7 +50,7 @@ myjs.tedir.Error.prototype.toString = function() {
  * this parser.
  *
  * @param {myjs.tedir.SourceOrigin} origin information about the source.
- * @param {Array} input the list of input tokens.
+ * @param {myjs.tedir.TokenStream} input the list of input tokens.
  * @param {number} tokenIndex the index in the input list of the offending
  *   token.
  * @constructor
@@ -288,7 +288,17 @@ myjs.tedir.Expression = function() {
  * @param {function(myjs.tedir.Expression):*} visitor the callback to invoke.
  */
 myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
-  // ignore
+  throw new Error("Abstract method called.");
+};
+
+/**
+ * Parse input from the given context according to this expression.
+ *
+ * @param {myjs.tedir.ParseContext} context the current parse context.
+ * @return {*} the value of the parsed expression.
+ */
+myjs.tedir.Expression.prototype.parse = function(context) {
+  throw new Error("Abstract method called.");
 };
 
 /**
@@ -1242,7 +1252,7 @@ myjs.tedir.CompositeSyntax_.prototype.getRule = function(name,
  * productions from the sub-syntaxes. Calculates and caches the result the
  * first time it is called.
  *
- * @return {Object.<string, myjs.tedir.Rule>} a map from names to the resulting
+ * @return {!Object.<string, myjs.tedir.Rule>} a map from names to the resulting
  *   combined rules.
  * @private
  */
@@ -1616,7 +1626,7 @@ myjs.tedir.ParseContext.prototype.isError = function(value) {
  * @constructor
  */
 myjs.tedir.SourceOrigin = function(opt_fileName) {
-  this.fileName = opt_fileName;
+  this.fileName = opt_fileName || null;
 };
 
 /**
