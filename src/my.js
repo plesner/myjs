@@ -268,6 +268,19 @@ myjs.Dialect.prototype.getTypes_ = function() {
 };
 
 /**
+ * Returns the type constructor for the given type name or null if none
+ * is defined.
+ *
+ * @param {string} name the name of the type.
+ * @return {?function} the associated type constructor, or null.
+ * @private
+ */
+myjs.Dialect.prototype.getType_ = function(name) {
+  var types = this.getTypes_();
+  return types.hasOwnProperty(name) ? types[name] : null;
+};
+
+/**
  * Returns this dialect's grammar, calculating it the first time this method
  * is called.
  *
@@ -313,6 +326,125 @@ myjs.Dialect.prototype.parse_ = function(source, origin, trace) {
 };
 
 /**
+ * Abstract syntax tree visitor.
+ *
+ * @constructor
+ */
+myjs.AstVisitor = function() { };
+
+/**
+ * Visit a typed syntax tree node.
+ *
+ * @param {Object} node the ast node.
+ * @param {?function} type that type's constructor function, or null.
+ * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ */
+myjs.AstVisitor.prototype.visitNode = function(node, type, dialect) {
+  myjs.util.abstractMethodCalled();
+};
+
+/**
+ * Visit an array of nodes.
+ *
+ * @param {Array} nodes the ast nodes.
+ * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ */
+myjs.AstVisitor.prototype.visitArray = function(nodes, dialect) {
+  myjs.util.abstractMethodCalled();
+};
+
+/**
+ * Visit a primitive value occurring in the syntax tree.
+ *
+ * @param {*} value the ast nodes.
+ * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ */
+myjs.AstVisitor.prototype.visitPrimitive = function(value, dialect) {
+  myjs.util.abstractMethodCalled();
+};
+
+/**
+ * Ast visitor for translating syntax trees.
+ *
+ * @constructor
+ * @extends myjs.AstVisitor
+ * @private
+ */
+myjs.TranslateVisitor_ = function() { };
+
+/**
+ * @inheritDoc
+ */
+myjs.TranslateVisitor_.prototype.visitNode = function(node, type, dialect) {
+  var self = this;
+  if (type && type.prototype.translate) {
+    // If this node type has a custom translater we call it to do the
+    // translation.
+    return type.prototype.translate.call(node, dialect, function(child) {
+      return dialect.traverse(child, self);
+    });
+  } else {
+    // Otherwise we manually scan through the node and build a translated
+    // result.
+    var keys = Object.keys(node);
+    var result = {};
+    keys.forEach(function(key) {
+      result[key] = dialect.traverse(node[key], self);
+    });
+    return result;
+  }
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.TranslateVisitor_.prototype.visitArray = function(nodes, dialect) {
+  var self = this;
+  return nodes.map(function(node) { return dialect.traverse(node, self); });
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.TranslateVisitor_.prototype.visitPrimitive = function(value, dialect) {
+  return value;
+};
+
+/**
+ * Translates an extended ast into plain javascript.
+ *
+ * @param {Object} ast the syntax tree to translate.
+ * @return {Object} the translated ast.
+ * @private
+ */
+myjs.Dialect.prototype.translate_ = function(ast) {
+  var visitor = new myjs.TranslateVisitor_();
+  return this.traverse(ast, visitor);
+};
+
+/**
+ * Traverses a syntax tree and invokes the appropriate methods on the given
+ * visitor.
+ *
+ * @param {Object} ast the syntax tree to traverse.
+ * @param {myjs.AstVisitor} visitor the visitor to invoke.
+ * @return {*} whatever the visitor returns.
+ */
+myjs.Dialect.prototype.traverse = function(ast, visitor) {
+  if (Array.isArray(ast)) {
+    return visitor.visitArray(ast, this);
+  } else if (ast == null || typeof ast == 'string' || typeof ast == 'number' ||
+      typeof ast == 'boolean') {
+    return visitor.visitPrimitive(ast, this);
+  } else if (typeof ast == 'object' && typeof ast.type == 'string') {
+    var type = this.getType_(ast.type);
+    return visitor.visitNode(ast, type, this);
+  } else {
+    throw new myjs.Error('Unexpected syntax tree node ' + JSON.stringify(ast) + '.');
+  }
+};
+
+/**
  * Returns the tokens of a piece of JavaScript source code, tokenized
  * according to the tokens of this dialect.
  *
@@ -343,7 +475,8 @@ myjs.Dialect.prototype.translate = function(source, origin, trace) {
   if (trace) {
     return ast;
   }
-  return this.unparse_(ast);
+  var translated = this.translate_(ast);
+  return this.unparse_(translated);
 };
 
 /**

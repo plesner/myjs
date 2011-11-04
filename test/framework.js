@@ -42,7 +42,7 @@ String.prototype.startsWith = function(substr) {
  */
 module.exports.assertEquals = function(a, b) {
   if (a != b) {
-    myjs.test.failComparison(a, b);
+    module.exports.failComparison(a, b);
   }
 };
 

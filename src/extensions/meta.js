@@ -28,32 +28,38 @@ goog.require('myjs.ast');
     this.value = value;
   };
 
-  function unparseQuoted(context, value) {
-    if (value.type) {
-      if (value.type == 'UnquoteExpression') {
-        context.write('{"type":"Literal","value":(').node(value.value).write(')}');
-      } else {
-        var first = true;
-        context.write('{');
-        Object.keys(value).forEach(function(key) {
-          if (first) {
-            first = false;
-          } else {
-            context.write(',');
-          }
-          unparseQuoted(context, key);
-          context.write(':');
-          unparseQuoted(context, value[key]);
-        });
-        context.write('}');
-      }
-    } else {
-      context.write(JSON.stringify(value));
-    }
+  function QuoteVisitor(translatePlain) {
+    this.translatePlain = translatePlain;
   }
 
-  myjs.ast.QuoteExpression.prototype.unparse = function(context) {
-    unparseQuoted(context, this.value);
+  QuoteVisitor.prototype.visitArray = function(asts, dialect) {
+    var self = this;
+    var elms = asts.map(function(ast) { return dialect.traverse(ast, self); });
+    return new myjs.ast.ArrayExpression(elms);
+  };
+
+  QuoteVisitor.prototype.visitNode = function(ast, type, dialect) {
+    if (type == myjs.ast.UnquoteExpression) {
+      return (this.translatePlain)(ast.value);
+    } else {
+      var self = this;
+      var keys = Object.keys(ast);
+      var props = [];
+      keys.forEach(function(key) {
+        props.push(new myjs.ast.ObjectProperty(
+          new myjs.ast.Identifier(key), dialect.traverse(ast[key], self)));
+      });
+      return new myjs.ast.ObjectExpression(props);
+    }
+  };
+
+  QuoteVisitor.prototype.visitPrimitive = function(value, dialect) {
+    return new myjs.ast.Literal(value);
+  };
+
+  myjs.ast.QuoteExpression.prototype.translate = function(dialect, recurse) {
+    var visitor = new QuoteVisitor(recurse);
+    return dialect.traverse(this.value, visitor);
   };
 
   myjs.ast.UnquoteExpression = function(value) {
@@ -71,10 +77,13 @@ goog.require('myjs.ast');
 
     // <PrimaryExpression>
     //   -> "`" <PrimaryExpression>
-    //   -> "," <PrimaryExpression>
     syntax.getRule('PrimaryExpression')
       .addProd(f.punct('`'), f.nonterm('PrimaryExpression'))
-      .setConstructor(myjs.ast.QuoteExpression)
+      .setConstructor(myjs.ast.QuoteExpression);
+
+    // <Identifier>
+    //   -> "," <PrimaryExpression>
+    syntax.getRule('Identifier')
       .addProd(f.punct(','), f.nonterm('PrimaryExpression'))
       .setConstructor(myjs.ast.UnquoteExpression);
 

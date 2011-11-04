@@ -115,12 +115,12 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
 
     // <LeftHandSideSuffix>
     //   -> "[" <Expression> "]"
-    //   -> "." $Identifier
+    //   -> "." <Identifier>
     //   -> <Arguments>
     syntax.getRule('LeftHandSideSuffix')
       .addProd(f.punct('['), f.nonterm('Expression'), f.punct(']'))
       .setConstructor(GetElementSuffix)
-      .addProd(f.punct('.'), f.value('Identifier'))
+      .addProd(f.punct('.'), f.nonterm('Identifier'))
       .setConstructor(GetPropertySuffix)
       .addProd(f.nonterm('Arguments'))
       .setConstructor(ArgumentsSuffix);
@@ -146,7 +146,7 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
     };
 
     GetPropertySuffix.prototype.wrapPlain = function(atom) {
-      return new myjs.ast.MemberExpression(atom, new myjs.ast.Identifier(this.name), false);
+      return new myjs.ast.MemberExpression(atom, this.name, false);
     };
 
     function ArgumentsSuffix(args) {

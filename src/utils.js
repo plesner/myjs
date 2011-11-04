@@ -25,7 +25,8 @@ goog.provide('myjs.utils');
  * array.
  *
  * @param {Object} args an array-like object to convert.
- * @param {number=} opt_start index of the first element to include in the result.
+ * @param {number=} opt_start index of the first element to include in the
+ *   result.
  * @return {Array} an array containing the elements of the given argument.
  */
 myjs.utils.toArray = function(args, opt_start) {
@@ -40,4 +41,11 @@ myjs.utils.toArray = function(args, opt_start) {
  */
 myjs.utils.base = function(me) {
   return me.constructor.superClass_.constructor;
+};
+
+/**
+ * Throws an error signalling that an abstract method was called.
+ */
+myjs.utils.abstractMethodCalled = function() {
+  throw new Error('Abstract Method Called');
 };

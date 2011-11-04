@@ -288,7 +288,7 @@ myjs.tedir.Expression = function() {
  * @param {function(myjs.tedir.Expression):*} visitor the callback to invoke.
  */
 myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
-  throw new Error("Abstract method called.");
+  throw new Error('Abstract method called.');
 };
 
 /**
@@ -298,7 +298,7 @@ myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
  * @return {*} the value of the parsed expression.
  */
 myjs.tedir.Expression.prototype.parse = function(context) {
-  throw new Error("Abstract method called.");
+  throw new Error('Abstract method called.');
 };
 
 /**

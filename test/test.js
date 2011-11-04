@@ -382,7 +382,7 @@ function obj(var_args) {
 }
 
 function prop(key, value) {
-  return {key: key, value: value};
+  return {type: 'ObjectProperty', key: key, value: value};
 }
 
 function id(name) {

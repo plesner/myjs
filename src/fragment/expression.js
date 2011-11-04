@@ -58,14 +58,22 @@ myjs.ast.ObjectExpression = function(properties) {
   this.properties = properties;
 };
 
+myjs.ast.ObjectExpression.prototype.unparse = function(stream) {
+  stream.write('{').nodes(this.properties, ', ').write('}');
+};
+
 /**
  * @constructor
  */
 myjs.ast.ObjectProperty = function(key, value) {
+  this.type = 'ObjectProperty';
   this.key = key;
   this.value = value;
 };
 
+myjs.ast.ObjectProperty.prototype.unparse = function(stream) {
+  stream.node(this.key).write(': ').node(this.value);
+};
 
 /**
  * @constructor
@@ -187,6 +195,8 @@ myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
     .registerType('FunctionExpression', myjs.ast.FunctionExpression)
     .registerType('ThisExpression', myjs.ast.ThisExpression)
     .registerType('ArrayExpression', myjs.ast.ArrayExpression)
+    .registerType('ObjectExpression', myjs.ast.ObjectExpression)
+    .registerType('ObjectProperty', myjs.ast.ObjectProperty)
     .registerType('ConditionalExpression', myjs.ast.ConditionalExpression);
 
   myjs.registerFragment(fragment);
