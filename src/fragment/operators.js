@@ -462,7 +462,7 @@ myjs.ast.LogicalOperator = function(token) {
       return current;
     }
 
-    function unaryBuilder(OpBuilder, AstBuilder) {
+    function makeBuilder(OpBuilder, AstBuilder) {
       return function(op) {
         var opAst = new OpBuilder(op);
         return function(value, isPrefix) {
@@ -475,14 +475,14 @@ myjs.ast.LogicalOperator = function(token) {
     //   -> ... update operators ...
     //   -> ... unary keywords ...
     //   -> ... unary operators ...
-    var updateBuilder = unaryBuilder(myjs.ast.UpdateOperator,
+    var updateBuilder = makeBuilder(myjs.ast.UpdateOperator,
       myjs.ast.UpdateExpression);
     UPDATE_OPERATORS.forEach(function(op) {
       syntax.getRule('PrefixToken')
         .addProd(f.punctValue(op))
         .setHandler(updateBuilder);
     });
-    var unaryBuilder = unaryBuilder(myjs.ast.UnaryOperator,
+    var unaryBuilder = makeBuilder(myjs.ast.UnaryOperator,
       myjs.ast.UnaryExpression);
     UNARY_KEYWORDS.forEach(function(word) {
       syntax.getRule('PrefixToken')

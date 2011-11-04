@@ -68,7 +68,7 @@ myjs.tedir.SyntaxError = function(origin, input, tokenIndex) {
  * Returns the index'th token of the input.
  *
  * @param {number} index which token to return?
- * @return {myjs.tedir.Token} the index'th token.
+ * @return {string} the index'th token's value.
  * @private
  */
 myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
@@ -78,7 +78,7 @@ myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
 /**
  * Returns the token that caused the error.
  *
- * @return {myjs.tedir.Token} the offending token.
+ * @return {string} the offending token.
  */
 myjs.tedir.SyntaxError.prototype.getOffendingToken = function() {
   return this.getToken_(this.tokenIndex);
@@ -169,7 +169,7 @@ myjs.tedir.factory.custom = function(handler) {
  * the value of the one non-ignored subexpression if there is exactly one,
  * or an array of the non-ignored subexpressions if there are more.
  *
- * @param {myjs.tedir.Expression...} var_args a sequence of expressions.
+ * @param {...myjs.tedir.Expression} var_args a sequence of expressions.
  * @return {myjs.tedir.Expression} an expression that matches the given
  *   subexpressions in sequence.
  */
@@ -181,7 +181,7 @@ myjs.tedir.factory.seq = function(var_args) {
  * Returns an expression that matches one of the given subexpressions and
  * yields the value of that subexpression.
  *
- * @param {myjs.tedir.Expression...} var_args a sequence of expression.
+ * @param {...myjs.tedir.Expression} var_args a sequence of expression.
  * @return {myjs.tedir.Expression} an expression matching any of the given
  *   subexpressions.
  */
@@ -193,7 +193,7 @@ myjs.tedir.factory.choice = function(var_args) {
  * Returns an expression that either matches the given sequence of expressions
  * or nothing.
  *
- * @param {myjs.tedir.Expression...} var_args a sequence of expressions.
+ * @param {...myjs.tedir.Expression} var_args a sequence of expressions.
  * @return {myjs.tedir.Expression} an expression matching either the given
  *   sequence or nothing.
  */
@@ -288,7 +288,7 @@ myjs.tedir.Expression = function() {
  * @param {function(myjs.tedir.Expression):*} visitor the callback to invoke.
  */
 myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
-  throw new Error('Abstract method called.');
+  myjs.utils.abstractMethodCalled();
 };
 
 /**
@@ -298,7 +298,27 @@ myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
  * @return {*} the value of the parsed expression.
  */
 myjs.tedir.Expression.prototype.parse = function(context) {
-  throw new Error('Abstract method called.');
+  myjs.utils.abstractMethodCalled();
+};
+
+/**
+ * Normalize this expression.
+ *
+ * @return {myjs.tedir.Expression} a normalized version of this expression.
+ */
+myjs.tedir.Expression.prototype.normalize = function() {
+  myjs.utils.abstractMethodCalled();
+  return null;
+};
+
+/**
+ * Returns the type string of this expression.
+ *
+ * @return {string} the string type of this expression.
+ */
+myjs.tedir.Expression.prototype.getType = function() {
+  myjs.utils.abstractMethodCalled();
+  return '';
 };
 
 /**
@@ -322,7 +342,7 @@ myjs.tedir.Expression.prototype.useValue = function() {
   if (this.useValueCache === null) {
     this.useValueCache = this.calcUseValue();
   }
-  return this.useValueCache;
+  return !!this.useValueCache;
 };
 
 /**
@@ -372,7 +392,9 @@ myjs.tedir.Terminal_.prototype.getType = function() {
 };
 
 /**
- * @inheritDoc
+ * Returns this terminal's kind.
+ *
+ * @return {*} the kind value of this terminal.
  */
 myjs.tedir.Terminal_.prototype.getKind = function() {
   return this.kind;
@@ -677,13 +699,6 @@ myjs.tedir.Choice_.prototype.getType = function() {
 /**
  * @inheritDoc
  */
-myjs.tedir.Choice_.prototype.addOption = function(term) {
-  this.terms.push(term);
-};
-
-/**
- * @inheritDoc
- */
 myjs.tedir.Choice_.prototype.toString = function() {
   return '(| ' + this.terms.join(' ') + ')';
 };
@@ -891,6 +906,7 @@ myjs.tedir.Filter_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
+ * @suppress {checkTypes}
  */
 myjs.tedir.Filter_.prototype.parse = function(context) {
   var value = this.term.parse(context);
@@ -922,7 +938,7 @@ myjs.tedir.Invoker_ = function() { };
  * @param {number} arity how many arguments are we going to pass?
  * @param {boolean} isConstructor call the function as a constructor?
  * @param {function(...):*} fun the function to call.
- * @return {function(Array):*} function that calls fun appropriately.
+ * @return {?function(Array):*} function that calls fun appropriately.
  */
 myjs.tedir.Invoker_.forArity = function(arity, isConstructor, fun) {
   if (arity == -1) {
@@ -963,9 +979,10 @@ myjs.tedir.Invoker_.constructorBridges = [];
  * Returns a function that, when given an array, calls the given constructor
  * in the appropriate way for that arity.
  *
- * @param {function(...):*} Cons a constructor function.
+ * @param {function(this:Object,...):*} Cons a constructor function.
  * @param {number} arity expected number of arguments.
  * @return {function(Array):*} a bridge function for calling the constructor.
+ * @suppress {checkTypes}
  */
 myjs.tedir.Invoker_.constructorForArity = function(Cons, arity) {
   if (arity == 1) {
@@ -1131,9 +1148,22 @@ myjs.tedir.Syntax.create = function() {
  * @param {string} name the name of the nonterm to return.
  * @param {boolean=} opt_failIfMissing if true is passed, throws an error if
  *   the nonterm doesn't exist. Otherwise creates it.
+ * @return {myjs.tedir.Rule} the rule with the given name.
  */
 myjs.tedir.Syntax.prototype.getRule = function(name,
-    opt_failIfMissing) { };
+    opt_failIfMissing) {
+  throw myjs.utils.abstractMethodCalled();
+};
+
+/**
+ * Returns a list of all the rule names defined in this syntax.
+ *
+ * @return {Array.<string>} a list of all rule names.
+ */
+myjs.tedir.Syntax.prototype.getRuleNames = function() {
+  myjs.utils.abstractMethodCalled();
+  return [];
+};
 
 /**
  * Returns a syntax that contains the union of the rules defined in this
@@ -1241,10 +1271,11 @@ myjs.tedir.CompositeSyntax_.prototype.getRuleNames = function() {
 myjs.tedir.CompositeSyntax_.prototype.getRule = function(name,
     opt_failIfMissing) {
   var rules = this.getRules_();
-  if (!(rules.hasOwnProperty(name))) {
+  if (rules.hasOwnProperty(name)) {
+    return rules[name];
+  } else {
     throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');
   }
-  return rules[name];
 };
 
 /**
@@ -1376,7 +1407,7 @@ myjs.tedir.Rule.prototype.addProd = function(var_args) {
  * production that was added succeeds during parsing. Equivalent to calling
  * {@link #setHandler} with opt_isConstructor=true.
  *
- * @param {function(*, ...):*} Constructor the constructor function.
+ * @param {Function} Constructor the constructor function.
  * @return {myjs.tedir.Rule} this rule, to enable call chaining.
  */
 myjs.tedir.Rule.prototype.setConstructor = function(Constructor) {
@@ -1387,7 +1418,7 @@ myjs.tedir.Rule.prototype.setConstructor = function(Constructor) {
  * Sets the function that should be called when the last production that
  * was added succeeds during parsing.
  *
- * @param {function(*, ...):*} handler the function to handle the value.
+ * @param {Function} handler the function to handle the value.
  * @param {boolean=} opt_isConstructor whether the handler should be called
  *   as a function or a constructor.
  * @return {myjs.tedir.Rule} this rule, to enable call chaining.
@@ -1478,8 +1509,6 @@ myjs.tedir.Grammar.prototype.buildNonterm_ = function(name) {
   return rule.asExpression_().normalize();
 };
 
-var EOF_TOKEN = new myjs.tedir.Terminal_('eof');
-
 /**
  * Interface for token objects.
  *
@@ -1493,6 +1522,30 @@ myjs.tedir.Token = function() { };
  * @return {boolean} true iff this is a soft token.
  */
 myjs.tedir.Token.prototype.isSoft = function() {};
+
+/**
+ * End of file token.
+ *
+ * @constructor
+ * @implements myjs.tedir.Token
+ * @private
+ */
+myjs.tedir.EofToken_ = function() {
+  this.value = 'eof';
+  this.type = 'eof';
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.EofToken_.prototype.isSoft = function() {
+  return false;
+};
+
+/**
+ * @private
+ */
+myjs.tedir.EOF_TOKEN_ = new myjs.tedir.EofToken_();
 
 /**
  * A stream of tokens with information together with a cursor that indicates
@@ -1520,7 +1573,7 @@ myjs.tedir.TokenStream.prototype.getCurrent = function() {
   if (this.hasMore()) {
     return this.tokens[this.cursor];
   } else {
-    return EOF_TOKEN;
+    return myjs.tedir.EOF_TOKEN_;
   }
 };
 

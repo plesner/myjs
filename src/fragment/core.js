@@ -26,6 +26,7 @@ goog.require('myjs.ast');
  *
  * @param {string} name the identifier's name.
  * @constructor
+ * @extends myjs.ast.Node
  */
 myjs.ast.Identifier = function(name) {
   this.type = 'Identifier';
@@ -44,6 +45,7 @@ myjs.ast.Identifier.prototype.unparse = function(context) {
  *
  * @param {*} value the literal value.
  * @constructor
+ * @extends myjs.ast.Node
  */
 myjs.ast.Literal = function(value) {
   this.type = 'Literal';
@@ -121,6 +123,9 @@ myjs.ast.Literal.prototype.unparse = function(context) {
 
     /**
      * Custom expression used to parse regular expressions.
+     *
+     * @constructor
+     * @extends myjs.tedir.CustomHandler
      */
     function RegExpHandler() { }
     goog.inherits(RegExpHandler, myjs.tedir.CustomHandler);

@@ -29,9 +29,30 @@ goog.require('myjs.utils');
  * @inheritDoc
  */
 myjs.factory = {};
-Object.keys(myjs.tedir.factory).forEach(function(key) {
-  myjs.factory[key] = myjs.tedir.factory[key];
-});
+
+/***/
+myjs.factory.ignore = myjs.tedir.factory.ignore;
+
+/***/
+myjs.factory.nonterm = myjs.tedir.factory.nonterm;
+
+/***/
+myjs.factory.option = myjs.tedir.factory.option;
+
+/***/
+myjs.factory.choice = myjs.tedir.factory.choice;
+
+/***/
+myjs.factory.star = myjs.tedir.factory.star;
+
+/***/
+myjs.factory.plus = myjs.tedir.factory.plus;
+
+/***/
+myjs.factory.custom = myjs.tedir.factory.custom;
+
+/***/
+myjs.factory.seq = myjs.tedir.factory.seq;
 
 /**
  * @inheritDoc
@@ -69,7 +90,7 @@ myjs.factory.punctValue = function(name) {
  * @return {myjs.tedir.Expression} a terminal with the given name.
  */
 myjs.factory.token = function(name) {
-  return myjs.factory.ignore(myjs.tedir.factory.token(name, null));
+  return myjs.factory.ignore(myjs.tedir.factory.token(name));
 };
 
 /**
@@ -103,7 +124,7 @@ myjs.factory.keywordValue = function(name) {
  * @return {myjs.tedir.Expression} a terminal with the given name.
  */
 myjs.factory.value = function(name) {
-  return myjs.tedir.factory.token(name, null);
+  return myjs.tedir.factory.token(name);
 };
 
 /**
@@ -164,7 +185,7 @@ myjs.Dialect.prototype.getName = function() {
  * Adds one or more fragment names to the list of fragments to include in
  * this dialect.
  *
- * @param {myjs.Fragment...} var_args the fragments to include.
+ * @param {...string} var_args the fragment names to include.
  * @return {myjs.Dialect} this dialect, for chaining.
  */
 myjs.Dialect.prototype.addFragment = function(var_args) {
@@ -272,7 +293,7 @@ myjs.Dialect.prototype.getTypes_ = function() {
  * is defined.
  *
  * @param {string} name the name of the type.
- * @return {?function} the associated type constructor, or null.
+ * @return {?Function} the associated type constructor, or null.
  * @private
  */
 myjs.Dialect.prototype.getType_ = function(name) {
@@ -315,8 +336,9 @@ myjs.Dialect.prototype.getScannerSettings_ = function() {
  * @param {string} source source code in this dialect.
  * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
  * @param {boolean} trace true if parsing should be traced.
- * @return {Object} the syntax tree for the given source.
+ * @return {myjs.ast.Node} the syntax tree for the given source.
  * @private
+ * @suppress {checkTypes}
  */
 myjs.Dialect.prototype.parse_ = function(source, origin, trace) {
   var grammar = this.getGrammar_();
@@ -335,12 +357,13 @@ myjs.AstVisitor = function() { };
 /**
  * Visit a typed syntax tree node.
  *
- * @param {Object} node the ast node.
- * @param {?function} type that type's constructor function, or null.
+ * @param {!Object} node the ast node.
+ * @param {?Function} type that type's constructor function, or null.
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ * @return {*} whatever.
  */
 myjs.AstVisitor.prototype.visitNode = function(node, type, dialect) {
-  myjs.util.abstractMethodCalled();
+  myjs.utils.abstractMethodCalled();
 };
 
 /**
@@ -348,9 +371,10 @@ myjs.AstVisitor.prototype.visitNode = function(node, type, dialect) {
  *
  * @param {Array} nodes the ast nodes.
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ * @return {*} whatever.
  */
 myjs.AstVisitor.prototype.visitArray = function(nodes, dialect) {
-  myjs.util.abstractMethodCalled();
+  myjs.utils.abstractMethodCalled();
 };
 
 /**
@@ -358,9 +382,10 @@ myjs.AstVisitor.prototype.visitArray = function(nodes, dialect) {
  *
  * @param {*} value the ast nodes.
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
+ * @return {*} whatever.
  */
 myjs.AstVisitor.prototype.visitPrimitive = function(value, dialect) {
-  myjs.util.abstractMethodCalled();
+  myjs.utils.abstractMethodCalled();
 };
 
 /**
@@ -374,6 +399,7 @@ myjs.TranslateVisitor_ = function() { };
 
 /**
  * @inheritDoc
+ * @suppress {missingProperties}
  */
 myjs.TranslateVisitor_.prototype.visitNode = function(node, type, dialect) {
   var self = this;
@@ -413,9 +439,10 @@ myjs.TranslateVisitor_.prototype.visitPrimitive = function(value, dialect) {
 /**
  * Translates an extended ast into plain javascript.
  *
- * @param {Object} ast the syntax tree to translate.
- * @return {Object} the translated ast.
+ * @param {myjs.ast.Node} ast the syntax tree to translate.
+ * @return {myjs.ast.Node} the translated ast.
  * @private
+ * @suppress {checkTypes}
  */
 myjs.Dialect.prototype.translate_ = function(ast) {
   var visitor = new myjs.TranslateVisitor_();
@@ -429,6 +456,7 @@ myjs.Dialect.prototype.translate_ = function(ast) {
  * @param {Object} ast the syntax tree to traverse.
  * @param {myjs.AstVisitor} visitor the visitor to invoke.
  * @return {*} whatever the visitor returns.
+ * @suppress {checkTypes}
  */
 myjs.Dialect.prototype.traverse = function(ast, visitor) {
   if (Array.isArray(ast)) {
@@ -469,7 +497,7 @@ myjs.Dialect.prototype.tokenize_ = function(source) {
  * @param {string} source source code in this dialect.
  * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
  * @param {boolean} trace true if parsing should be traced.
- * @return {string} plain javascript translation of the source.
+ * @return {*} plain javascript translation of the source.
  */
 myjs.Dialect.prototype.translate = function(source, origin, trace) {
   var ast = this.parse_(source, origin, trace);
@@ -553,7 +581,7 @@ myjs.Dialect.prototype.calcTokenTypes_ = function() {
 /**
  * Formats the given ast as source code and returns it as a string.
  *
- * @param {Object} ast the ast node to unparse.
+ * @param {myjs.ast.Node} ast the ast node to unparse.
  * @return {string} the source code as a string.
  * @private
  */
@@ -695,7 +723,7 @@ myjs.getFragment = function(name) {
  * @param {string=} opt_type the type of this token. If none is specified
  *   the value will be used.
  * @constructor
- * @extends myjs.tedir.Token
+ * @implements myjs.tedir.Token
  * @private
  */
 myjs.HardToken_ = function(value, opt_type) {
@@ -727,7 +755,7 @@ myjs.HardToken_.prototype.toString = function() {
  *
  * @param {string} value the value of this token.
  * @constructor
- * @extends myjs.tedir.Token
+ * @implements myjs.tedir.Token
  * @private
  */
 myjs.SoftToken_ = function(value) {
@@ -782,7 +810,7 @@ myjs.ScannerSettings_.prototype.isKeyword = function(word) {
  * @return {boolean} true iff the character occurs in a punctuation string.
  */
 myjs.ScannerSettings_.prototype.isPunctuation = function(chr) {
-  return this.punctuation.get(chr);
+  return !!this.punctuation.get(chr);
 };
 
 /**
@@ -1006,12 +1034,12 @@ myjs.Scanner_.prototype.scanToken = function() {
   } else if (this.settings.isPunctuation(c)) {
     return this.scanPunctuation();
   } else if (myjs.Scanner_.isDigit(c)) {
-    return this.scanNumber(c);
+    return this.scanNumber();
   } else if (myjs.Scanner_.isIdentifierStart(c)) {
-    return this.scanIdentifier(c);
+    return this.scanIdentifier();
   } else {
     this.advance();
-    return new myjs.SoftToken_(c, c);
+    return new myjs.SoftToken_(c);
   }
 };
 
@@ -1203,6 +1231,7 @@ myjs.SourceStream.prototype.newline = function() {
  *
  * @param {myjs.ast.Node} ast the node to unparse.
  * @return {myjs.SourceStream} this object, for chaining.
+ * @suppress {missingProperties}
  */
 myjs.SourceStream.prototype.node = function(ast) {
   var type = ast.type;

@@ -28,6 +28,7 @@ goog.require('myjs.ast');
  * @param {Array.<myjs.ast.Expression>} args the constructor arguments.
  * @constructor
  * @extends myjs.ast.Expression
+ * @suppress {checkTypes}
  */
 myjs.ast.NewExpression = function(constructor, args) {
   this.type = 'NewExpression';
@@ -37,6 +38,7 @@ myjs.ast.NewExpression = function(constructor, args) {
 
 /**
  * @inheritDoc
+ * @suppress {checkTypes}
  */
 myjs.ast.NewExpression.prototype.unparse = function(context) {
   context.write('new (').node(this.constructor).write(')(')
@@ -96,6 +98,56 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
 (function() {
 
   function getSyntax() {
+
+    /**
+     * @constructor
+     */
+    function GetElementSuffix(value) {
+      this.value = value;
+    }
+
+    GetElementSuffix.prototype.isArguments = function() {
+      return false;
+    };
+
+    GetElementSuffix.prototype.wrapPlain = function(atom) {
+      return new myjs.ast.MemberExpression(atom, this.value, true);
+    };
+
+    /**
+     * @constructor
+     */
+    function GetPropertySuffix(name) {
+      this.name = name;
+    }
+
+    GetPropertySuffix.prototype.isArguments = function() {
+      return false;
+    };
+
+    GetPropertySuffix.prototype.wrapPlain = function(atom) {
+      return new myjs.ast.MemberExpression(atom, this.name, false);
+    };
+
+    /**
+     * @constructor
+     */
+    function ArgumentsSuffix(args) {
+      this.args = args;
+    }
+
+    ArgumentsSuffix.prototype.isArguments = function() {
+      return true;
+    };
+
+    ArgumentsSuffix.prototype.wrapPlain = function(atom) {
+      return new myjs.ast.CallExpression(atom, this.args);
+    };
+
+    ArgumentsSuffix.prototype.wrapNew = function(atom) {
+      return new myjs.ast.NewExpression(atom, this.args);
+    };
+
     var syntax = myjs.Syntax.create();
     var f = myjs.factory;
 
@@ -149,46 +201,6 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       .setConstructor(GetPropertySuffix)
       .addProd(f.nonterm('Arguments'))
       .setConstructor(ArgumentsSuffix);
-
-    function GetElementSuffix(value) {
-      this.value = value;
-    }
-
-    GetElementSuffix.prototype.isArguments = function() {
-      return false;
-    };
-
-    GetElementSuffix.prototype.wrapPlain = function(atom) {
-      return new myjs.ast.MemberExpression(atom, this.value, true);
-    };
-
-    function GetPropertySuffix(name) {
-      this.name = name;
-    }
-
-    GetPropertySuffix.prototype.isArguments = function() {
-      return false;
-    };
-
-    GetPropertySuffix.prototype.wrapPlain = function(atom) {
-      return new myjs.ast.MemberExpression(atom, this.name, false);
-    };
-
-    function ArgumentsSuffix(args) {
-      this.args = args;
-    }
-
-    ArgumentsSuffix.prototype.isArguments = function() {
-      return true;
-    };
-
-    ArgumentsSuffix.prototype.wrapPlain = function(atom) {
-      return new myjs.ast.CallExpression(atom, this.args);
-    };
-
-    ArgumentsSuffix.prototype.wrapNew = function(atom) {
-      return new myjs.ast.NewExpression(atom, this.args);
-    };
 
     // <Arguments>
     //   -> "(" <AssignmentExpression> *: "," ")"

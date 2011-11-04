@@ -23,11 +23,19 @@ goog.require('myjs.ast');
 
 (function() {
 
+  /**
+   * @constructor
+   * @extends myjs.ast.Expression
+   */
   myjs.ast.QuoteExpression = function(value) {
     this.type = 'QuoteExpression';
     this.value = value;
   };
 
+  /**
+   * @constructor
+   * @extends myjs.AstVisitor
+   */
   function QuoteVisitor(translatePlain) {
     this.translatePlain = translatePlain;
   }
@@ -38,6 +46,9 @@ goog.require('myjs.ast');
     return new myjs.ast.ArrayExpression(elms);
   };
 
+  /**
+   * @suppress {checkTypes}
+   */
   QuoteVisitor.prototype.visitNode = function(ast, type, dialect) {
     if (type == myjs.ast.UnquoteExpression) {
       return (this.translatePlain)(ast.value);
@@ -47,7 +58,7 @@ goog.require('myjs.ast');
       var props = [];
       keys.forEach(function(key) {
         props.push(new myjs.ast.ObjectProperty(
-          new myjs.ast.Identifier(key), dialect.traverse(ast[key], self)));
+          new myjs.ast.Literal(key), dialect.traverse(ast[key], self)));
       });
       return new myjs.ast.ObjectExpression(props);
     }
@@ -62,6 +73,10 @@ goog.require('myjs.ast');
     return dialect.traverse(this.value, visitor);
   };
 
+  /**
+   * @constructor
+   * @extends myjs.ast.Expression
+   */
   myjs.ast.UnquoteExpression = function(value) {
     this.type = 'UnquoteExpression';
     this.value = value;

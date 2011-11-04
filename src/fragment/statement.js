@@ -68,7 +68,7 @@ myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
 /**
  * A block statement, i.e, a sequence of statements surrounded by braces.
  *
- * @param {myjs.ast.Statement} body the statements in the sequence.
+ * @param {Array.<myjs.ast.Statement>} body the statements in the sequence.
  * @constructor
  * @extends myjs.ast.Statement
  */

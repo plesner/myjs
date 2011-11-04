@@ -35,7 +35,16 @@ myjs.ast.Node = function() {
    * A string representing the AST variant type.
    * @type {string}
    */
-  this.type = null;
+  this.type = '';
+};
+
+/**
+ * Unparse this syntax tree node.
+ *
+ * @param {myjs.SourceStream} stream the output stream to unparse to.
+ */
+myjs.ast.Node.prototype.unparse = function(stream) {
+  myjs.utils.abstractMethodCalled();
 };
 
 /**
@@ -82,3 +91,11 @@ myjs.ast.Statement = function() { };
  * @extends myjs.ast.Node
  */
 myjs.ast.Expression = function() { };
+
+/**
+ * Any declaration.
+ *
+ * @constructor
+ * @extends myjs.ast.Node
+ */
+myjs.ast.Declaration = function() { };
