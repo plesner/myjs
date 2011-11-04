@@ -387,9 +387,7 @@ myjs.AstVisitor = function() { };
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
  * @return {*} whatever.
  */
-myjs.AstVisitor.prototype.visitNode = function(node, type, dialect) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.AstVisitor.prototype.visitNode = goog.abstractMethod;
 
 /**
  * Visit an array of nodes.
@@ -398,9 +396,7 @@ myjs.AstVisitor.prototype.visitNode = function(node, type, dialect) {
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
  * @return {*} whatever.
  */
-myjs.AstVisitor.prototype.visitArray = function(nodes, dialect) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.AstVisitor.prototype.visitArray = goog.abstractMethod;
 
 /**
  * Visit a primitive value occurring in the syntax tree.
@@ -409,9 +405,7 @@ myjs.AstVisitor.prototype.visitArray = function(nodes, dialect) {
  * @param {myjs.Dialect} dialect the dialect we're traversing within.
  * @return {*} whatever.
  */
-myjs.AstVisitor.prototype.visitPrimitive = function(value, dialect) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.AstVisitor.prototype.visitPrimitive = goog.abstractMethod;
 
 /**
  * Ast visitor for translating syntax trees.

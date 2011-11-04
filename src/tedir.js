@@ -291,9 +291,7 @@ myjs.tedir.Expression = function() {
  *
  * @param {function(myjs.tedir.Expression):*} visitor the callback to invoke.
  */
-myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.tedir.Expression.prototype.forEachChild = goog.abstractMethod;
 
 /**
  * Parse input from the given context according to this expression.
@@ -301,29 +299,22 @@ myjs.tedir.Expression.prototype.forEachChild = function(visitor) {
  * @param {myjs.tedir.ParseContext} context the current parse context.
  * @return {*} the value of the parsed expression.
  */
-myjs.tedir.Expression.prototype.parse = function(context) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.tedir.Expression.prototype.parse = goog.abstractMethod;
 
 /**
  * Normalize this expression.
  *
  * @return {myjs.tedir.Expression} a normalized version of this expression.
+ * @private
  */
-myjs.tedir.Expression.prototype.normalize = function() {
-  myjs.utils.abstractMethodCalled();
-  return null;
-};
+myjs.tedir.Expression.prototype.normalize_ = goog.abstractMethod;
 
 /**
  * Returns the type string of this expression.
  *
  * @return {string} the string type of this expression.
  */
-myjs.tedir.Expression.prototype.getType = function() {
-  myjs.utils.abstractMethodCalled();
-  return '';
-};
+myjs.tedir.Expression.prototype.getType = goog.abstractMethod;
 
 /**
  * If the value of this expression is passed through a filter, how many
@@ -414,7 +405,7 @@ myjs.tedir.Terminal_.prototype.forEachChild = function(visitor) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Terminal_.prototype.normalize = function() {
+myjs.tedir.Terminal_.prototype.normalize_ = function() {
   return new myjs.tedir.Terminal_(this.value, this.kind);
 };
 
@@ -470,7 +461,7 @@ myjs.tedir.Nonterm_.prototype.forEachChild = function(visitor) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Nonterm_.prototype.normalize = function() {
+myjs.tedir.Nonterm_.prototype.normalize_ = function() {
   return new myjs.tedir.Nonterm_(this.name);
 };
 
@@ -497,6 +488,8 @@ myjs.tedir.Nonterm_.prototype.toString = function() {
  */
 myjs.tedir.CustomHandler = function() { };
 
+goog.exportSymbol('myjs.tedir.CustomHandler', myjs.tedir.CustomHandler);
+
 /**
  * Invoke the given callback for each child element under this expression.
  *
@@ -505,6 +498,9 @@ myjs.tedir.CustomHandler = function() { };
 myjs.tedir.CustomHandler.prototype.forEachChild = function(callback) {
   // no children by default
 };
+
+goog.exportProperty(myjs.tedir.CustomHandler.prototype, 'forEachChild',
+  myjs.tedir.CustomHandler.prototype.forEachChild);
 
 /**
  * If this handler has subexpressions, must return a new handler with each
@@ -517,6 +513,9 @@ myjs.tedir.CustomHandler.prototype.normalize = function() {
   // No normalization
   return this;
 };
+
+goog.exportProperty(myjs.tedir.CustomHandler.prototype, 'normalize',
+  myjs.tedir.CustomHandler.prototype.normalize);
 
 /**
  * Subtypes must implement this method to parse input from the given context.
@@ -561,8 +560,8 @@ myjs.tedir.Custom_.prototype.forEachChild = function(callback) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Custom_.prototype.normalize = function() {
-  return new myjs.tedir.Custom_(this.handler.normalize());
+myjs.tedir.Custom_.prototype.normalize_ = function() {
+  return new myjs.tedir.Custom_(this.handler['normalize']());
 };
 
 /**
@@ -661,10 +660,10 @@ myjs.tedir.Sequence_.prototype.calcUseValue = function() {
 /**
  * @inheritDoc
  */
-myjs.tedir.Sequence_.prototype.normalize = function() {
+myjs.tedir.Sequence_.prototype.normalize_ = function() {
   var normalTerms = [];
   this.terms.forEach(function(term) {
-    var normalTerm = term.normalize();
+    var normalTerm = term.normalize_();
     // Ignore the empty terminal.
     if (!normalTerm.isEmpty()) {
       normalTerms.push(normalTerm);
@@ -734,11 +733,11 @@ myjs.tedir.Choice_.prototype.forEachChild = function(visitor) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Choice_.prototype.normalize = function() {
+myjs.tedir.Choice_.prototype.normalize_ = function() {
   if (this.terms.length == 1) {
-    return this.terms[0].normalize();
+    return this.terms[0].normalize_();
   } else {
-    var newTerms = this.terms.map(function(t) { return t.normalize(); });
+    var newTerms = this.terms.map(function(t) { return t.normalize_(); });
     return new myjs.tedir.Choice_(newTerms);
   }
 };
@@ -785,7 +784,7 @@ myjs.tedir.Empty_.prototype.isEmpty = function() {
 /**
  * @inheritDoc
  */
-myjs.tedir.Empty_.prototype.normalize = function() {
+myjs.tedir.Empty_.prototype.normalize_ = function() {
   return this;
 };
 
@@ -851,8 +850,8 @@ myjs.tedir.Ignore_.prototype.parse = function(context) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Ignore_.prototype.normalize = function() {
-  return new myjs.tedir.Ignore_(this.term.normalize());
+myjs.tedir.Ignore_.prototype.normalize_ = function() {
+  return new myjs.tedir.Ignore_(this.term.normalize_());
 };
 
 /**
@@ -920,11 +919,11 @@ myjs.tedir.Filter_.prototype.parse = function(context) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Filter_.prototype.normalize = function() {
-  var term = this.term.normalize();
+myjs.tedir.Filter_.prototype.normalize_ = function() {
+  var term = this.term.normalize_();
   var arity = (this.arity === -1) ? term.getArity() : this.arity;
-  return new myjs.tedir.Filter_(this.term.normalize(), this.filter,
-    this.isConstructor, arity);
+  return new myjs.tedir.Filter_(term, this.filter, this.isConstructor,
+    arity);
 };
 
 /**
@@ -1070,8 +1069,8 @@ myjs.tedir.Repeat_.prototype.forEachChild = function(visitor) {
 /**
  * @inheritDoc
  */
-myjs.tedir.Repeat_.prototype.normalize = function() {
-  return new myjs.tedir.Repeat_(this.body.normalize(), this.sep.normalize(),
+myjs.tedir.Repeat_.prototype.normalize_ = function() {
+  return new myjs.tedir.Repeat_(this.body.normalize_(), this.sep.normalize_(),
       this.allowEmpty);
 };
 
@@ -1162,10 +1161,7 @@ goog.exportProperty(myjs.tedir.Syntax, 'create', myjs.tedir.Syntax.create);
  *   the nonterm doesn't exist. Otherwise creates it.
  * @return {myjs.tedir.Rule} the rule with the given name.
  */
-myjs.tedir.Syntax.prototype.getRule = function(name,
-    opt_failIfMissing) {
-  throw myjs.utils.abstractMethodCalled();
-};
+myjs.tedir.Syntax.prototype.getRule = goog.abstractMethod;
 
 goog.exportProperty(myjs.tedir.Syntax.prototype, 'getRule',
   myjs.tedir.Syntax.prototype.getRule);
@@ -1175,10 +1171,7 @@ goog.exportProperty(myjs.tedir.Syntax.prototype, 'getRule',
  *
  * @return {Array.<string>} a list of all rule names.
  */
-myjs.tedir.Syntax.prototype.getRuleNames = function() {
-  myjs.utils.abstractMethodCalled();
-  return [];
-};
+myjs.tedir.Syntax.prototype.getRuleNames = goog.abstractMethod;
 
 /**
  * Returns a syntax that contains the union of the rules defined in this
@@ -1536,7 +1529,7 @@ myjs.tedir.Grammar.prototype.getNonterm = function(name) {
  */
 myjs.tedir.Grammar.prototype.buildNonterm_ = function(name) {
   var rule = this.syntax.getRule(name, true);
-  return rule.asExpression_().normalize();
+  return rule.asExpression_().normalize_();
 };
 
 /**

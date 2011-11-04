@@ -43,9 +43,7 @@ myjs.ast.Node = function() {
  *
  * @param {myjs.SourceStream} stream the output stream to unparse to.
  */
-myjs.ast.Node.prototype.unparse = function(stream) {
-  myjs.utils.abstractMethodCalled();
-};
+myjs.ast.Node.prototype.unparse = goog.abstractMethod;
 
 /**
  * A standard function element.

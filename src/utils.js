@@ -44,10 +44,3 @@ goog.exportSymbol('myjs.utils.toArray', myjs.utils.toArray);
 myjs.utils.base = function(me) {
   return me.constructor.superClass_.constructor;
 };
-
-/**
- * Throws an error signalling that an abstract method was called.
- */
-myjs.utils.abstractMethodCalled = function() {
-  throw new Error('Abstract Method Called');
-};
