@@ -20,4 +20,4 @@ var console;
 var JSON;
 var module;
 
-function addEventListener() { }
+function addEventListener(a, b) { }
