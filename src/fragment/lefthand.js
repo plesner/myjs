@@ -106,10 +106,6 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       this.value = value;
     }
 
-    GetElementSuffix.prototype.isArguments = function() {
-      return false;
-    };
-
     GetElementSuffix.prototype.wrapPlain = function(atom) {
       return new myjs.ast.MemberExpression(atom, this.value, true);
     };
@@ -120,10 +116,6 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
     function GetPropertySuffix(name) {
       this.name = name;
     }
-
-    GetPropertySuffix.prototype.isArguments = function() {
-      return false;
-    };
 
     GetPropertySuffix.prototype.wrapPlain = function(atom) {
       return new myjs.ast.MemberExpression(atom, this.name, false);
@@ -136,9 +128,7 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       this.args = args;
     }
 
-    ArgumentsSuffix.prototype.isArguments = function() {
-      return true;
-    };
+    ArgumentsSuffix.prototype.legalNewSuffix = true;
 
     ArgumentsSuffix.prototype.wrapPlain = function(atom) {
       return new myjs.ast.CallExpression(atom, this.args);
@@ -165,7 +155,7 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       // appropriately.
       for (i = 0; i < suffixes.length; i++) {
         var suffix = suffixes[i];
-        if (suffix.isArguments() && newCount > 0) {
+        if (suffix.legalNewSuffix && newCount > 0) {
           // If this is argument suffix we match it with a "new" if there is
           // one.
           current = suffix.wrapNew(current);

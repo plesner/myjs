@@ -18,10 +18,6 @@ function getSyntax() {
     this.name = name;
   }
 
-  ColonSuffix.prototype.isArguments = function() {
-    return false;
-  };
-
   ColonSuffix.prototype.wrapPlain = function(atom) {
     return new ColonExpression(atom, this.name);
   };
