@@ -30,17 +30,17 @@ var FILES = [
   ['test/test.js'],
   ['test/framework.js'],
   ['src/main.js'],
-  ['src/fragment/program.js'],
-  ['src/fragment/statement.js'],
-  ['src/fragment/core.js'],
-  ['src/fragment/declaration.js'],
-  ['src/fragment/lefthand.js'],
-  ['src/fragment/operators.js'],
-  ['src/fragment/expression.js'],
-  ['src/fragment/control.js'],
-  ['src/fragment/iteration.js'],
-  ['src/fragment/exceptions.js'],
-  ['src/dialects/tedir.my.js']
+  ['src/fragments/program.js'],
+  ['src/fragments/statement.js'],
+  ['src/fragments/core.js'],
+  ['src/fragments/declaration.js'],
+  ['src/fragments/lefthand.js'],
+  ['src/fragments/operators.js'],
+  ['src/fragments/expression.js'],
+  ['src/fragments/control.js'],
+  ['src/fragments/iteration.js'],
+  ['src/fragments/exceptions.js'],
+  ['src/extensions/quote.js']
 ];
 
 /**

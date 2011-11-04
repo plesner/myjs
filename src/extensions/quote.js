@@ -105,7 +105,7 @@ goog.require('myjs.ast');
     return syntax;
   }
 
-  var fragment = new myjs.Fragment('myjs.Meta')
+  var fragment = new myjs.Fragment('myjs.Quote')
     .setSyntaxProvider(getSyntax)
     .registerType('QuoteExpression', myjs.ast.QuoteExpression)
     .registerType('UnquoteExpression', myjs.ast.UnquoteExpression);

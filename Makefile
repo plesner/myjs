@@ -1,20 +1,20 @@
 # Files that need to be part of the resulting library.
-SHARED_FILES=               \
-src/utils.js                \
-src/ast.js                  \
-src/tedir.js                \
-src/my.js                   \
-src/fragment/control.js     \
-src/fragment/core.js        \
-src/fragment/declaration.js \
-src/fragment/exceptions.js  \
-src/fragment/expression.js  \
-src/fragment/iteration.js   \
-src/fragment/lefthand.js    \
-src/fragment/operators.js   \
-src/fragment/program.js     \
-src/fragment/statement.js   \
-src/extensions/meta.js
+SHARED_FILES=                \
+src/utils.js                 \
+src/ast.js                   \
+src/tedir.js                 \
+src/my.js                    \
+src/fragments/control.js     \
+src/fragments/core.js        \
+src/fragments/declaration.js \
+src/fragments/exceptions.js  \
+src/fragments/expression.js  \
+src/fragments/iteration.js   \
+src/fragments/lefthand.js    \
+src/fragments/operators.js   \
+src/fragments/program.js     \
+src/fragments/statement.js   \
+src/extensions/quote.js
 
 NODE_LIB_FILES=   \
 $(SHARED_FILES)   \
