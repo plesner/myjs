@@ -36,13 +36,13 @@ myjs.mimetype.Error.prototype.toString = function() {
   return 'MyJsException: ' + this.message;
 };
 
-var DEFAULT_DIALECT = 'default';
-
 /**
  * Fetches a file using XHR, invoking the callback with the result when
  * the request is complete.
+ *
+ * @suppress {missingProperties}
  */
-function fetch(url, callback) {
+myjs.mimetype.fetch = function(url, callback) {
   var Constructor = window.ActiveXObject || XMLHttpRequest;
   var request = new Constructor('Microsoft.XMLHTTP');
   request.onreadystatechange = function() {
@@ -56,79 +56,89 @@ function fetch(url, callback) {
   };
   request.open('GET', url, false);
   request.send();
-}
+};
 
-var fileCache = {};
+/**
+ * @private
+ */
+myjs.mimetype.fileCache_ = {};
 /**
  * Similar to fetch but uses a cache to avoid fetching the same file more
  * than once.
  */
-function getFile(url, callback) {
-  if (fileCache.hasOwnProperty(url)) {
-    callback(fileCache[url]);
+myjs.mimetype.getFile = function(url, callback) {
+  var cache = myjs.mimetype.fileCache_;
+  if (cache.hasOwnProperty(url)) {
+    callback(cache[url]);
   } else {
-    fetch(url, function(value) {
-      fileCache[url] = value;
+    myjs.mimetype.fetch(url, function(value) {
+      cache[url] = value;
       callback(value);
     });
   }
-}
+};
 
 /**
  * Loads the given source code string using the given dialect.
  */
-function processSource(dialect, source, origin, traceTarget) {
-  var result = dialect.translate(source, origin, !!traceTarget);
-  if (traceTarget) {
-    (window[traceTarget])(result);
-  } else {
-    console.log(result);
-    window.eval(result);
-  }
-}
+myjs.mimetype.processSource = function(dialect, source, origin) {
+  var result = dialect.translate(source, origin);
+  console.log(result);
+  window.eval(result);
+};
 
 /**
  * Processes the source code of the given script tag using the given
  * dialect.
  */
-function processScriptWithDialect(dialect, script) {
-  var traceTarget = script.getAttribute('onTrace');
+myjs.mimetype.processScriptWithDialect = function(dialect, script) {
   function processInnerText() {
     if (script.innerText) {
-      processSource(dialect, script.innerText.trim(), null, traceTarget);
+      myjs.mimetype.processSource(dialect, script.innerText.trim(), null);
     }
   }
   if (script.src) {
     // Load a remote src if there is one.
-    getFile(script.src, function(source) {
+    myjs.mimetype.getFile(script.src, function(source) {
       var origin = new myjs.tedir.SourceOrigin(script.src);
-      processSource(dialect, source, origin, traceTarget);
+      myjs.mimetype.processSource(dialect, source, origin);
       processInnerText();
     });
   } else {
     // If there is no 'src' just process the text of the script tag.
     processInnerText();
   }
-}
+};
+
+myjs.mimetype.resolveDialect = function(name) {
+  if (!name) {
+    return myjs.getDialect('myjs.JavaScript');
+  }
+  var result = myjs.getDialect(name);
+  if (result) {
+    return result;
+  }
+  var fragment = myjs.getFragment(name);
+  if (fragment) {
+    return new myjs.Dialect(name).addFragment(name);
+  }
+  throw new myjs.mimetype.Error("Unknown dialect '" + name + "'.");
+};
 
 /**
  * Process the script tag as appropriate.
  */
-function processScript(script) {
-  var name = script.getAttribute('dialect') || DEFAULT_DIALECT;
-  var dialect = myjs.getDialect(name);
-  if (!dialect) {
-    throw new myjs.mimetype.Error("Unknown dialect '" + name + "'.");
-  }
-  processScriptWithDialect(dialect, script);
-}
+myjs.mimetype.processScript = function(script) {
+  var dialect = myjs.mimetype.resolveDialect(script.getAttribute('dialect'));
+  myjs.mimetype.processScriptWithDialect(dialect, script);
+};
 
 addEventListener('DOMContentLoaded', function() {
   var i, scripts = document.getElementsByTagName('script');
   for (i = 0; i < scripts.length; i++) {
     var script = scripts[i];
     if (script.type == 'text/myjs') {
-      processScript(script);
+      myjs.mimetype.processScript(script);
     }
   }
 });

@@ -101,7 +101,7 @@ function getParserTestRunner(syntax, startOpt) {
   var start = startOpt || 'start';
   return function(expected, source) {
     var parser = new myjs.tedir.Parser(syntax);
-    var tokens = myjs.getDialect('default').tokenize_(source);
+    var tokens = myjs.getDialect('myjs.JavaScript').tokenize_(source);
     if (typeof expected == 'function') {
       try {
         parser.parse(start, tokens);
@@ -116,7 +116,7 @@ function getParserTestRunner(syntax, startOpt) {
 }
 
 function getFragmentParser(start) {
-  var dialect = myjs.getDialect('default');
+  var dialect = myjs.getDialect('myjs.JavaScript');
   var parser = new myjs.tedir.Parser(dialect.getSyntax_());
   return function(source) {
     var tokens = dialect.tokenize_(source);
@@ -304,7 +304,7 @@ function testInvoker() {
 }
 
 function runTokenTest(expected, source) {
-  var elements = myjs.getDialect('default').tokenize_(source);
+  var elements = myjs.getDialect('myjs.JavaScript').tokenize_(source);
   var tokens = [];
   elements.forEach(function(element) {
     if (!element.isSoft()) {

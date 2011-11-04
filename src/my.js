@@ -155,7 +155,7 @@ myjs.Error.prototype.toString = function() {
  */
 myjs.Dialect = function(name) {
   this.name = name;
-  this.parent = null;
+  this.parent = 'myjs.JavaScript';
   this.fragments = [];
   this.syntax = null;
   this.grammar = null;
@@ -199,7 +199,7 @@ myjs.Dialect.prototype.addFragment = function(var_args) {
 /**
  * Sets the name of this dialect's parent dialect.
  *
- * @param {string} name the name of this dialect's parent dialect.
+ * @param {?string} name the name of this dialect's parent dialect.
  * @return {myjs.Dialect} this dialect, for chaining.
  */
 myjs.Dialect.prototype.extendsDialect = function(name) {
@@ -604,11 +604,11 @@ myjs.registerDialect = function(dialect) {
  * Returns the dialect registered under the given name.
  *
  * @param {string} name the dialect name.
- * @return {myjs.Fragment} the dialect with the given name.
+ * @return {myjs.Dialect} the dialect with the given name.
  */
 myjs.getDialect = function(name) {
   if (!myjs.Dialect.registry_.hasOwnProperty(name)) {
-    throw new myjs.Error('Unknown dialect "' + name + '".');
+    return null;
   }
   return myjs.Dialect.registry_[name];
 };
@@ -1320,7 +1320,8 @@ myjs.SourceStream.prototype.flush_ = function() {
 };
 
 // Register the default dialect.
-myjs.registerDialect(new myjs.Dialect('default')
+myjs.registerDialect(new myjs.Dialect('myjs.JavaScript')
+  .extendsDialect(null)
   .addFragment('myjs.Program')
   .addFragment('myjs.Statement')
   .addFragment('myjs.Declaration')
@@ -1331,8 +1332,3 @@ myjs.registerDialect(new myjs.Dialect('default')
   .addFragment('myjs.Control')
   .addFragment('myjs.Iteration')
   .addFragment('myjs.Exceptions'));
-
-// Register the meta language dialect.
-myjs.registerDialect(new myjs.Dialect('meta')
-  .extendsDialect('default')
-  .addFragment('myjs.Meta'));

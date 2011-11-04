@@ -65,7 +65,7 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
 function parseAllFiles() {
   forEachAsync(FILES, function(pair, doNext) {
     var name = pair[0];
-    var dialect = myjs.getDialect(pair[1] || 'default');
+    var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
     fs.readFile(name, 'utf8', function(error, source) {
       console.log("Parsing " + name);
       var origin = new myjs.tedir.SourceOrigin(name);

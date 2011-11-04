@@ -37,10 +37,6 @@ function getSyntax() {
   return syntax;
 }
 
-myjs.registerFragment(new myjs.Fragment('Colons')
+myjs.registerFragment(new myjs.Fragment('demo.Colons')
   .setSyntaxProvider(getSyntax)
   .registerType('ColonExpression', ColonExpression));
-
-myjs.registerDialect(new myjs.Dialect('colons')
-  .extendsDialect('default')
-  .addFragment('Colons'));
