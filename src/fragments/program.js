@@ -33,20 +33,20 @@ myjs.ast.Program = function(body) {
    * "Program"
    * @const
    */
-  this.type = 'Program';
+  this['type'] = 'Program';
 
   /**
    * The program elements.
    * @type {Array}
    */
-  this.elements = body;
+  this['elements'] = body;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.Program.prototype.unparse = function(context) {
-  context.nodes(this.elements);
+  context.nodes(this['elements']);
 };
 
 (function() {

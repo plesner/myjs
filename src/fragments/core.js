@@ -29,15 +29,15 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Node
  */
 myjs.ast.Identifier = function(name) {
-  this.type = 'Identifier';
-  this.name = name;
+  this['type'] = 'Identifier';
+  this['name'] = name;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.Identifier.prototype.unparse = function(context) {
- context.write(this.name);
+ context.write(this['name']);
 };
 
 /**
@@ -48,15 +48,15 @@ myjs.ast.Identifier.prototype.unparse = function(context) {
  * @extends myjs.ast.Node
  */
 myjs.ast.Literal = function(value) {
-  this.type = 'Literal';
-  this.value = value;
+  this['type'] = 'Literal';
+  this['value'] = value;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.Literal.prototype.unparse = function(context) {
-  context.write(JSON.stringify(this.value));
+  context.write(JSON.stringify(this['value']));
 };
 
 (function() {

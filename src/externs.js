@@ -19,5 +19,6 @@
 var console;
 var JSON;
 var module;
+module.exports = {};
 
 function addEventListener(a, b) { }

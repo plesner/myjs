@@ -29,8 +29,8 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Statement
  */
 myjs.ast.ReturnStatement = function(argument) {
-  this.type = 'ReturnStatement';
-  this.argument = argument;
+  this['type'] = 'ReturnStatement';
+  this['argument'] = argument;
 };
 
 /**
@@ -38,8 +38,8 @@ myjs.ast.ReturnStatement = function(argument) {
  */
 myjs.ast.ReturnStatement.prototype.unparse = function(context) {
   context.write('return');
-  if (this.argument) {
-    context.write(' ').node(this.argument);
+  if (this['argument']) {
+    context.write(' ').node(this['argument']);
   }
   context.write(';').newline();
 };
@@ -54,19 +54,19 @@ myjs.ast.ReturnStatement.prototype.unparse = function(context) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
-  this.type = 'IfStatement';
-  this.test = test;
-  this.consequent = consequent;
-  this.alternate = opt_alternate || null;
+  this['type'] = 'IfStatement';
+  this['test'] = test;
+  this['consequent'] = consequent;
+  this['alternate'] = opt_alternate || null;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.IfStatement.prototype.unparse = function(context) {
-  context.write('if (').node(this.test).write(') ').node(this.consequent);
-  if (this.alternate) {
-    context.write(' else ').node(this.alternate);
+  context.write('if (').node(this['test']).write(') ').node(this['consequent']);
+  if (this['alternate']) {
+    context.write(' else ').node(this['alternate']);
   }
 };
 
@@ -79,9 +79,9 @@ myjs.ast.IfStatement.prototype.unparse = function(context) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.LabeledStatement = function(label, body) {
-  this.type = 'LabeledStatement';
-  this.label = label;
-  this.body = body;
+  this['type'] = 'LabeledStatement';
+  this['label'] = label;
+  this['body'] = body;
 };
 
 /**
@@ -92,8 +92,8 @@ myjs.ast.LabeledStatement = function(label, body) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.BreakStatement = function(label) {
-  this.type = 'BreakStatement';
-  this.label = label;
+  this['type'] = 'BreakStatement';
+  this['label'] = label;
 };
 
 /**
@@ -104,8 +104,8 @@ myjs.ast.BreakStatement = function(label) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.ContinueStatement = function(label) {
-  this.type = 'ContinueStatement';
-  this.label = label;
+  this['type'] = 'ContinueStatement';
+  this['label'] = label;
 };
 
 /**
@@ -117,9 +117,9 @@ myjs.ast.ContinueStatement = function(label) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.SwitchStatement = function(discriminant, cases) {
-  this.type = 'SwitchStatement';
-  this.discriminant = discriminant;
-  this.cases = cases;
+  this['type'] = 'SwitchStatement';
+  this['discriminant'] = discriminant;
+  this['cases'] = cases;
 };
 
 /**
@@ -131,9 +131,9 @@ myjs.ast.SwitchStatement = function(discriminant, cases) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.SwitchCase = function(test, consequent) {
-  this.type = 'SwitchCase';
-  this.test = test;
-  this.consequent = consequent;
+  this['type'] = 'SwitchCase';
+  this['test'] = test;
+  this['consequent'] = consequent;
 };
 
 (function() {

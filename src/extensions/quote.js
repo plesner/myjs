@@ -28,8 +28,8 @@ goog.require('myjs.ast');
    * @extends myjs.ast.Expression
    */
   myjs.ast.QuoteExpression = function(value) {
-    this.type = 'QuoteExpression';
-    this.value = value;
+    this['type'] = 'QuoteExpression';
+    this['value'] = value;
   };
 
   /**
@@ -51,7 +51,7 @@ goog.require('myjs.ast');
    */
   QuoteVisitor.prototype.visitNode = function(ast, type, dialect) {
     if (type == myjs.ast.UnquoteExpression) {
-      return (this.translatePlain)(ast.value);
+      return (this.translatePlain)(ast['value']);
     } else {
       var self = this;
       var keys = Object.keys(ast);
@@ -70,20 +70,19 @@ goog.require('myjs.ast');
 
   myjs.ast.QuoteExpression.prototype.translate = function(dialect, recurse) {
     var visitor = new QuoteVisitor(recurse);
-    return dialect.traverse(this.value, visitor);
+    return dialect.traverse(this['value'], visitor);
   };
+
+  goog.exportProperty(myjs.ast.QuoteExpression.prototype, 'translate',
+    myjs.ast.QuoteExpression.prototype.translate);
 
   /**
    * @constructor
    * @extends myjs.ast.Expression
    */
   myjs.ast.UnquoteExpression = function(value) {
-    this.type = 'UnquoteExpression';
-    this.value = value;
-  };
-
-  myjs.ast.UnquoteExpression.prototype.unparse = function(context) {
-    context.node(this.value);
+    this['type'] = 'UnquoteExpression';
+    this['value'] = value;
   };
 
   function getSyntax() {

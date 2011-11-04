@@ -29,8 +29,8 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Statement
  */
 myjs.ast.ThrowStatement = function(argument) {
-  this.type = 'ThrowStatement';
-  this.argument = argument;
+  this['type'] = 'ThrowStatement';
+  this['argument'] = argument;
 };
 
 /**
@@ -43,10 +43,10 @@ myjs.ast.ThrowStatement = function(argument) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.TryStatement = function(block, handler, finalizer) {
-  this.type = 'TryStatement';
-  this.block = block;
-  this.handler = handler;
-  this.finalizer = finalizer;
+  this['type'] = 'TryStatement';
+  this['block'] = block;
+  this['handler'] = handler;
+  this['finalizer'] = finalizer;
 };
 
 /**
@@ -58,9 +58,9 @@ myjs.ast.TryStatement = function(block, handler, finalizer) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.CatchClause = function(param, body) {
-  this.type = 'CatchClause';
-  this.param = param;
-  this.body = body;
+  this['type'] = 'CatchClause';
+  this['param'] = param;
+  this['body'] = body;
 };
 
 (function() {

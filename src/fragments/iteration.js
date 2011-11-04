@@ -30,16 +30,16 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Statement
  */
 myjs.ast.WhileStatement = function(test, body) {
-  this.type = 'WhileStatement';
-  this.test = test;
-  this.body = body;
+  this['type'] = 'WhileStatement';
+  this['test'] = test;
+  this['body'] = body;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.WhileStatement.prototype.unparse = function(context) {
-  context.write('while (').node(this.test).write(') ').node(this.body);
+  context.write('while (').node(this['test']).write(') ').node(this['body']);
 };
 
 /**
@@ -51,16 +51,16 @@ myjs.ast.WhileStatement.prototype.unparse = function(context) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.DoWhileStatement = function(body, test) {
-  this.type = 'DoWhileStatement';
-  this.body = body;
-  this.test = test;
+  this['type'] = 'DoWhileStatement';
+  this['body'] = body;
+  this['test'] = test;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.DoWhileStatement.prototype.unparse = function(context) {
-  context.write('do ').node(this.body).write(' while (').node(this.test)
+  context.write('do ').node(this['body']).write(' while (').node(this['test'])
     .write(');');
 };
 
@@ -76,11 +76,11 @@ myjs.ast.DoWhileStatement.prototype.unparse = function(context) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.ForStatement = function(init, test, update, body) {
-  this.type = 'ForStatement';
-  this.init = init;
-  this.test = test;
-  this.update = update;
-  this.body = body;
+  this['type'] = 'ForStatement';
+  this['init'] = init;
+  this['test'] = test;
+  this['update'] = update;
+  this['body'] = body;
 };
 
 /**
@@ -94,10 +94,10 @@ myjs.ast.ForStatement = function(init, test, update, body) {
  * @extends myjs.ast.Statement
  */
 myjs.ast.ForInStatement = function(left, right, body) {
-  this.type = 'ForInStatement';
-  this.left = left;
-  this.right = right;
-  this.body = body;
+  this['type'] = 'ForInStatement';
+  this['left'] = left;
+  this['right'] = right;
+  this['body'] = body;
 };
 
 (function() {

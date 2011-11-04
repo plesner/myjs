@@ -31,18 +31,18 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Declaration
  */
 myjs.ast.FunctionDeclaration = function(id, params, body) {
-  this.type = 'FunctionDeclaration';
-  this.id = id;
-  this.params = params;
-  this.body = body;
+  this['type'] = 'FunctionDeclaration';
+  this['id'] = id;
+  this['params'] = params;
+  this['body'] = body;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
-  context.write('function ').node(this.id).write('(').nodes(this.params, ', ')
-    .write(')').node(this.body).newline();
+  context.write('function ').node(this['id']).write('(')
+    .nodes(this['params'], ', ') .write(')').node(this['body']).newline();
 };
 
 /**
@@ -54,15 +54,15 @@ myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
  * @extends myjs.ast.Declaration
  */
 myjs.ast.VariableDeclaration = function(declarations) {
-  this.type = 'VariableDeclaration';
-  this.declarations = declarations;
+  this['type'] = 'VariableDeclaration';
+  this['declarations'] = declarations;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
-  context.write('var ').nodes(this.declarations, ', ').write(';').newline();
+  context.write('var ').nodes(this['declarations'], ', ').write(';').newline();
 };
 
 /**
@@ -74,18 +74,18 @@ myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
  * @extends myjs.ast.Node
  */
 myjs.ast.VariableDeclarator = function(id, init) {
-  this.type = 'VariableDeclarator';
-  this.id = id;
-  this.init = init;
+  this['type'] = 'VariableDeclarator';
+  this['id'] = id;
+  this['init'] = init;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.VariableDeclarator.prototype.unparse = function(context) {
-  context.node(this.id);
-  if (this.init) {
-    context.write(' = ').node(this.init);
+  context.node(this['id']);
+  if (this['init']) {
+    context.write(' = ').node(this['init']);
   }
 };
 

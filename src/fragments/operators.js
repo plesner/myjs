@@ -34,13 +34,13 @@ myjs.ast.SequenceExpression = function(expressions) {
    * "SequenceExpression"
    * @const
    */
-  this.type = 'SequenceExpression';
+  this['type'] = 'SequenceExpression';
 
   /**
    * The expressions in the sequence.
    * @type {Array.<myjs.ast.Expression>}
    */
-  this.expressions = expressions;
+  this['expressions'] = expressions;
 };
 
 /**
@@ -57,25 +57,25 @@ myjs.ast.UnaryExpression = function(operator, argument, prefix) {
    * "UnaryExpression"
    * @const
    */
-  this.type = 'UnaryExpression';
+  this['type'] = 'UnaryExpression';
 
   /**
    * The operator.
    * @type {myjs.ast.UnaryOperator}
    */
-  this.operator = operator;
+  this['operator'] = operator;
 
   /**
    * The argument.
    * @type {myjs.ast.Expression}
    */
-  this.argument = argument;
+  this['argument'] = argument;
 
   /**
    * Is this a prefix operator?
    * @type {boolean}
    */
-  this.prefix = prefix;
+  this['prefix'] = prefix;
 };
 
 /**
@@ -89,13 +89,13 @@ myjs.ast.UnaryOperator = function(token) {
    * "UnaryOperator"
    * @const
    */
-  this.type = 'UnaryOperator';
+  this['type'] = 'UnaryOperator';
 
   /**
    * The token.
    * @type {string}
    */
-  this.token = token;
+  this['token'] = token;
 };
 
 /**
@@ -113,25 +113,25 @@ myjs.ast.BinaryExpression = function(left, operator, right) {
    * "BinaryExpression"
    * @const
    */
-  this.type = 'BinaryExpression';
+  this['type'] = 'BinaryExpression';
 
   /**
    * The left-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.left = left;
+  this['left'] = left;
 
   /**
    * The operator.
    * @type {myjs.ast.BinaryOperator}
    */
-  this.operator = operator;
+  this['operator'] = operator;
 
   /**
    * The right-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.right = right;
+  this['right'] = right;
 };
 
 /**
@@ -145,13 +145,13 @@ myjs.ast.BinaryOperator = function(token) {
    * "BinaryOperator"
    * @const
    */
-  this.type = 'BinaryOperator';
+  this['type'] = 'BinaryOperator';
 
   /**
    * The token.
    * @type {string}
    */
-  this.token = token;
+  this['token'] = token;
 };
 
 /**
@@ -168,25 +168,25 @@ myjs.ast.AssignmentExpression = function(left, operator, right) {
    * "AssignmentExpression"
    * @const
    */
-  this.type = 'AssignmentExpression';
+  this['type'] = 'AssignmentExpression';
 
   /**
    * The left-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.left = left;
+  this['left'] = left;
 
   /**
    * The operator.
    * @type {myjs.ast.AssignmentOperator}
    */
-  this.operator = operator;
+  this['operator'] = operator;
 
   /**
    * The right-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.right = right;
+  this['right'] = right;
 };
 
 /**
@@ -200,13 +200,13 @@ myjs.ast.AssignmentOperator = function(token) {
    * "AssignmentOperator"
    * @const
    */
-  this.type = 'AssignmentOperator';
+  this['type'] = 'AssignmentOperator';
 
   /**
    * The token.
    * @type {string}
    */
-  this.token = token;
+  this['token'] = token;
 };
 
 /**
@@ -223,25 +223,25 @@ myjs.ast.UpdateExpression = function(operator, argument, prefix) {
    * "UpdateExpression"
    * @const
    */
-  this.type = 'UpdateExpression';
+  this['type'] = 'UpdateExpression';
 
   /**
    * The operator.
    * @type {myjs.ast.UpdateOperator}
    */
-  this.operator = operator;
+  this['operator'] = operator;
 
   /**
    * The argument.
    * @type {myjs.ast.Expression}
    */
-  this.argument = argument;
+  this['argument'] = argument;
 
   /**
    * Is this a prefix operator?
    * @type {boolean}
    */
-  this.prefix = prefix;
+  this['prefix'] = prefix;
 };
 
 /**
@@ -255,13 +255,13 @@ myjs.ast.UpdateOperator = function(token) {
    * "UpdateOperator"
    * @const
    */
-  this.type = 'UpdateOperator';
+  this['type'] = 'UpdateOperator';
 
   /**
    * The token.
    * @type {string}
    */
-  this.token = token;
+  this['token'] = token;
 };
 
 /**
@@ -278,25 +278,25 @@ myjs.ast.LogicalExpression = function(left, operator, right) {
    * "LogicalExpression"
    * @const
    */
-  this.type = 'LogicalExpression';
+  this['type'] = 'LogicalExpression';
 
   /**
    * The operator.
    * @type {myjs.ast.LogicalOperator}
    */
-  this.operator = operator;
+  this['operator'] = operator;
 
   /**
    * The left-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.left = left;
+  this['left'] = left;
 
   /**
    * The right-hand side argument.
    * @type {myjs.ast.Expression}
    */
-  this.right = right;
+  this['right'] = right;
 };
 
 /**
@@ -310,13 +310,13 @@ myjs.ast.LogicalOperator = function(token) {
    * "LogicalOperator"
    * @const
    */
-  this.type = 'LogicalOperator';
+  this['type'] = 'LogicalOperator';
 
   /**
    * The token.
    * @type {string}
    */
-  this.token = token;
+  this['token'] = token;
 };
 
 (function() {
@@ -335,14 +335,14 @@ myjs.ast.LogicalOperator = function(token) {
   function BinaryHandler() { }
 
   BinaryHandler.prototype.unparse = function(context) {
-    context.write('(').node(this.left).write(')').node(this.operator).write('(')
-      .node(this.right).write(')');
+    context.write('(').node(this['left']).write(')').node(this['operator'])
+      .write('(').node(this['right']).write(')');
   };
 
   function OperatorHandler() { }
 
   OperatorHandler.prototype.unparse = function(context) {
-    context.write(this.token);
+    context.write(this['token']);
   };
 
   function getSyntax() {

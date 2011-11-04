@@ -29,35 +29,45 @@ goog.require('myjs.utils');
  * @inheritDoc
  */
 myjs.factory = {};
+goog.exportSymbol('myjs.factory', myjs.factory);
 
 /***/
 myjs.factory.ignore = myjs.tedir.factory.ignore;
+goog.exportProperty(myjs.factory, 'ignore', myjs.factory.ignore);
 
 /***/
 myjs.factory.nonterm = myjs.tedir.factory.nonterm;
+goog.exportProperty(myjs.factory, 'nonterm', myjs.factory.nonterm);
 
 /***/
 myjs.factory.option = myjs.tedir.factory.option;
+goog.exportProperty(myjs.factory, 'option', myjs.factory.option);
 
 /***/
 myjs.factory.choice = myjs.tedir.factory.choice;
+goog.exportProperty(myjs.factory, 'choice', myjs.factory.choice);
 
 /***/
 myjs.factory.star = myjs.tedir.factory.star;
+goog.exportProperty(myjs.factory, 'star', myjs.factory.star);
 
 /***/
 myjs.factory.plus = myjs.tedir.factory.plus;
+goog.exportProperty(myjs.factory, 'plus', myjs.factory.plus);
 
 /***/
 myjs.factory.custom = myjs.tedir.factory.custom;
+goog.exportProperty(myjs.factory, 'custom', myjs.factory.custom);
 
 /***/
 myjs.factory.seq = myjs.tedir.factory.seq;
+goog.exportProperty(myjs.factory, 'seq', myjs.factory.seq);
 
 /**
  * @inheritDoc
  */
 myjs.Syntax = myjs.tedir.Syntax;
+goog.exportSymbol('myjs.Syntax', myjs.Syntax);
 
 /**
  * Creates a new ignored-punctuator expression, matching the punctuator with
@@ -71,6 +81,8 @@ myjs.factory.punct = function(name) {
     myjs.Dialect.PUNCTUATOR_MARKER_));
 };
 
+goog.exportProperty(myjs.factory, 'punct', myjs.factory.punct);
+
 /**
  * Creates a new punctuator-with-value expression, matching the punctuator with
  * the given name.
@@ -82,6 +94,8 @@ myjs.factory.punctValue = function(name) {
   return myjs.tedir.factory.token(name, myjs.Dialect.PUNCTUATOR_MARKER_);
 };
 
+goog.exportProperty(myjs.factory, 'punctValue', myjs.factory.punctValue);
+
 /**
  * Creates a new ignored-terminal expression, matching the token with the
  * given name.
@@ -92,6 +106,8 @@ myjs.factory.punctValue = function(name) {
 myjs.factory.token = function(name) {
   return myjs.factory.ignore(myjs.tedir.factory.token(name));
 };
+
+goog.exportProperty(myjs.factory, 'token', myjs.factory.token);
 
 /**
  * Creates a new ignored-keyword expression, matching the keyword with the
@@ -105,6 +121,8 @@ myjs.factory.keyword = function(name) {
     myjs.Dialect.KEYWORD_MARKER_));
 };
 
+goog.exportProperty(myjs.factory, 'keyword', myjs.factory.keyword);
+
 /**
  * Creates a new keyword-with-value expression, matching the keyword with the
  * given name.
@@ -116,6 +134,8 @@ myjs.factory.keywordValue = function(name) {
   return myjs.tedir.factory.token(name, myjs.Dialect.KEYWORD_MARKER_);
 };
 
+goog.exportProperty(myjs.factory, 'keywordValue', myjs.factory.keywordValue);
+
 /**
  * Creates a new terminal-with-value expression, matching the token with the
  * given name.
@@ -126,6 +146,8 @@ myjs.factory.keywordValue = function(name) {
 myjs.factory.value = function(name) {
   return myjs.tedir.factory.token(name);
 };
+
+goog.exportProperty(myjs.factory, 'value', myjs.factory.value);
 
 /**
  * Signals an error condition in tedir.
@@ -249,6 +271,9 @@ myjs.Dialect.prototype.getSyntax_ = function() {
   }
   return this.syntax;
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'getSyntax_',
+    myjs.Dialect.prototype.getSyntax_);
 
 /**
  * Given a set of objects, returns one object that for each key in one of the
@@ -403,10 +428,10 @@ myjs.TranslateVisitor_ = function() { };
  */
 myjs.TranslateVisitor_.prototype.visitNode = function(node, type, dialect) {
   var self = this;
-  if (type && type.prototype.translate) {
+  if (type && type.prototype['translate']) {
     // If this node type has a custom translater we call it to do the
     // translation.
-    return type.prototype.translate.call(node, dialect, function(child) {
+    return type.prototype['translate'].call(node, dialect, function(child) {
       return dialect.traverse(child, self);
     });
   } else {
@@ -464,8 +489,8 @@ myjs.Dialect.prototype.traverse = function(ast, visitor) {
   } else if (ast == null || typeof ast == 'string' || typeof ast == 'number' ||
       typeof ast == 'boolean') {
     return visitor.visitPrimitive(ast, this);
-  } else if (typeof ast == 'object' && typeof ast.type == 'string') {
-    var type = this.getType_(ast.type);
+  } else if (typeof ast == 'object' && typeof ast['type'] == 'string') {
+    var type = this.getType_(ast['type']);
     return visitor.visitNode(ast, type, this);
   } else {
     throw new myjs.Error('Unexpected syntax tree node ' + JSON.stringify(ast) +
@@ -491,6 +516,9 @@ myjs.Dialect.prototype.tokenize_ = function(source) {
   return tokens;
 };
 
+goog.exportProperty(myjs.Dialect.prototype, 'tokenize_',
+  myjs.Dialect.prototype.tokenize_);
+
 /**
  * Translates source code written in this dialect to plain javascript.
  *
@@ -507,6 +535,9 @@ myjs.Dialect.prototype.translate = function(source, origin, trace) {
   var translated = this.translate_(ast);
   return this.unparse_(translated);
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'translate',
+  myjs.Dialect.prototype.translate);
 
 /**
  * Returns the set of keywords used by this dialect.
@@ -613,6 +644,8 @@ myjs.getDialect = function(name) {
   return myjs.Dialect.registry_[name];
 };
 
+goog.exportSymbol('myjs.getDialect', myjs.getDialect);
+
 /**
  * A (potentially incomplete) fragment of syntax that defines how a type
  * of syntax should be parsed and processed.
@@ -626,6 +659,8 @@ myjs.Fragment = function(name) {
   this.syntax = null;
   this.types = {};
 };
+
+goog.exportSymbol('myjs.Fragment', myjs.Fragment);
 
 /**
  * A map from fragment names to fragment objects.
@@ -646,6 +681,9 @@ myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
   return this;
 };
 
+goog.exportProperty(myjs.Fragment.prototype, 'setSyntaxProvider',
+  myjs.Fragment.prototype.setSyntaxProvider);
+
 /**
  * Registers the given constructor as the type for the given ast node type.
  *
@@ -657,6 +695,9 @@ myjs.Fragment.prototype.registerType = function(name, constructor) {
   this.types[name] = constructor;
   return this;
 };
+
+goog.exportProperty(myjs.Fragment.prototype, 'registerType',
+  myjs.Fragment.prototype.registerType);
 
 /**
  * Returns the type map for this fragment.
@@ -703,6 +744,8 @@ myjs.registerFragment = function(fragment) {
   myjs.Fragment.registry_[fragment.getName()] = fragment;
 };
 
+goog.exportSymbol('myjs.registerFragment', myjs.registerFragment);
+
 /**
  * Returns the fragment registered under the given name.
  *
@@ -715,6 +758,8 @@ myjs.getFragment = function(name) {
   }
   return myjs.Fragment.registry_[name];
 };
+
+goog.exportSymbol('myjs.getFragment', myjs.getFragment);
 
 /**
  * A "hard" token with a string value.
@@ -737,6 +782,9 @@ myjs.HardToken_ = function(value, opt_type) {
 myjs.HardToken_.prototype.isSoft = function() {
   return false;
 };
+
+goog.exportProperty(myjs.HardToken_.prototype, 'isSoft',
+  myjs.HardToken_.prototype.isSoft);
 
 /**
  * @inheritDoc
@@ -775,6 +823,9 @@ myjs.SoftToken_.prototype.toString = function() {
 myjs.SoftToken_.prototype.isSoft = function() {
   return true;
 };
+
+goog.exportProperty(myjs.SoftToken_.prototype, 'isSoft',
+  myjs.SoftToken_.prototype.isSoft);
 
 /**
  * A collection of settings that control how a scanner tokenizes input.
@@ -833,6 +884,8 @@ myjs.Trie_ = function(map) {
   this.map = map;
 };
 
+goog.exportSymbol('myjs.Trie_', myjs.Trie_);
+
 /**
  * A singleton empty trie.
  */
@@ -866,6 +919,8 @@ myjs.Trie_.build = function(strings) {
   return new myjs.Trie_(subTries);
 };
 
+goog.exportProperty(myjs.Trie_, 'build', myjs.Trie_.build);
+
 /**
  * Returns the subtrie of this trie for the given character.
  *
@@ -875,6 +930,8 @@ myjs.Trie_.build = function(strings) {
 myjs.Trie_.prototype.get = function(chr) {
   return this.map[chr];
 };
+
+goog.exportProperty(myjs.Trie_.prototype, 'get', myjs.Trie_.prototype.get);
 
 /**
  * A simple stream that provides the contents of a string one char at a
@@ -1234,11 +1291,13 @@ myjs.SourceStream.prototype.newline = function() {
  * @suppress {missingProperties}
  */
 myjs.SourceStream.prototype.node = function(ast) {
-  var type = ast.type;
+  var type = ast['type'];
   var typeCons = this.types[type];
   if (typeCons) {
     typeCons.prototype.unparse.call(ast, this);
     return this;
+  } else if (!type) {
+    throw new Error('Invalid node');
   }
   this.write('#<' + type + '>');
   return this;

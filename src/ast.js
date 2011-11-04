@@ -35,7 +35,7 @@ myjs.ast.Node = function() {
    * A string representing the AST variant type.
    * @type {string}
    */
-  this.type = '';
+  this['type'] = '';
 };
 
 /**
@@ -61,19 +61,19 @@ myjs.ast.Function = function(id, params, body) {
    * The name of the function.
    * @type {myjs.ast.Identifier}
    */
-  this.id = id;
+  this['id'] = id;
 
   /**
    * This function's parameters.
    * @type {Array.<myjs.ast.Identifier>}
    */
-  this.params = params;
+  this['params'] = params;
 
   /**
    * The body of this function.
    * @type {myjs.ast.BlockStatement}
    */
-  this.body = body;
+  this['body'] = body;
 };
 
 /**

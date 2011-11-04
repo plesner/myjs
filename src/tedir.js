@@ -38,6 +38,8 @@ myjs.tedir.Error = function(message) {
   this.message = message;
 };
 
+goog.exportSymbol('myjs.tedir.Error', myjs.tedir.Error);
+
 /**
  * @inheritDoc
  */
@@ -63,6 +65,8 @@ myjs.tedir.SyntaxError = function(origin, input, tokenIndex) {
   this.input = input;
   this.tokenIndex = tokenIndex;
 };
+
+goog.exportSymbol('myjs.tedir.SyntaxError', myjs.tedir.SyntaxError);
 
 /**
  * Returns the index'th token of the input.
@@ -931,6 +935,8 @@ myjs.tedir.Filter_.prototype.normalize = function() {
  */
 myjs.tedir.Invoker_ = function() { };
 
+goog.exportSymbol('myjs.tedir.Invoker_', myjs.tedir.Invoker_);
+
 /**
  * Returns a function that, when given a list of arguments, call the given
  * function in the appropriate way..
@@ -949,6 +955,9 @@ myjs.tedir.Invoker_.forArity = function(arity, isConstructor, fun) {
     return myjs.tedir.Invoker_.callerForArity(fun, arity);
   }
 };
+
+goog.exportProperty(myjs.tedir.Invoker_, 'forArity',
+  myjs.tedir.Invoker_.forArity);
 
 /**
  * Returns a function that, when called with an arguments array (that is,
@@ -1132,6 +1141,7 @@ myjs.tedir.GrammarOrSyntax = function() { };
  */
 myjs.tedir.Syntax = function() { };
 goog.inherits(myjs.tedir.Syntax, myjs.tedir.GrammarOrSyntax);
+goog.exportSymbol('myjs.tedir.Syntax', myjs.tedir.Syntax);
 
 /**
  * Creates a new literal syntax builder.
@@ -1141,6 +1151,8 @@ goog.inherits(myjs.tedir.Syntax, myjs.tedir.GrammarOrSyntax);
 myjs.tedir.Syntax.create = function() {
   return new myjs.tedir.LiteralSyntax_();
 };
+
+goog.exportProperty(myjs.tedir.Syntax, 'create', myjs.tedir.Syntax.create);
 
 /**
  * Returns the rule with the given name.
@@ -1154,6 +1166,9 @@ myjs.tedir.Syntax.prototype.getRule = function(name,
     opt_failIfMissing) {
   throw myjs.utils.abstractMethodCalled();
 };
+
+goog.exportProperty(myjs.tedir.Syntax.prototype, 'getRule',
+  myjs.tedir.Syntax.prototype.getRule);
 
 /**
  * Returns a list of all the rule names defined in this syntax.
@@ -1241,6 +1256,9 @@ myjs.tedir.LiteralSyntax_.prototype.getRule = function(name,
   return this.rules[name];
 };
 
+goog.exportProperty(myjs.tedir.LiteralSyntax_.prototype, 'getRule',
+  myjs.tedir.LiteralSyntax_.prototype.getRule);
+
 /**
  * A syntax defined by composing a number of sub-syntaxes. Each rule in this
  * syntax has the union of all production of the same rules in all the
@@ -1277,6 +1295,9 @@ myjs.tedir.CompositeSyntax_.prototype.getRule = function(name,
     throw new myjs.tedir.Error('Undefined nonterminal <' + name + '>');
   }
 };
+
+goog.exportProperty(myjs.tedir.CompositeSyntax_.prototype, 'getRule',
+  myjs.tedir.CompositeSyntax_.prototype.getRule);
 
 /**
  * Returns a mapping from nonterm names to the union of all the corresponding
@@ -1402,6 +1423,9 @@ myjs.tedir.Rule.prototype.addProd = function(var_args) {
   return this;
 };
 
+goog.exportProperty(myjs.tedir.Rule.prototype, 'addProd',
+  myjs.tedir.Rule.prototype.addProd);
+
 /**
  * Sets the constructor function that should be instantiated when the last
  * production that was added succeeds during parsing. Equivalent to calling
@@ -1413,6 +1437,9 @@ myjs.tedir.Rule.prototype.addProd = function(var_args) {
 myjs.tedir.Rule.prototype.setConstructor = function(Constructor) {
   return this.setHandler(Constructor, true);
 };
+
+goog.exportProperty(myjs.tedir.Rule.prototype, 'setConstructor',
+  myjs.tedir.Rule.prototype.setConstructor);
 
 /**
  * Sets the function that should be called when the last production that
@@ -1430,6 +1457,9 @@ myjs.tedir.Rule.prototype.setHandler = function(handler, opt_isConstructor) {
   };
   return this;
 };
+
+goog.exportProperty(myjs.tedir.Rule.prototype, 'setHandler',
+  myjs.tedir.Rule.prototype.setHandler);
 
 /**
  * Returns the expression produced by this rule.
@@ -1522,6 +1552,9 @@ myjs.tedir.Token = function() { };
  * @return {boolean} true iff this is a soft token.
  */
 myjs.tedir.Token.prototype.isSoft = function() {};
+
+goog.exportProperty(myjs.tedir.Token.prototype, 'isSoft',
+  myjs.tedir.Token.prototype.isSoft);
 
 /**
  * End of file token.
@@ -1682,6 +1715,8 @@ myjs.tedir.SourceOrigin = function(opt_fileName) {
   this.fileName = opt_fileName || null;
 };
 
+goog.exportSymbol('myjs.tedir.SourceOrigin', myjs.tedir.SourceOrigin);
+
 /**
  * Returns the name of the file this source came from or null if it is
  * unknown.
@@ -1703,6 +1738,7 @@ myjs.tedir.SourceOrigin.prototype.getFileName = function() {
 myjs.tedir.Parser = function(grammarOrSyntax) {
   this.grammar = grammarOrSyntax.asGrammar();
 };
+goog.exportSymbol('myjs.tedir.Parser', myjs.tedir.Parser);
 
 /**
  * Parses the given array of tokens according to this parser's grammar.
@@ -1732,6 +1768,9 @@ myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, opt_origin,
     return result;
   }
 };
+
+goog.exportProperty(myjs.tedir.Parser.prototype, 'parse',
+  myjs.tedir.Parser.prototype.parse);
 
 /**
  * A collection of information about the process of parsing one piece

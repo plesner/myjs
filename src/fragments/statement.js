@@ -32,7 +32,7 @@ myjs.ast.EmptyStatement = function() {
    * "EmptyStatement"
    * @const
    */
-  this.type = 'EmptyStatement';
+  this['type'] = 'EmptyStatement';
 };
 
 /**
@@ -48,21 +48,21 @@ myjs.ast.ExpressionStatement = function(expression) {
    * "ExpressionStatement"
    * @const
    */
-  this.type = 'ExpressionStatement';
+  this['type'] = 'ExpressionStatement';
 
   /**
    * The expression.
    *
    * @type {myjs.ast.Expression}
    */
-  this.expression = expression;
+  this['expression'] = expression;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
-  context.node(this.expression).write(';').newline();
+  context.node(this['expression']).write(';').newline();
 };
 
 /**
@@ -77,21 +77,22 @@ myjs.ast.BlockStatement = function(body) {
    * "BlockStatement"
    * @const
    */
-  this.type = 'BlockStatement';
+  this['type'] = 'BlockStatement';
 
   /**
    * The statements in the sequence.
    *
    * @type {Array.<myjs.ast.Statement>}
    */
-  this.body = body;
+  this['body'] = body;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.BlockStatement.prototype.unparse = function(context) {
-  context.write('{').indent().newline().nodes(this.body).deindent().write('}');
+  context.write('{').indent().newline().nodes(this['body']).deindent()
+    .write('}');
 };
 
 (function() {

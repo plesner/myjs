@@ -28,7 +28,7 @@ goog.require('myjs.ast');
  * @extends myjs.ast.Expression
  */
 myjs.ast.ThisExpression = function() {
-  this.type = 'ThisExpression';
+  this['type'] = 'ThisExpression';
 };
 
 /**
@@ -60,15 +60,15 @@ myjs.ast.ThisExpression.prototype.unparse = function(context) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.ArrayExpression = function(elements) {
-  this.type = 'ArrayExpression';
-  this.elements = elements;
+  this['type'] = 'ArrayExpression';
+  this['elements'] = elements;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.ArrayExpression.prototype.unparse = function(context) {
-  context.write('[').nodes(this.elements, ', ').write(']');
+  context.write('[').nodes(this['elements'], ', ').write(']');
 };
 
 /**
@@ -80,15 +80,15 @@ myjs.ast.ArrayExpression.prototype.unparse = function(context) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.ObjectExpression = function(properties) {
-  this.type = 'ObjectExpression';
-  this.properties = properties;
+  this['type'] = 'ObjectExpression';
+  this['properties'] = properties;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.ObjectExpression.prototype.unparse = function(stream) {
-  stream.write('{').nodes(this.properties, ', ').write('}');
+  stream.write('{').nodes(this['properties'], ', ').write('}');
 };
 
 /**
@@ -100,16 +100,16 @@ myjs.ast.ObjectExpression.prototype.unparse = function(stream) {
  * @extends myjs.ast.Node
  */
 myjs.ast.ObjectProperty = function(key, value) {
-  this.type = 'ObjectProperty';
-  this.key = key;
-  this.value = value;
+  this['type'] = 'ObjectProperty';
+  this['key'] = key;
+  this['value'] = value;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.ObjectProperty.prototype.unparse = function(stream) {
-  stream.node(this.key).write(': ').node(this.value);
+  stream.node(this['key']).write(': ').node(this['value']);
 };
 
 /**
@@ -122,10 +122,10 @@ myjs.ast.ObjectProperty.prototype.unparse = function(stream) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.FunctionExpression = function(id, params, body) {
-  this.type = 'FunctionExpression';
-  this.id = id;
-  this.params = params;
-  this.body = body;
+  this['type'] = 'FunctionExpression';
+  this['id'] = id;
+  this['params'] = params;
+  this['body'] = body;
 };
 
 /**
@@ -133,10 +133,10 @@ myjs.ast.FunctionExpression = function(id, params, body) {
  */
 myjs.ast.FunctionExpression.prototype.unparse = function(context) {
   context.write('function ');
-  if (this.id) {
-    context.node(this.id);
+  if (this['id']) {
+    context.node(this['id']);
   }
-  context.write('(').nodes(this.params, ', ').write(') ').node(this.body)
+  context.write('(').nodes(this['params'], ', ').write(') ').node(this['body'])
     .newline();
 };
 
@@ -150,18 +150,18 @@ myjs.ast.FunctionExpression.prototype.unparse = function(context) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
-  this.type = 'ConditionalExpression';
-  this.test = test;
-  this.consequent = consequent;
-  this.alternate = alternate;
+  this['type'] = 'ConditionalExpression';
+  this['test'] = test;
+  this['consequent'] = consequent;
+  this['alternate'] = alternate;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
-  context.write('(').node(this.test).write(')?(').node(this.consequent)
-    .write('):(').node(this.alternate).write(')');
+  context.write('(').node(this['test']).write(')?(').node(this['consequent'])
+    .write('):(').node(this['alternate']).write(')');
 };
 
 (function() {

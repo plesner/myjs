@@ -40,10 +40,10 @@ WEB_LIB=myjs-$(VERSION).js
 NODE_LIB=myjs-$(VERSION)-node.js
 
 # Extra closure flags.
-CLOSURE_FLAGS=                             \
-  --compilation_level=SIMPLE_OPTIMIZATIONS \
-  --warning_level=VERBOSE                  \
-  --language_in=ECMASCRIPT5		   \
+CLOSURE_FLAGS=                               \
+  --compilation_level=ADVANCED_OPTIMIZATIONS \
+  --warning_level=VERBOSE                    \
+  --language_in=ECMASCRIPT5		     \
   --externs src/externs.js
 
 # Builds the library and then tests it.

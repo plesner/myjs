@@ -31,9 +31,9 @@ goog.require('myjs.ast');
  * @suppress {checkTypes}
  */
 myjs.ast.NewExpression = function(constructor, args) {
-  this.type = 'NewExpression';
-  this.constructor = constructor;
-  this.arguments = args;
+  this['type'] = 'NewExpression';
+  this['constructor'] = constructor;
+  this['arguments'] = args;
 };
 
 /**
@@ -41,8 +41,8 @@ myjs.ast.NewExpression = function(constructor, args) {
  * @suppress {checkTypes}
  */
 myjs.ast.NewExpression.prototype.unparse = function(context) {
-  context.write('new (').node(this.constructor).write(')(')
-    .nodes(this.arguments, ', ').write(')');
+  context.write('new (').node(this['constructor']).write(')(')
+    .nodes(this['arguments'], ', ').write(')');
 };
 
 /**
@@ -54,17 +54,17 @@ myjs.ast.NewExpression.prototype.unparse = function(context) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.CallExpression = function(callee, args) {
-  this.type = 'CallExpression';
-  this.callee = callee;
-  this.arguments = args;
+  this['type'] = 'CallExpression';
+  this['callee'] = callee;
+  this['arguments'] = args;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.CallExpression.prototype.unparse = function(context) {
-  context.write('(').node(this.callee).write(')(')
-    .nodes(this.arguments, ', ').write(')');
+  context.write('(').node(this['callee']).write(')(')
+    .nodes(this['arguments'], ', ').write(')');
 };
 
 /**
@@ -77,23 +77,45 @@ myjs.ast.CallExpression.prototype.unparse = function(context) {
  * @extends myjs.ast.Expression
  */
 myjs.ast.MemberExpression = function(object, property, computed) {
-  this.type = 'MemberExpression';
-  this.object = object;
-  this.property = property;
-  this.computed = computed;
+  this['type'] = 'MemberExpression';
+  this['object'] = object;
+  this['property'] = property;
+  this['computed'] = computed;
 };
 
 /**
  * @inheritDoc
  */
 myjs.ast.MemberExpression.prototype.unparse = function(context) {
-  if (this.computed) {
-    context.write('(').node(this.object).write(')[').node(this.property)
+  if (this['computed']) {
+    context.write('(').node(this['object']).write(')[').node(this['property'])
       .write(']');
   } else {
-    context.write('(').node(this.object).write(').').node(this.property);
+    context.write('(').node(this['object']).write(').').node(this['property']);
   }
 };
+
+/**
+ * An expression suffix that can later, when passed the atom it is a
+ * suffix of, create the full expression.
+ *
+ * @interface
+ */
+myjs.ast.LeftHandSuffix = function() { };
+
+goog.exportSymbol('myjs.ast.LeftHandSuffix', myjs.ast.LeftHandSuffix);
+
+/**
+ * Applies this suffix to an atom, returning the full syntax tree for
+ * this expression.
+ *
+ * @param {myjs.ast.Expression} atom the atom to wrap.
+ * @return {myjs.ast.Expression} the full wrapped expression.
+ */
+myjs.ast.LeftHandSuffix.prototype.wrapPlain = goog.abstractMethod;
+
+goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
+  myjs.ast.LeftHandSuffix.prototype.wrapPlain);
 
 (function() {
 
@@ -101,6 +123,7 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
 
     /**
      * @constructor
+     * @implements myjs.ast.LeftHandSuffix
      */
     function GetElementSuffix(value) {
       this.value = value;
@@ -110,8 +133,12 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       return new myjs.ast.MemberExpression(atom, this.value, true);
     };
 
+    goog.exportProperty(GetElementSuffix.prototype, 'wrapPlain',
+      GetElementSuffix.prototype.wrapPlain);
+
     /**
      * @constructor
+     * @implements myjs.ast.LeftHandSuffix
      */
     function GetPropertySuffix(name) {
       this.name = name;
@@ -121,8 +148,12 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
       return new myjs.ast.MemberExpression(atom, this.name, false);
     };
 
+    goog.exportProperty(GetPropertySuffix.prototype, 'wrapPlain',
+      GetPropertySuffix.prototype.wrapPlain);
+
     /**
      * @constructor
+     * @implements myjs.ast.LeftHandSuffix
      */
     function ArgumentsSuffix(args) {
       this.args = args;
@@ -133,6 +164,9 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
     ArgumentsSuffix.prototype.wrapPlain = function(atom) {
       return new myjs.ast.CallExpression(atom, this.args);
     };
+
+    goog.exportProperty(ArgumentsSuffix.prototype, 'wrapPlain',
+      ArgumentsSuffix.prototype.wrapPlain);
 
     ArgumentsSuffix.prototype.wrapNew = function(atom) {
       return new myjs.ast.NewExpression(atom, this.args);
@@ -162,7 +196,7 @@ myjs.ast.MemberExpression.prototype.unparse = function(context) {
           newCount--;
         } else {
           // Otherwise we just apply the suffix and keep going.
-          current = suffix.wrapPlain(current);
+          current = suffix['wrapPlain'](current);
         }
       }
       // Any news that weren't matched by arguments have implicit empty

@@ -33,6 +33,8 @@ myjs.utils.toArray = function(args, opt_start) {
   return Array.prototype.slice.call(args, opt_start);
 };
 
+goog.exportSymbol('myjs.utils.toArray', myjs.utils.toArray);
+
 /**
  * Returns the parent constructor function for the given object.
  *
