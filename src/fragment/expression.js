@@ -22,48 +22,82 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A this expression.
+ *
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.ThisExpression = function() {
   this.type = 'ThisExpression';
 };
 
+/**
+ * @private
+ */
 myjs.ast.ThisExpression.INSTANCE_ = new myjs.ast.ThisExpression();
 
+/**
+ * Returns the singleton instance of a this-expression.
+ *
+ * @return {myjs.ast.Expression} a singleton this expression.
+ */
 myjs.ast.ThisExpression.get = function() {
   return myjs.ast.ThisExpression.INSTANCE_;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ThisExpression.prototype.unparse = function(context) {
   context.write('this');
 };
 
 /**
+ * An array expression.
+ *
+ * @param {Array.<myjs.ast.Expression>} elements the array elements.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.ArrayExpression = function(elements) {
   this.type = 'ArrayExpression';
   this.elements = elements;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ArrayExpression.prototype.unparse = function(context) {
   context.write('[').nodes(this.elements, ', ').write(']');
 };
 
 /**
+ * An object expression.
+ *
+ * @param {Array.<myjs.ast.ObjectProperty>} properties the object's
+ *   properties.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.ObjectExpression = function(properties) {
   this.type = 'ObjectExpression';
   this.properties = properties;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ObjectExpression.prototype.unparse = function(stream) {
   stream.write('{').nodes(this.properties, ', ').write('}');
 };
 
 /**
+ * A single object property.
+ *
+ * @param {myjs.ast.Literal} key the property key.
+ * @param {myjs.ast.Expression} value the property value.
  * @constructor
+ * @extends myjs.ast.Node
  */
 myjs.ast.ObjectProperty = function(key, value) {
   this.type = 'ObjectProperty';
@@ -71,12 +105,21 @@ myjs.ast.ObjectProperty = function(key, value) {
   this.value = value;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ObjectProperty.prototype.unparse = function(stream) {
   stream.node(this.key).write(': ').node(this.value);
 };
 
 /**
+ * A function expression.
+ *
+ * @param {?myjs.ast.Identifier} id optional function name.
+ * @param {Array.<myjs.ast.Identifier>} params function parameters.
+ * @param {myjs.ast.BlockStatement} body the function body.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.FunctionExpression = function(id, params, body) {
   this.type = 'FunctionExpression';
@@ -85,6 +128,9 @@ myjs.ast.FunctionExpression = function(id, params, body) {
   this.body = body;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.FunctionExpression.prototype.unparse = function(context) {
   context.write('function ');
   if (this.id) {
@@ -95,7 +141,13 @@ myjs.ast.FunctionExpression.prototype.unparse = function(context) {
 };
 
 /**
+ * A conditional expression, i.e., a ternary ?/: expression.
+ *
+ * @param {myjs.ast.Expression} test the value to test.
+ * @param {myjs.ast.Expression} consequent value if the test is true.
+ * @param {myjs.ast.Expression} alternate value if the test is false.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.type = 'ConditionalExpression';
@@ -104,6 +156,9 @@ myjs.ast.ConditionalExpression = function(test, consequent, alternate) {
   this.alternate = alternate;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
   context.write('(').node(this.test).write(')?(').node(this.consequent)
     .write('):(').node(this.alternate).write(')');

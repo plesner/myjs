@@ -440,7 +440,8 @@ myjs.Dialect.prototype.traverse = function(ast, visitor) {
     var type = this.getType_(ast.type);
     return visitor.visitNode(ast, type, this);
   } else {
-    throw new myjs.Error('Unexpected syntax tree node ' + JSON.stringify(ast) + '.');
+    throw new myjs.Error('Unexpected syntax tree node ' + JSON.stringify(ast) +
+      '.');
   }
 };
 

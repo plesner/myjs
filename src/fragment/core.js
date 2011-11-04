@@ -22,6 +22,9 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * An identifier.
+ *
+ * @param {string} name the identifier's name.
  * @constructor
  */
 myjs.ast.Identifier = function(name) {
@@ -29,11 +32,17 @@ myjs.ast.Identifier = function(name) {
   this.name = name;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.Identifier.prototype.unparse = function(context) {
  context.write(this.name);
 };
 
 /**
+ * A literal value.
+ *
+ * @param {*} value the literal value.
  * @constructor
  */
 myjs.ast.Literal = function(value) {
@@ -41,6 +50,9 @@ myjs.ast.Literal = function(value) {
   this.value = value;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.Literal.prototype.unparse = function(context) {
   context.write(JSON.stringify(this.value));
 };

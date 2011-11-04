@@ -22,7 +22,12 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A new expression.
+ *
+ * @param {myjs.ast.Expression} constructor the constructor function.
+ * @param {Array.<myjs.ast.Expression>} args the constructor arguments.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.NewExpression = function(constructor, args) {
   this.type = 'NewExpression';
@@ -30,13 +35,21 @@ myjs.ast.NewExpression = function(constructor, args) {
   this.arguments = args;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.NewExpression.prototype.unparse = function(context) {
   context.write('new (').node(this.constructor).write(')(')
     .nodes(this.arguments, ', ').write(')');
 };
 
 /**
+ * A function or method call expression.
+ *
+ * @param {myjs.ast.Expression} callee the object being called.
+ * @param {Array.<myjs.ast.Expression>} args the call arguments.
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.CallExpression = function(callee, args) {
   this.type = 'CallExpression';
@@ -44,13 +57,22 @@ myjs.ast.CallExpression = function(callee, args) {
   this.arguments = args;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.CallExpression.prototype.unparse = function(context) {
   context.write('(').node(this.callee).write(')(')
     .nodes(this.arguments, ', ').write(')');
 };
 
 /**
+ * A member expression.
+ *
+ * @param {myjs.ast.Expression} object the object being accessed.
+ * @param {myjs.ast.Identifier|myjs.ast.Expression} property the property.
+ * @param {boolean} computed is this 'o[p]' or 'o.p' access?
  * @constructor
+ * @extends myjs.ast.Expression
  */
 myjs.ast.MemberExpression = function(object, property, computed) {
   this.type = 'MemberExpression';
@@ -59,6 +81,9 @@ myjs.ast.MemberExpression = function(object, property, computed) {
   this.computed = computed;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.MemberExpression.prototype.unparse = function(context) {
   if (this.computed) {
     context.write('(').node(this.object).write(')[').node(this.property)

@@ -22,7 +22,13 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A function declaration.
+ *
+ * @param {myjs.ast.Identifier} id the name of the function.
+ * @param {Array.<myjs.ast.Identifier>} params the function's parameters.
+ * @param {myjs.ast.BlockStatement} body the body of the function.
  * @constructor
+ * @extends myjs.ast.Declaration
  */
 myjs.ast.FunctionDeclaration = function(id, params, body) {
   this.type = 'FunctionDeclaration';
@@ -31,25 +37,41 @@ myjs.ast.FunctionDeclaration = function(id, params, body) {
   this.body = body;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.FunctionDeclaration.prototype.unparse = function(context) {
   context.write('function ').node(this.id).write('(').nodes(this.params, ', ')
     .write(')').node(this.body).newline();
 };
 
 /**
+ * A variable declaration.
+ *
+ * @param {Array.<myjs.ast.VariableDeclarator>} declarations the variables
+ *   being declared.
  * @constructor
+ * @extends myjs.ast.Declaration
  */
 myjs.ast.VariableDeclaration = function(declarations) {
   this.type = 'VariableDeclaration';
   this.declarations = declarations;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.VariableDeclaration.prototype.unparse = function(context) {
   context.write('var ').nodes(this.declarations, ', ').write(';').newline();
 };
 
 /**
+ * A single variable declarator.
+ *
+ * @param {myjs.ast.Identifier} id the identifier being declared.
+ * @param {?myjs.ast.Expression} init the value if there is one.
  * @constructor
+ * @extends myjs.ast.Node
  */
 myjs.ast.VariableDeclarator = function(id, init) {
   this.type = 'VariableDeclarator';
@@ -57,6 +79,9 @@ myjs.ast.VariableDeclarator = function(id, init) {
   this.init = init;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.VariableDeclarator.prototype.unparse = function(context) {
   context.node(this.id);
   if (this.init) {

@@ -22,7 +22,12 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A while statement.
+ *
+ * @param {myjs.ast.Expression} test the while test.
+ * @param {myjs.ast.Statement} body the body statement.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.WhileStatement = function(test, body) {
   this.type = 'WhileStatement';
@@ -30,12 +35,20 @@ myjs.ast.WhileStatement = function(test, body) {
   this.body = body;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.WhileStatement.prototype.unparse = function(context) {
   context.write('while (').node(this.test).write(') ').node(this.body);
 };
 
 /**
+ * A do/while statement.
+ *
+ * @param {myjs.ast.Statement} body the body statement.
+ * @param {myjs.ast.Expression} test the test expression.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.DoWhileStatement = function(body, test) {
   this.type = 'DoWhileStatement';
@@ -43,13 +56,24 @@ myjs.ast.DoWhileStatement = function(body, test) {
   this.test = test;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.DoWhileStatement.prototype.unparse = function(context) {
   context.write('do ').node(this.body).write(' while (').node(this.test)
     .write(');');
 };
 
 /**
+ * A for loop.
+ *
+ * @param {myjs.ast.Expression|myjs.ast.VariableDeclaration} init the
+ *   loop initializer.
+ * @param {myjs.ast.Expression} test the loop test.
+ * @param {myjs.ast.Expression} update the update expression.
+ * @param {myjs.ast.Statement} body the body statement.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.ForStatement = function(init, test, update, body) {
   this.type = 'ForStatement';
@@ -60,7 +84,14 @@ myjs.ast.ForStatement = function(init, test, update, body) {
 };
 
 /**
+ * A for/in statement.
+ *
+ * @param {myjs.ast.Expression|myjs.ast.VariableDeclaration} left the loop
+ *   value.
+ * @param {myjs.ast.Expression} right the collection to loop through.
+ * @param {myjs.ast.Statement} body the body statement.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.ForInStatement = function(left, right, body) {
   this.type = 'ForInStatement';

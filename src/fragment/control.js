@@ -22,13 +22,20 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A return statement.
+ *
+ * @param {?myjs.ast.Expression} argument optional return value.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.ReturnStatement = function(argument) {
   this.type = 'ReturnStatement';
   this.argument = argument;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.ReturnStatement.prototype.unparse = function(context) {
   context.write('return');
   if (this.argument) {
@@ -38,7 +45,13 @@ myjs.ast.ReturnStatement.prototype.unparse = function(context) {
 };
 
 /**
+ * An if statement.
+ *
+ * @param {myjs.ast.Expression} test the if test.
+ * @param {myjs.ast.Statement} consequent then-part.
+ * @param {myjs.ast.Statement=} opt_alternate optional else-part.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.type = 'IfStatement';
@@ -47,6 +60,9 @@ myjs.ast.IfStatement = function(test, consequent, opt_alternate) {
   this.alternate = opt_alternate || null;
 };
 
+/**
+ * @inheritDoc
+ */
 myjs.ast.IfStatement.prototype.unparse = function(context) {
   context.write('if (').node(this.test).write(') ').node(this.consequent);
   if (this.alternate) {
@@ -55,7 +71,12 @@ myjs.ast.IfStatement.prototype.unparse = function(context) {
 };
 
 /**
+ * Labeled statement.
+ *
+ * @param {myjs.ast.Identifier} label the label.
+ * @param {myjs.ast.Statement} body the statement body.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.LabeledStatement = function(label, body) {
   this.type = 'LabeledStatement';
@@ -64,7 +85,11 @@ myjs.ast.LabeledStatement = function(label, body) {
 };
 
 /**
+ * A break statement.
+ *
+ * @param {?myjs.ast.Identifier} label the label to break from.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.BreakStatement = function(label) {
   this.type = 'BreakStatement';
@@ -72,7 +97,11 @@ myjs.ast.BreakStatement = function(label) {
 };
 
 /**
+ * A continue statement.
+ *
+ * @param {?myjs.ast.Identifier} label the label to continue from.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.ContinueStatement = function(label) {
   this.type = 'ContinueStatement';
@@ -80,7 +109,12 @@ myjs.ast.ContinueStatement = function(label) {
 };
 
 /**
+ * A switch statement.
+ *
+ * @param {myjs.ast.Expression} discriminant the expression to switch on.
+ * @param {Array.<myjs.ast.SwitchCase>} cases the switch cases.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.SwitchStatement = function(discriminant, cases) {
   this.type = 'SwitchStatement';
@@ -89,7 +123,12 @@ myjs.ast.SwitchStatement = function(discriminant, cases) {
 };
 
 /**
+ * A switch case.
+ *
+ * @param {?myjs.ast.Expression} test the test expression or null for default.
+ * @param {myjs.ast.Statement} consequent the body statement.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.SwitchCase = function(test, consequent) {
   this.type = 'SwitchCase';
@@ -168,7 +207,8 @@ myjs.ast.SwitchCase = function(test, consequent) {
     // <DefaultClause>
     //   // -> "default" ":" <Statement>*
     syntax.getRule('DefaultClause')
-      .addProd(f.keyword('default'), f.punct(':'), f.star(f.nonterm('Statement')))
+      .addProd(f.keyword('default'), f.punct(':'),
+        f.star(f.nonterm('Statement')))
       .setHandler(buildDefaultCase);
 
     function buildDefaultCase(body) {

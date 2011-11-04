@@ -22,7 +22,11 @@ goog.require('myjs');
 goog.require('myjs.ast');
 
 /**
+ * A throw statement.
+ *
+ * @param {myjs.ast.Expression} argument the value to throw.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.ThrowStatement = function(argument) {
   this.type = 'ThrowStatement';
@@ -30,7 +34,13 @@ myjs.ast.ThrowStatement = function(argument) {
 };
 
 /**
+ * A try/catch/finally statement.
+ *
+ * @param {myjs.ast.BlockStatement} block the try body.
+ * @param {?myjs.ast.CatchClause} handler the catch handler.
+ * @param {?myjs.ast.BlockStatement} finalizer the finally clause.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.TryStatement = function(block, handler, finalizer) {
   this.type = 'TryStatement';
@@ -40,7 +50,12 @@ myjs.ast.TryStatement = function(block, handler, finalizer) {
 };
 
 /**
+ * A catch clause.
+ *
+ * @param {myjs.ast.Identifier} param the catch parameter.
+ * @param {myjs.ast.BlockStatement} body the body of the catch clause.
  * @constructor
+ * @extends myjs.ast.Statement
  */
 myjs.ast.CatchClause = function(param, body) {
   this.type = 'CatchClause';
