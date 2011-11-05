@@ -221,8 +221,8 @@ myjs.ast.ConditionalExpression.prototype.unparse = function(context) {
     //      <OperatorExpression>)?
     syntax.getRule('ConditionalExpression')
       .addProd(f.nonterm('OperatorExpression'), f.option(f.punct('?'),
-        f.nonterm('OperatorExpression'), f.punct(':'),
-        f.nonterm('OperatorExpression')))
+        f.nonterm('AssignmentExpression'), f.punct(':'),
+        f.nonterm('AssignmentExpression')))
       .setHandler(buildConditional);
 
     function buildConditional(cond, rest) {

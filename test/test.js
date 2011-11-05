@@ -683,6 +683,10 @@ function vdc(name, init) {
   return {type: 'VariableDeclarator', id: id(name), init: init || null};
 }
 
+function emp(name, init) {
+  return {type: 'EmptyStatement'};
+}
+
 registerTest(testExpressionStatementParsing);
 function testExpressionStatementParsing() {
   stmtCheck('1;', exp(lit(1)));
@@ -725,6 +729,7 @@ function testSimpleStatementParsing() {
   stmtCheck('return 4;', ret(lit(4)));
   stmtCheck('throw foo;', thr(id('foo')));
   stmtCheck('throw 4;', thr(lit(4)));
+  stmtCheck(';', emp());
 }
 
 registerTest(testWhileStatementParsing);
@@ -816,6 +821,7 @@ function stmtUnparse(input) {
 
 registerTest(testStatementUnparsing);
 function testStatementUnparsing() {
+  stmtUnparse(';');
   stmtUnparse('3;');
   stmtUnparse('return;');
   stmtUnparse('return 4;');

@@ -16,6 +16,8 @@ src/fragments/program.js     \
 src/fragments/statement.js   \
 src/extensions/quote.js
 
+EXTRA_DEPS=Makefile
+
 NODE_LIB_FILES=   \
 $(SHARED_FILES)   \
 src/node-module.js
@@ -53,14 +55,14 @@ all:		$(WEB_LIB) test
 # Runs the tests and lints all files.
 presubmit:	test lint docs
 
-$(WEB_LIB):	$(WEB_LIB_FILES) tools/compiler tools/library
+$(WEB_LIB):	$(WEB_LIB_FILES) tools/compiler tools/library $(EXTRA_DEPS)
 		java -jar tools/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
 		  $(WEB_LIB_FILES:%=--js=%)                        \
 		  $(CLOSURE_FLAGS)                                 \
 		  --js_output_file $(WEB_LIB)
 
-$(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
+$(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library $(EXTRA_DEPS)
 		java -jar tools/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
 		  $(NODE_LIB_FILES:%=--js=%)                       \

@@ -36,6 +36,13 @@ myjs.ast.EmptyStatement = function() {
 };
 
 /**
+ * @inheritDoc
+ */
+myjs.ast.EmptyStatement.prototype.unparse = function(stream) {
+  stream.write(';').newline();
+};
+
+/**
  * An expression statement, i.e, a statement consisting of a single
  * expression.
  *
@@ -61,8 +68,8 @@ myjs.ast.ExpressionStatement = function(expression) {
 /**
  * @inheritDoc
  */
-myjs.ast.ExpressionStatement.prototype.unparse = function(context) {
-  context.node(this['expression']).write(';').newline();
+myjs.ast.ExpressionStatement.prototype.unparse = function(stream) {
+  stream.node(this['expression']).write(';').newline();
 };
 
 /**
@@ -102,6 +109,7 @@ myjs.ast.BlockStatement.prototype.unparse = function(context) {
     var f = myjs.factory;
 
     // <Statement>
+    //   -> <EmptyStatement>
     //   -> <ExpressionStatement>
     //   -> <Block>
     //   -> <VariableStatement>
@@ -109,6 +117,12 @@ myjs.ast.BlockStatement.prototype.unparse = function(context) {
       .addProd(f.nonterm('ExpressionStatement'))
       .addProd(f.nonterm('Block'))
       .addProd(f.nonterm('VariableStatement'));
+
+    // <EmptyStatement>
+    //   -> ";"
+    syntax.getRule('Statement')
+      .addProd(f.punct(';'))
+      .setConstructor(myjs.ast.EmptyStatement);
 
     // <ExpressionStatement>
     //   -> <Expression> ";"
@@ -133,6 +147,7 @@ myjs.ast.BlockStatement.prototype.unparse = function(context) {
 
   var fragment = new myjs.Fragment('myjs.Statement')
     .setSyntaxProvider(getSyntax)
+    .registerType('EmptyStatement', myjs.ast.EmptyStatement)
     .registerType('ExpressionStatement', myjs.ast.ExpressionStatement)
     .registerType('BlockStatement', myjs.ast.BlockStatement);
 
