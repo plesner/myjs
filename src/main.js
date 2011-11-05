@@ -62,18 +62,28 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
 /**
  * Parses all the source files.
  */
-function parseAllFiles() {
-  forEachAsync(FILES, function(pair, doNext) {
+function parseAllFiles(files) {
+  var totalTimeMillis = 0;
+  var charsProcessed = 0;
+  forEachAsync(files, function(pair, doNext) {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
     fs.readFile(name, 'utf8', function(error, source) {
-      console.log("Parsing " + name);
       var origin = new myjs.tedir.SourceOrigin(name);
+      var now = new Date();
       dialect.translate(source, origin);
+      var duration = new Date() - now;
+      totalTimeMillis += duration;
+      charsProcessed += source.length;
+      console.log("Parsed " + name + " [" + duration + " ms.]");
       doNext();
     });
   }, function() {
     console.log('All files parsed successfully.');
+    var megas = charsProcessed / (1024 * 1024);
+    var megasPerMilli = megas / totalTimeMillis;
+    var megasPerSec = megasPerMilli * 1000;
+    console.log('Throughput: ' + megasPerSec.toPrecision(4) + " M/s");
   });
 }
 
@@ -104,8 +114,50 @@ Runner.prototype.start = function() {
  * Runs all the node-based tests.
  */
 Runner.prototype.testHandler = function() {
-  parseAllFiles();
+  parseAllFiles(FILES);
   runUnitTests();
+};
+
+function matchFilter(regexp, negate) {
+  return function(file) {
+    return negate ^ regexp.test(file);
+  };
+}
+
+/**
+ * Invoke the callback with a list of all the files in the given
+ * directory.
+ */
+Runner.prototype.listFiles = function(root, callback, partial) {
+  var self = this;
+  var result = partial || [];
+  fs.readdir(root, function(readdirErr, files) {
+    var nonHidden = files.filter(matchFilter(/^\./, true));
+    forEachAsync(nonHidden, function(file, doNext) {
+      var fullPath = root + "/" + file;
+      fs.stat(fullPath, function(statErr, stats) {
+        if (stats.isDirectory()) {
+          self.listFiles(fullPath, doNext, result);
+        } else {
+          result.push(fullPath);
+          doNext();
+        }
+      });
+    }, function() {
+      callback(result);
+    });
+  });
+};
+
+/**
+ * Parse all files in the closure library.
+ */
+Runner.prototype.benchHandler = function() {
+  this.listFiles("tools/library", function(files) {
+    var jses = files.filter(matchFilter(/\.js$/));
+    var pairs = jses.map(function(elm) { return [elm]; });
+    parseAllFiles(pairs);
+  });
 };
 
 function strip(text) {

@@ -71,6 +71,10 @@ $(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library
 test:		$(NODE_LIB)
 		node src/main.js test
 
+# Runs the benchmarks.
+bench:		$(NODE_LIB) tools/library
+		node src/main.js bench
+
 # Lints all files
 lint:
 		gjslint $(SHARED_FILES) $(MISC_FILES)
