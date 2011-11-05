@@ -1019,8 +1019,18 @@ myjs.Scanner_.isWhiteSpace = function(c) {
  * @param {string} c the character to check.
  * @return {boolean} is c a digit?
  */
-myjs.Scanner_.isDigit = function(c) {
+myjs.Scanner_.isDecimalDigit = function(c) {
   return (/[\d]/).test(c);
+};
+
+/**
+ * Is this character a legal hex digit?
+ *
+ * @param {string} c the character to check.
+ * @return {boolean} is c a hex digit?
+ */
+myjs.Scanner_.isHexDigit = function(c) {
+  return (/[0-9a-fA-F]/).test(c);
 };
 
 /**
@@ -1071,7 +1081,7 @@ myjs.Scanner_.prototype.scanToken = function() {
     return this.scanWhiteSpace();
   } else if (this.settings.isPunctuation(c)) {
     return this.scanPunctuation();
-  } else if (myjs.Scanner_.isDigit(c)) {
+  } else if (myjs.Scanner_.isDecimalDigit(c)) {
     return this.scanNumber();
   } else if (myjs.Scanner_.isIdentifierStart(c)) {
     return this.scanIdentifier();
@@ -1155,10 +1165,21 @@ myjs.Scanner_.prototype.scanPunctuation = function() {
  */
 myjs.Scanner_.prototype.scanNumber = function() {
   var start = this.getCursor();
-  this.scanDecimalDigits();
-  if (this.hasMore() && this.getCurrent() == '.') {
+  var hasScanned = false;
+  if (this.getCurrent() == '0') {
     this.advance();
+    if (this.getCurrent() == 'x' || this.getCurrent() == 'X') {
+      this.advance();
+      this.scanHexDigits();
+      hasScanned = true;
+    }
+  }
+  if (!hasScanned) {
     this.scanDecimalDigits();
+    if (this.hasMore() && this.getCurrent() == '.') {
+      this.advance();
+      this.scanDecimalDigits();
+    }
   }
   var end = this.getCursor();
   var value = this.getPart(start, end);
@@ -1170,7 +1191,16 @@ myjs.Scanner_.prototype.scanNumber = function() {
  * Scans over a sequence of plain decimal digits.
  */
 myjs.Scanner_.prototype.scanDecimalDigits = function() {
-  while (this.hasMore() && myjs.Scanner_.isDigit(this.getCurrent())) {
+  while (this.hasMore() && myjs.Scanner_.isDecimalDigit(this.getCurrent())) {
+    this.advance();
+  }
+};
+
+/**
+ * Scans over a sequence of hex digits.
+ */
+myjs.Scanner_.prototype.scanHexDigits = function() {
+  while (this.hasMore() && myjs.Scanner_.isHexDigit(this.getCurrent())) {
     this.advance();
   }
 };

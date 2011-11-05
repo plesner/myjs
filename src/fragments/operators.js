@@ -324,7 +324,7 @@ myjs.ast.LogicalOperator = function(token) {
   var ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '&=', '|=', '^=', '%=',
     '>>=', '>>>=', '<<=', '/='];
   var BINARY_OPERATORS = ['==', '!=', '===', '!==', '<', '<=', '>', '>=',
-    '<<', '>>', '>>>', '+', '-', '*', '%', '|', '^', '/'];
+    '<<', '>>', '>>>', '+', '-', '*', '%', '|', '^', '/', '&'];
   var BINARY_KEYWORDS = ['instanceof', 'in'];
   var LOGICAL_OPERATORS = ['||', '&&'];
   var INFIX_KEYWORDS = ['instanceof'];

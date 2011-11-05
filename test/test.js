@@ -354,15 +354,20 @@ function testTokenizing() {
 registerTest(testNumberScanning);
 function testNumberScanning() {
   function runTest(input) {
-    var tokens = myjs.getDialect('myjs.JavaScript').tokenize_(" " + input + "  ");
+    var tokens = myjs.getDialect('myjs.JavaScript').tokenize_(
+      ' ' + input + '  ');
     var hard = tokens.filter(function(e) { return !e.isSoft(); });
     assertEquals(1, hard.length);
     var token = hard[0];
-    var value = token.value;
-    assertEquals(input, value);
+    assertEquals('NumericLiteral', token.type);
+    assertEquals(input, token.value);
   }
-  runTest("3");
-  runTest("1.5");
+  runTest('3');
+  runTest('1.5');
+  runTest('0.5');
+  runTest('3.1415926');
+  runTest('3.');
+  runTest('0x7');
 }
 
 function alphaJson(obj) {
