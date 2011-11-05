@@ -149,13 +149,78 @@ Runner.prototype.listFiles = function(root, callback, partial) {
   });
 };
 
+var benchBlacklist = {
+  // grammar
+  'tools/library/closure/goog/cssom/cssom.js': true,
+  'tools/library/closure/goog/dom/dom.js': true,
+  'tools/library/closure/goog/dom/dom_test.js': true,
+  'tools/library/closure/goog/editor/link.js': true,
+  'tools/library/closure/goog/editor/plugins/basictextformatter.js': true,
+  'tools/library/closure/goog/editor/plugins/blockquote.js': true,
+  'tools/library/closure/goog/editor/seamlessfield_test.js': true,
+  'tools/library/closure/goog/format/format.js': true,
+  'tools/library/closure/goog/format/htmlprettyprinter.js': true,
+  'tools/library/closure/goog/gears/database.js': true,
+  'tools/library/closure/goog/i18n/bidi.js': true,
+  'tools/library/closure/goog/i18n/datetimeformat.js': true,
+  'tools/library/closure/goog/i18n/numberformat.js': true,
+  'tools/library/closure/goog/jsaction/eventcontract.js': true,
+  'tools/library/closure/goog/math/bezier.js': true,
+  'tools/library/closure/goog/net/crossdomainrpc.js': true,
+  'tools/library/closure/goog/net/filedownloader.js': true,
+  'tools/library/closure/goog/net/xpc/crosspagechannel.js': true,
+  'tools/library/closure/goog/proto2/message.js': true,
+  'tools/library/closure/goog/proto2/package_test.pb.js': true,
+  'tools/library/closure/goog/proto2/test.pb.js': true,
+  'tools/library/closure/goog/storage/mechanism/mechanism_test.js': true,
+  'tools/library/closure/goog/style/style_test.js': true,
+  'tools/library/closure/goog/testing/fs/entry.js': true,
+  'tools/library/closure/goog/testing/loosemock.js': true,
+  'tools/library/closure/goog/testing/mock.js': true,
+  'tools/library/closure/goog/testing/performancetable.js': true,
+  'tools/library/closure/goog/testing/strictmock.js': true,
+  'tools/library/closure/goog/tweak/tweakui.js': true,
+  'tools/library/closure/goog/ui/dragdropdetector.js': true,
+  'tools/library/closure/goog/ui/editor/defaulttoolbar.js': true,
+  'tools/library/closure/goog/ui/media/flickr.js': true,
+  'tools/library/closure/goog/ui/media/googlevideo.js': true,
+  'tools/library/closure/goog/ui/media/mp3.js': true,
+  'tools/library/closure/goog/ui/media/picasa.js': true,
+  'tools/library/closure/goog/ui/media/vimeo.js': true,
+  'tools/library/closure/goog/uri/uri.js': true,
+  'tools/library/closure/goog/useragent/adobereader.js': true,
+  'tools/library/closure/goog/useragent/product_isversion.js': true,
+  'tools/library/closure/goog/useragent/useragent.js': true,
+  'tools/library/closure/goog/vec/vec.js': true,
+  'tools/library/third_party/closure/goog/dojo/dom/query.js': true,
+  'tools/library/third_party/closure/goog/dojo/dom/query_test.js': true,
+  'tools/library/third_party/closure/goog/jpeg_encoder/jpeg_encoder_basic.js': true,
+  'tools/library/third_party/closure/goog/loremipsum/text/loremipsum.js': true,
+
+  // bug
+  'tools/library/closure/goog/datasource/datamanager.js': true,
+  'tools/library/closure/goog/demos/autocompleteremotedata.js': true,
+  'tools/library/closure/goog/demos/autocompleterichremotedata.js': true,
+  'tools/library/closure/goog/demos/graphics/tigerdata.js': true,
+  'tools/library/closure/goog/demos/tree/testdata.js': true,
+  'tools/library/closure/goog/dom/savedcaretrange.js': true,
+  'tools/library/closure/goog/format/emailaddress.js': true,
+  'tools/library/closure/goog/json/json.js': true,
+  'tools/library/closure/goog/storage/mechanism/ieuserdata.js': true,
+  'tools/library/closure/goog/string/string.js': true,
+  'tools/library/closure/goog/testing/stacktrace.js': true,
+  'tools/library/closure/goog/window/window.js': true,
+  'tools/library/third_party/closure/goog/caja/string/html/htmlparser.js': true
+};
+
 /**
  * Parse all files in the closure library.
  */
 Runner.prototype.benchHandler = function() {
   this.listFiles("tools/library", function(files) {
     var jses = files.filter(matchFilter(/\.js$/));
-    var pairs = jses.map(function(elm) { return [elm]; });
+    var whitelist = jses.filter(function(elm) { return !benchBlacklist[elm]; });
+    var pairs = whitelist.map(function(elm) { return [elm]; });
     parseAllFiles(pairs);
   });
 };
