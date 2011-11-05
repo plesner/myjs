@@ -44,7 +44,8 @@ CLOSURE_FLAGS=                               \
   --compilation_level=ADVANCED_OPTIMIZATIONS \
   --warning_level=VERBOSE                    \
   --language_in=ECMASCRIPT5		     \
-  --externs src/externs.js
+  --externs src/externs.js                   \
+  --output_wrapper="(function() { %output% })();"
 
 # Builds the library and then tests it.
 all:		$(WEB_LIB) test
