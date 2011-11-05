@@ -272,9 +272,6 @@ myjs.Dialect.prototype.getSyntax_ = function() {
   return this.syntax;
 };
 
-goog.exportProperty(myjs.Dialect.prototype, 'getSyntax_',
-    myjs.Dialect.prototype.getSyntax_);
-
 /**
  * Given a set of objects, returns one object that for each key in one of the
  * input maps maps to that key's value in the input map.
@@ -509,9 +506,6 @@ myjs.Dialect.prototype.tokenize_ = function(source) {
   }
   return tokens;
 };
-
-goog.exportProperty(myjs.Dialect.prototype, 'tokenize_',
-  myjs.Dialect.prototype.tokenize_);
 
 /**
  * Translates source code written in this dialect to plain javascript.
@@ -878,8 +872,6 @@ myjs.Trie_ = function(map) {
   this.map = map;
 };
 
-goog.exportSymbol('myjs.Trie_', myjs.Trie_);
-
 /**
  * A singleton empty trie.
  */
@@ -913,8 +905,6 @@ myjs.Trie_.build = function(strings) {
   return new myjs.Trie_(subTries);
 };
 
-goog.exportProperty(myjs.Trie_, 'build', myjs.Trie_.build);
-
 /**
  * Returns the subtrie of this trie for the given character.
  *
@@ -924,8 +914,6 @@ goog.exportProperty(myjs.Trie_, 'build', myjs.Trie_.build);
 myjs.Trie_.prototype.get = function(chr) {
   return this.map[chr];
 };
-
-goog.exportProperty(myjs.Trie_.prototype, 'get', myjs.Trie_.prototype.get);
 
 /**
  * A simple stream that provides the contents of a string one char at a

@@ -404,6 +404,7 @@ myjs.tedir.Terminal_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Terminal_.prototype.normalize_ = function() {
   return new myjs.tedir.Terminal_(this.value, this.kind);
@@ -460,6 +461,7 @@ myjs.tedir.Nonterm_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Nonterm_.prototype.normalize_ = function() {
   return new myjs.tedir.Nonterm_(this.name);
@@ -559,6 +561,7 @@ myjs.tedir.Custom_.prototype.forEachChild = function(callback) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Custom_.prototype.normalize_ = function() {
   return new myjs.tedir.Custom_(this.handler['normalize']());
@@ -659,6 +662,7 @@ myjs.tedir.Sequence_.prototype.calcUseValue = function() {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Sequence_.prototype.normalize_ = function() {
   var normalTerms = [];
@@ -732,6 +736,7 @@ myjs.tedir.Choice_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Choice_.prototype.normalize_ = function() {
   if (this.terms.length == 1) {
@@ -783,6 +788,7 @@ myjs.tedir.Empty_.prototype.isEmpty = function() {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Empty_.prototype.normalize_ = function() {
   return this;
@@ -849,6 +855,7 @@ myjs.tedir.Ignore_.prototype.parse = function(context) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Ignore_.prototype.normalize_ = function() {
   return new myjs.tedir.Ignore_(this.term.normalize_());
@@ -918,6 +925,7 @@ myjs.tedir.Filter_.prototype.parse = function(context) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Filter_.prototype.normalize_ = function() {
   var term = this.term.normalize_();
@@ -1068,6 +1076,7 @@ myjs.tedir.Repeat_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
+ * @private
  */
 myjs.tedir.Repeat_.prototype.normalize_ = function() {
   return new myjs.tedir.Repeat_(this.body.normalize_(), this.sep.normalize_(),

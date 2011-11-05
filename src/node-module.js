@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Extra property exports.
+goog.exportProperty(myjs.Trie_, 'build', myjs.Trie_.build);
+goog.exportProperty(myjs.Trie_.prototype, 'get', myjs.Trie_.prototype.get);
+goog.exportProperty(myjs.Dialect.prototype, 'getSyntax_',
+    myjs.Dialect.prototype.getSyntax_);
+goog.exportProperty(myjs.Dialect.prototype, 'tokenize_',
+  myjs.Dialect.prototype.tokenize_);
+
+// myjs
 goog.exportProperty(module.exports, 'factory', {});
 goog.exportProperty(module.exports['factory'], 'ignore', myjs.factory.ignore);
 goog.exportProperty(module.exports['factory'], 'star', myjs.factory.star);
@@ -24,9 +33,11 @@ goog.exportProperty(module.exports, 'getDialect', myjs.getDialect);
 goog.exportProperty(module.exports, 'Trie_', myjs.Trie_);
 goog.exportProperty(module.exports, 'Syntax', myjs.Syntax);
 
+// utils
 goog.exportProperty(module.exports, 'utils', {});
 goog.exportProperty(module.exports['utils'], 'toArray', myjs.utils.toArray);
 
+// tedir
 goog.exportProperty(module.exports, 'tedir', {});
 goog.exportProperty(module.exports['tedir'], 'Parser', myjs.tedir.Parser);
 goog.exportProperty(module.exports['tedir'], 'Syntax', myjs.tedir.Syntax);

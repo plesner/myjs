@@ -1,14 +1,15 @@
-// Syntax tree node.
+// Colon expression syntax tree node.
 function ColonExpression(atom, name) {
   this.type = 'ColonExpression';
   this.atom = atom;
   this.name = name;
 }
 
+// Translate into plain js.
 ColonExpression.prototype.translate = function(dialect, recurse) {
   return `((function(temp) {
-    return temp.,(this.name).bind(temp);
-  })(,(this.atom)));
+    return temp.,(recurse(this.name)).bind(temp);
+  })(,(recurse(this.atom))));
 };
 
 function getSyntax() {
@@ -18,6 +19,7 @@ function getSyntax() {
     this.name = name;
   }
 
+  // Apply this suffix to a base expression.
   ColonSuffix.prototype.apply = function(atom) {
     return new ColonExpression(atom, this.name);
   };
@@ -33,6 +35,7 @@ function getSyntax() {
   return syntax;
 }
 
+// Register this language extension with myjs.
 myjs.registerFragment(new myjs.Fragment('demo.Colons')
   .setSyntaxProvider(getSyntax)
   .registerType('ColonExpression', ColonExpression));
