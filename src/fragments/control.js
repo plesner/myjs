@@ -97,6 +97,17 @@ myjs.ast.BreakStatement = function(label) {
 };
 
 /**
+ * @inheritDoc
+ */
+myjs.ast.BreakStatement.prototype.unparse = function(context) {
+  context.write('break');
+  if (this['label']) {
+    context.write(' ').node(this['label']);
+  }
+  context.write(';').newline();
+};
+
+/**
  * A continue statement.
  *
  * @param {?myjs.ast.Identifier} label the label to continue from.
@@ -106,6 +117,17 @@ myjs.ast.BreakStatement = function(label) {
 myjs.ast.ContinueStatement = function(label) {
   this['type'] = 'ContinueStatement';
   this['label'] = label;
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.ast.ContinueStatement.prototype.unparse = function(context) {
+  context.write('continue');
+  if (this['label']) {
+    context.write(' ').node(this['label']);
+  }
+  context.write(';').newline();
 };
 
 /**
@@ -221,6 +243,8 @@ myjs.ast.SwitchCase = function(test, consequent) {
   var fragment = new myjs.Fragment('myjs.Control')
     .setSyntaxProvider(getSyntax)
     .registerType('ReturnStatement', myjs.ast.ReturnStatement)
+    .registerType('BreakStatement', myjs.ast.BreakStatement)
+    .registerType('ContinueStatement', myjs.ast.ContinueStatement)
     .registerType('IfStatement', myjs.ast.IfStatement);
 
   myjs.registerFragment(fragment);

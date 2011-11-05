@@ -305,9 +305,9 @@ myjs.tedir.Expression.prototype.parse = goog.abstractMethod;
  * Normalize this expression.
  *
  * @return {myjs.tedir.Expression} a normalized version of this expression.
- * @private
+ * @protected
  */
-myjs.tedir.Expression.prototype.normalize_ = goog.abstractMethod;
+myjs.tedir.Expression.prototype.normalize = goog.abstractMethod;
 
 /**
  * Returns the type string of this expression.
@@ -404,9 +404,8 @@ myjs.tedir.Terminal_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Terminal_.prototype.normalize_ = function() {
+myjs.tedir.Terminal_.prototype.normalize = function() {
   return new myjs.tedir.Terminal_(this.value, this.kind);
 };
 
@@ -461,9 +460,8 @@ myjs.tedir.Nonterm_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Nonterm_.prototype.normalize_ = function() {
+myjs.tedir.Nonterm_.prototype.normalize = function() {
   return new myjs.tedir.Nonterm_(this.name);
 };
 
@@ -561,9 +559,8 @@ myjs.tedir.Custom_.prototype.forEachChild = function(callback) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Custom_.prototype.normalize_ = function() {
+myjs.tedir.Custom_.prototype.normalize = function() {
   return new myjs.tedir.Custom_(this.handler['normalize']());
 };
 
@@ -662,12 +659,11 @@ myjs.tedir.Sequence_.prototype.calcUseValue = function() {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Sequence_.prototype.normalize_ = function() {
+myjs.tedir.Sequence_.prototype.normalize = function() {
   var normalTerms = [];
   this.terms.forEach(function(term) {
-    var normalTerm = term.normalize_();
+    var normalTerm = term.normalize();
     // Ignore the empty terminal.
     if (!normalTerm.isEmpty()) {
       normalTerms.push(normalTerm);
@@ -736,13 +732,12 @@ myjs.tedir.Choice_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Choice_.prototype.normalize_ = function() {
+myjs.tedir.Choice_.prototype.normalize = function() {
   if (this.terms.length == 1) {
-    return this.terms[0].normalize_();
+    return this.terms[0].normalize();
   } else {
-    var newTerms = this.terms.map(function(t) { return t.normalize_(); });
+    var newTerms = this.terms.map(function(t) { return t.normalize(); });
     return new myjs.tedir.Choice_(newTerms);
   }
 };
@@ -788,9 +783,8 @@ myjs.tedir.Empty_.prototype.isEmpty = function() {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Empty_.prototype.normalize_ = function() {
+myjs.tedir.Empty_.prototype.normalize = function() {
   return this;
 };
 
@@ -855,10 +849,9 @@ myjs.tedir.Ignore_.prototype.parse = function(context) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Ignore_.prototype.normalize_ = function() {
-  return new myjs.tedir.Ignore_(this.term.normalize_());
+myjs.tedir.Ignore_.prototype.normalize = function() {
+  return new myjs.tedir.Ignore_(this.term.normalize());
 };
 
 /**
@@ -925,10 +918,9 @@ myjs.tedir.Filter_.prototype.parse = function(context) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Filter_.prototype.normalize_ = function() {
-  var term = this.term.normalize_();
+myjs.tedir.Filter_.prototype.normalize = function() {
+  var term = this.term.normalize();
   var arity = (this.arity === -1) ? term.getArity() : this.arity;
   return new myjs.tedir.Filter_(term, this.filter, this.isConstructor,
     arity);
@@ -1076,10 +1068,9 @@ myjs.tedir.Repeat_.prototype.forEachChild = function(visitor) {
 
 /**
  * @inheritDoc
- * @private
  */
-myjs.tedir.Repeat_.prototype.normalize_ = function() {
-  return new myjs.tedir.Repeat_(this.body.normalize_(), this.sep.normalize_(),
+myjs.tedir.Repeat_.prototype.normalize = function() {
+  return new myjs.tedir.Repeat_(this.body.normalize(), this.sep.normalize(),
       this.allowEmpty);
 };
 
@@ -1538,7 +1529,7 @@ myjs.tedir.Grammar.prototype.getNonterm = function(name) {
  */
 myjs.tedir.Grammar.prototype.buildNonterm_ = function(name) {
   var rule = this.syntax.getRule(name, true);
-  return rule.asExpression_().normalize_();
+  return rule.asExpression_().normalize();
 };
 
 /**

@@ -34,7 +34,7 @@ goog.require('myjs.ast');
 
   /**
    * @constructor
-   * @extends myjs.AstVisitor
+   * @implements myjs.AstVisitor
    */
   function QuoteVisitor(translatePlain) {
     this.translatePlain = translatePlain;

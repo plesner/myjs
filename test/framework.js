@@ -55,7 +55,7 @@ module.exports.assertTrue = function(value) {
   if (value) {
     return;
   } else {
-    throw 'assertTrue failed';
+    throw new Error('assertTrue failed');
   }
 };
 
@@ -76,9 +76,7 @@ module.exports.assertFalse = function(value) {
  * @param {*} b the second value.
  */
 module.exports.failComparison = function(a, b) {
-  console.log(a);
-  console.log(b);
-  throw 'Error: ' + a + ' != ' + b;
+  throw new Error('Error: ' + a + ' != ' + b);
 };
 
 /**

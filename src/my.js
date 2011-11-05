@@ -358,7 +358,7 @@ myjs.Dialect.prototype.getScannerSettings_ = function() {
  * @param {string} source source code in this dialect.
  * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
  * @param {boolean} trace true if parsing should be traced.
- * @return {myjs.ast.Node} the syntax tree for the given source.
+ * @return {*} the syntax tree for the given source.
  * @private
  * @suppress {checkTypes}
  */
@@ -372,7 +372,7 @@ myjs.Dialect.prototype.parse_ = function(source, origin, trace) {
 /**
  * Abstract syntax tree visitor.
  *
- * @constructor
+ * @interface
  */
 myjs.AstVisitor = function() { };
 
@@ -408,7 +408,7 @@ myjs.AstVisitor.prototype.visitPrimitive = goog.abstractMethod;
  * Ast visitor for translating syntax trees.
  *
  * @constructor
- * @extends myjs.AstVisitor
+ * @implements myjs.AstVisitor
  * @private
  */
 myjs.TranslateVisitor_ = function() { };
@@ -455,10 +455,9 @@ myjs.TranslateVisitor_.prototype.visitPrimitive = function(value, dialect) {
 /**
  * Translates an extended ast into plain javascript.
  *
- * @param {myjs.ast.Node} ast the syntax tree to translate.
- * @return {myjs.ast.Node} the translated ast.
+ * @param {*} ast the syntax tree to translate.
+ * @return {*} the translated ast.
  * @private
- * @suppress {checkTypes}
  */
 myjs.Dialect.prototype.translate_ = function(ast) {
   var visitor = new myjs.TranslateVisitor_();
@@ -469,7 +468,7 @@ myjs.Dialect.prototype.translate_ = function(ast) {
  * Traverses a syntax tree and invokes the appropriate methods on the given
  * visitor.
  *
- * @param {Object} ast the syntax tree to traverse.
+ * @param {*} ast the syntax tree to traverse.
  * @param {myjs.AstVisitor} visitor the visitor to invoke.
  * @return {*} whatever the visitor returns.
  * @suppress {checkTypes}
@@ -600,7 +599,7 @@ myjs.Dialect.prototype.calcTokenTypes_ = function() {
 /**
  * Formats the given ast as source code and returns it as a string.
  *
- * @param {myjs.ast.Node} ast the ast node to unparse.
+ * @param {*} ast the ast node to unparse.
  * @return {string} the source code as a string.
  * @private
  */
@@ -1225,6 +1224,7 @@ myjs.Scanner_.prototype.scanBlockComment = function() {
  *
  * @param {myjs.Dialect} dialect the dialect to use to resolve nodes.
  * @constructor
+ * @implements myjs.AstVisitor
  */
 myjs.SourceStream = function(dialect) {
   this.dialect = dialect;
@@ -1268,21 +1268,38 @@ myjs.SourceStream.prototype.newline = function() {
 /**
  * Recursively unparse the given ast node.
  *
- * @param {myjs.ast.Node} ast the node to unparse.
+ * @param {*} ast the node to unparse.
  * @return {myjs.SourceStream} this object, for chaining.
- * @suppress {missingProperties}
  */
 myjs.SourceStream.prototype.node = function(ast) {
-  var type = ast['type'];
-  var typeCons = this.types[type];
-  if (typeCons) {
-    typeCons.prototype.unparse.call(ast, this);
-    return this;
-  } else if (!type) {
-    throw new Error('Invalid node');
-  }
-  this.write('#<' + type + '>');
+  this.dialect.traverse(ast, this);
   return this;
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.SourceStream.prototype.visitArray = function(elms, dialect) {
+  this.nodes(elms);
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.SourceStream.prototype.visitPrimitive = function(value, dialect) {
+  this.write(String(value));
+};
+
+/**
+ * @inheritDoc
+ * @suppress {missingProperties}
+ */
+myjs.SourceStream.prototype.visitNode = function(node, type, dialect) {
+  if (type) {
+    type.prototype.unparse.call(node, this);
+  } else {
+    this.write('#<' + type + '>');
+  }
 };
 
 /**

@@ -808,6 +808,27 @@ function testProgramParsing() {
   progCheck('var x = 0;', prg(vas(vdc('x', lit(0)))));
 }
 
+function stmtUnparse(input) {
+  var dialect = myjs.getDialect('myjs.JavaScript');
+  var translated = dialect.translate(input);
+  assertEquals(input, translated.trim().replace(/\s+/g, ' '));
+}
+
+registerTest(testStatementUnparsing);
+function testStatementUnparsing() {
+  stmtUnparse('3;');
+  stmtUnparse('return;');
+  stmtUnparse('return 4;');
+  stmtUnparse('if (3) 4;');
+  stmtUnparse('if (3) 4; else 5;');
+  stmtUnparse('while (3) 4;');
+  stmtUnparse('do 4; while (3);');
+  stmtUnparse('break;');
+  stmtUnparse('break foo;');
+  stmtUnparse('continue;');
+  stmtUnparse('continue foo;');
+}
+
 module.exports.getAllTests = function() {
   return allTests;
 };
