@@ -1155,12 +1155,24 @@ myjs.Scanner_.prototype.scanPunctuation = function() {
  */
 myjs.Scanner_.prototype.scanNumber = function() {
   var start = this.getCursor();
-  while (this.hasMore() && myjs.Scanner_.isDigit(this.getCurrent())) {
+  this.scanDecimalDigits();
+  if (this.hasMore() && this.getCurrent() == '.') {
     this.advance();
+    this.scanDecimalDigits();
   }
   var end = this.getCursor();
   var value = this.getPart(start, end);
   return new myjs.HardToken_(value, 'NumericLiteral');
+
+};
+
+/**
+ * Scans over a sequence of plain decimal digits.
+ */
+myjs.Scanner_.prototype.scanDecimalDigits = function() {
+  while (this.hasMore() && myjs.Scanner_.isDigit(this.getCurrent())) {
+    this.advance();
+  }
 };
 
 /**

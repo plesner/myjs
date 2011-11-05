@@ -351,6 +351,20 @@ function testTokenizing() {
   runTokenTest(['(', '[', ',', ';', ']', ')', '.'], '([,;]).');
 }
 
+registerTest(testNumberScanning);
+function testNumberScanning() {
+  function runTest(input) {
+    var tokens = myjs.getDialect('myjs.JavaScript').tokenize_(" " + input + "  ");
+    var hard = tokens.filter(function(e) { return !e.isSoft(); });
+    assertEquals(1, hard.length);
+    var token = hard[0];
+    var value = token.value;
+    assertEquals(input, value);
+  }
+  runTest("3");
+  runTest("1.5");
+}
+
 function alphaJson(obj) {
   if (Array.isArray(obj)) {
     return '[' + obj.map(alphaJson).join(',') + ']';
