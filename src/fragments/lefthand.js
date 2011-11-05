@@ -112,10 +112,10 @@ goog.exportSymbol('myjs.ast.LeftHandSuffix', myjs.ast.LeftHandSuffix);
  * @param {myjs.ast.Expression} atom the atom to wrap.
  * @return {myjs.ast.Expression} the full wrapped expression.
  */
-myjs.ast.LeftHandSuffix.prototype.wrapPlain = goog.abstractMethod;
+myjs.ast.LeftHandSuffix.prototype.apply = goog.abstractMethod;
 
-goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
-  myjs.ast.LeftHandSuffix.prototype.wrapPlain);
+goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'apply',
+  myjs.ast.LeftHandSuffix.prototype.apply);
 
 (function() {
 
@@ -129,12 +129,12 @@ goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
       this.value = value;
     }
 
-    GetElementSuffix.prototype.wrapPlain = function(atom) {
+    GetElementSuffix.prototype.apply = function(atom) {
       return new myjs.ast.MemberExpression(atom, this.value, true);
     };
 
-    goog.exportProperty(GetElementSuffix.prototype, 'wrapPlain',
-      GetElementSuffix.prototype.wrapPlain);
+    goog.exportProperty(GetElementSuffix.prototype, 'apply',
+      GetElementSuffix.prototype.apply);
 
     /**
      * @constructor
@@ -144,12 +144,12 @@ goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
       this.name = name;
     }
 
-    GetPropertySuffix.prototype.wrapPlain = function(atom) {
+    GetPropertySuffix.prototype.apply = function(atom) {
       return new myjs.ast.MemberExpression(atom, this.name, false);
     };
 
-    goog.exportProperty(GetPropertySuffix.prototype, 'wrapPlain',
-      GetPropertySuffix.prototype.wrapPlain);
+    goog.exportProperty(GetPropertySuffix.prototype, 'apply',
+      GetPropertySuffix.prototype.apply);
 
     /**
      * @constructor
@@ -161,14 +161,14 @@ goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
 
     ArgumentsSuffix.prototype.legalNewSuffix = true;
 
-    ArgumentsSuffix.prototype.wrapPlain = function(atom) {
+    ArgumentsSuffix.prototype.apply = function(atom) {
       return new myjs.ast.CallExpression(atom, this.args);
     };
 
-    goog.exportProperty(ArgumentsSuffix.prototype, 'wrapPlain',
-      ArgumentsSuffix.prototype.wrapPlain);
+    goog.exportProperty(ArgumentsSuffix.prototype, 'apply',
+      ArgumentsSuffix.prototype.apply);
 
-    ArgumentsSuffix.prototype.wrapNew = function(atom) {
+    ArgumentsSuffix.prototype.applyNew = function(atom) {
       return new myjs.ast.NewExpression(atom, this.args);
     };
 
@@ -192,17 +192,17 @@ goog.exportProperty(myjs.ast.LeftHandSuffix.prototype, 'wrapPlain',
         if (suffix.legalNewSuffix && newCount > 0) {
           // If this is argument suffix we match it with a "new" if there is
           // one.
-          current = suffix.wrapNew(current);
+          current = suffix.applyNew(current);
           newCount--;
         } else {
           // Otherwise we just apply the suffix and keep going.
-          current = suffix['wrapPlain'](current);
+          current = suffix['apply'](current);
         }
       }
       // Any news that weren't matched by arguments have implicit empty
       // arguments.
       for (i = 0; i < newCount; i++) {
-        current = new ArgumentsSuffix([]).wrapNew(current);
+        current = new ArgumentsSuffix([]).applyNew(current);
       }
       return current;
     }

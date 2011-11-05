@@ -18,7 +18,7 @@ function getSyntax() {
     this.name = name;
   }
 
-  ColonSuffix.prototype.wrapPlain = function(atom) {
+  ColonSuffix.prototype.apply = function(atom) {
     return new ColonExpression(atom, this.name);
   };
 
