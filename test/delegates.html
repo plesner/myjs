@@ -1,7 +1,7 @@
 <html>
   <script src="../out/myjs-web.js"></script>
-  <script type="text/myjs" src="colons.js" dialect="myjs.Quote"></script>
-  <script type="text/myjs" dialect="demo.Colons">
+  <script type="text/myjs" src="delegates.js" dialect="myjs.Quote"></script>
+  <script type="text/myjs" dialect="demo.Delegates">
 function Printer(prefix) {
   this.prefix = prefix;
 }
@@ -15,6 +15,7 @@ Printer.prototype.print = function(value) {
 var p = new Printer("Looky here: ");
 
 [1, 2, 3].map(p::print);
+::print(p, "Where?");
   </script>
   <body></body>
 </html>

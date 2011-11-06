@@ -98,7 +98,7 @@ myjs.ast.Program.prototype.unparse = function(context) {
         // Else we need to rewind past the leading ether and look for a
         // newline.
         input.rewindEther();
-        var current = input.getCurrent();
+        current = input.getCurrent();
         while (current.isSoft()) {
           if (current.value.indexOf('\n') != -1) {
             // Found a piece of ether containing a newline. Skip back to
