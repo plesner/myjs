@@ -169,19 +169,14 @@ Runner.prototype.listFiles = function(root, callback, partial) {
 };
 
 var benchBlacklist = {
-  'download/library/closure/goog/format/format.js': true,
   'download/library/closure/goog/gears/database.js': true,
   'download/library/closure/goog/i18n/bidi.js': true,
-  'download/library/closure/goog/i18n/numberformat.js': true,
-  'download/library/closure/goog/math/bezier.js': true,
   'download/library/closure/goog/net/filedownloader.js': true,
   'download/library/closure/goog/storage/mechanism/ieuserdata.js': true,
   'download/library/closure/goog/string/string.js': true,
-  'download/library/closure/goog/testing/fs/entry.js': true,
   'download/library/closure/goog/testing/performancetable.js': true,
   'download/library/closure/goog/testing/stacktrace.js': true,
   'download/library/closure/goog/uri/uri.js': true,
-  'download/library/closure/goog/vec/vec.js': true,
   'download/library/closure/goog/window/window.js': true,
   'download/library/third_party/closure/goog/caja/string/html/htmlparser.js': true
 };

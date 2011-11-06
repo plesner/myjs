@@ -91,6 +91,9 @@ myjs.ast.Program.prototype.unparse = function(context) {
         // and return success.
         input.advanceHard();
         return null;
+      } else if (current.value == '}') {
+        // Otherwise if we're at a } that counts so we return success.
+        return null;
       } else {
         // Else we need to rewind past the leading ether and look for a
         // newline.

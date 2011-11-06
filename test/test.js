@@ -374,6 +374,10 @@ function testNumberScanning() {
   runTest('3.1415926');
   runTest('3.');
   runTest('0x7');
+  runTest('1e8');
+  runTest('1e-8');
+  runTest('1.43e8');
+  runTest('0x34e8');
 }
 
 registerTest(testRegExpParsing);

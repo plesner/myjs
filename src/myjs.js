@@ -1202,6 +1202,13 @@ myjs.Scanner_.prototype.scanNumber = function() {
       this.scanDecimalDigits();
     }
   }
+  if (this.getCurrent() == 'e' || this.getCurrent() == 'E') {
+    this.advance();
+    if (this.getCurrent() == '-') {
+      this.advance();
+    }
+    this.scanDecimalDigits();
+  }
   var end = this.getCursor();
   var value = this.getPart(start, end);
   return new myjs.HardToken_(value, 'NumericLiteral');
