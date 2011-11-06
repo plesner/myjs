@@ -60,6 +60,8 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
   }
 }
 
+var CATCH_ERRORS = false;
+
 /**
  * Parses all the source files.
  */
@@ -71,15 +73,18 @@ function parseAllFiles(files) {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
     fs.readFile(name, 'utf8', function(error, rawSource) {
-      console.log(name);
       // Strip any hashbangs.
       var source = rawSource.replace(/^\#\!.*/, '');
       var origin = new myjs.tedir.SourceOrigin(name);
       var now = new Date();
-      try {
+      if (CATCH_ERRORS) {
+        try {
+          dialect.translate(source, origin);
+        } catch (e) {
+          failed.push(name);
+        }
+      } else {
         dialect.translate(source, origin);
-      } catch (e) {
-        failed.push(name);
       }
       var duration = new Date() - now;
       totalTimeMillis += duration;
@@ -88,7 +93,7 @@ function parseAllFiles(files) {
       doNext();
     });
   }, function() {
-    if (failed.size == 0) {
+    if (failed.length == 0) {
       console.log('All files parsed successfully.');
       var megas = charsProcessed / (1024 * 1024);
       var megasPerMilli = megas / totalTimeMillis;

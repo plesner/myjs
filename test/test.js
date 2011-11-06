@@ -380,7 +380,6 @@ registerTest(testRegExpParsing);
 function testRegExpParsing() {
   function runTest(expr, flags) {
     var fullExpr = '( /' + expr + '/' + (flags || '') + ' )';
-    console.log(fullExpr);
     var ast = exprParser(fullExpr);
     assertEquals('Literal', ast.type);
     assertEquals(RegExp(expr, flags).toString(), ast.value.toString());
