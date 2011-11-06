@@ -80,7 +80,6 @@ myjs.ast.Literal.prototype.unparse = function(context) {
       .addProd(f.nonterm('NumericLiteral'))
       .addProd(f.nonterm('StringLiteral'))
       .addProd(f.nonterm('RegularExpressionLiteral'))
-      .setConstructor(myjs.ast.Literal)
       .addProd(f.nonterm('BooleanLiteral'));
 
     /**
@@ -132,30 +131,39 @@ myjs.ast.Literal.prototype.unparse = function(context) {
 
     RegExpHandler.prototype.parse = function(context) {
       var input = context.getTokenStream();
-      var tokens = [];
+      input.rewindEther();
+      var exprTokens = [];
+      var flags = '';
       var current = input.getCurrent().value;
       // Scan forward until we meet the end of the input or a "/".
       while (input.hasMore() && (current != '/')) {
-        tokens.push(current);
-        input.advance();
+        exprTokens.push(current);
+        input.advanceSoft();
         current = input.getCurrent().value;
       }
       if (input.hasMore()) {
-        input.advance();
+        input.advanceSoft();
         if (input.hasMore() && input.getCurrent().type == 'Identifier') {
-          tokens += input.getCurrent().value;
-          input.advance();
+          flags = input.getCurrent().value;
+          input.advanceSoft();
         }
       } else {
         return context.getErrorMarker();
       }
-      return tokens;
+      var expr = exprTokens.join('');
+      input.skipEther();
+      return [expr, flags];
     };
+
+    function wrapRegExp(args) {
+      return new myjs.ast.Literal(RegExp(args[0], args[1]));
+    }
 
     // <RegularExpressionLiteral>
     //   -> "/" [<RegularExpressionBody> "/" RegularExpressionFlags]
     syntax.getRule('RegularExpressionLiteral')
-      .addProd(f.token('/'), f.custom(new RegExpHandler()));
+      .addProd(f.token('/'), f.custom(new RegExpHandler()))
+      .setHandler(wrapRegExp);
 
     return syntax;
   }

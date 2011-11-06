@@ -70,6 +70,7 @@ function parseAllFiles(files) {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
     fs.readFile(name, 'utf8', function(error, rawSource) {
+      console.log(name);
       // Strip any hashbangs.
       var source = rawSource.replace(/^\#\!.*/, '');
       var origin = new myjs.tedir.SourceOrigin(name);

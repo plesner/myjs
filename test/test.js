@@ -19,6 +19,11 @@
 var myjs = require('../out/myjs-node.js');
 var framework = require('./framework.js');
 
+/**
+ * Namespace for accessing the tests individually.
+ */
+myjs.test = {};
+
 (function() {
 
 'use strict';
@@ -41,6 +46,7 @@ var assertListEquals = framework.assertListEquals;
 var allTests = [];
 function registerTest(fun) {
   allTests.push(fun);
+  myjs.test[fun.name] = fun;
 }
 
 registerTest(testDefined);
@@ -368,6 +374,20 @@ function testNumberScanning() {
   runTest('3.1415926');
   runTest('3.');
   runTest('0x7');
+}
+
+registerTest(testRegExpParsing);
+function testRegExpParsing() {
+  function runTest(expr, flags) {
+    var ast = exprParser('( /' + expr + '/' + (flags || '') + ' )');
+    assertEquals('Literal', ast.type);
+    assertEquals(RegExp(expr, flags).toString(), ast.value.toString());
+  }
+  runTest('foo');
+  runTest('[\\w]');
+  runTest('[b\\-a]');
+  runTest(' +');
+  runTest('&nbsp;', "g");
 }
 
 function alphaJson(obj) {

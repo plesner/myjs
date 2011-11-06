@@ -421,7 +421,7 @@ myjs.tedir.Terminal_.prototype.parse = function(context) {
   var input = context.input;
   var current = input.getCurrent();
   if (current.type == this.value) {
-    input.advance();
+    input.advanceHard();
     return current.value;
   } else {
     return context.getErrorMarker();
@@ -491,7 +491,7 @@ myjs.tedir.Nonterm_.prototype.toString = function() {
  *
  * @constructor
  */
-myjs.tedir.CustomHandler = function() { };
+myjs.tedir.CustomHandler = function() {};
 
 goog.exportSymbol('myjs.tedir.CustomHandler', myjs.tedir.CustomHandler);
 
@@ -530,8 +530,16 @@ goog.exportProperty(myjs.tedir.CustomHandler.prototype, 'normalize',
  * @return {*} the value of this expression or the failure marker
  *   (see {@link myjs.tedir.ParseContext#getErrorMarker}) if parsing failed.
  */
-myjs.tedir.CustomHandler.prototype.parse = function(context) {
-  throw new Error('Abstract method called');
+myjs.tedir.CustomHandler.prototype.parse = goog.abstractMethod;
+
+/**
+ * Returns the number of values returned by this custom parser.
+ * Default is to return 1.
+ *
+ * @return {number} the number of values returned by this parser.
+ */
+myjs.tedir.CustomHandler.prototype.getArity = function() {
+  return 1;
 };
 
 /**
@@ -544,6 +552,7 @@ myjs.tedir.CustomHandler.prototype.parse = function(context) {
  * @private
  */
 myjs.tedir.Custom_ = function(handler) {
+  myjs.utils.base(this).call(this);
   this.handler = handler;
 };
 goog.inherits(myjs.tedir.Custom_, myjs.tedir.Expression);
@@ -574,6 +583,13 @@ myjs.tedir.Custom_.prototype.normalize = function() {
  */
 myjs.tedir.Custom_.prototype.parse = function(context) {
   return this.handler.parse(context);
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Custom_.prototype.getArity = function(context) {
+  return this.handler.getArity();
 };
 
 /**
@@ -1615,6 +1631,20 @@ myjs.tedir.TokenStream.prototype.hasMore = function() {
 };
 
 /**
+ * Rewinds the cursor until it points to the first soft token following
+ * the start of input or the nearest preceding hard token. Parsing a
+ * terminal automatically skips over ether to the next hard token; this
+ * operation undoes the skip over ether.
+ *
+ * @see myjs.tedir.Token#isSoft
+ */
+myjs.tedir.TokenStream.prototype.rewindEther = function() {
+  while (this.cursor >= 1 && this.tokens[this.cursor-1].isSoft()) {
+    this.cursor--;
+  }
+};
+
+/**
  * Advances the cursor until it reaches a non-soft token or the end of the
  * token stream.
  *
@@ -1632,9 +1662,16 @@ myjs.tedir.TokenStream.prototype.skipEther = function() {
 /**
  * Advances the cursor one step and then skips over any soft tokens.
  */
-myjs.tedir.TokenStream.prototype.advance = function() {
-  this.cursor++;
+myjs.tedir.TokenStream.prototype.advanceHard = function() {
+  this.advanceSoft();
   this.skipEther();
+};
+
+/**
+ * Advances the cursor one step.
+ */
+myjs.tedir.TokenStream.prototype.advanceSoft = function() {
+  this.cursor++;
 };
 
 /**

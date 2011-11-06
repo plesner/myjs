@@ -276,6 +276,9 @@ myjs.Dialect.prototype.getSyntax_ = function() {
   return this.syntax;
 };
 
+goog.exportProperty(myjs.Dialect.prototype, 'getSyntax_',
+    myjs.Dialect.prototype.getSyntax_);
+
 /**
  * Given a set of objects, returns one object that for each key in one of the
  * input maps maps to that key's value in the input map.
@@ -481,7 +484,7 @@ myjs.Dialect.prototype.traverse = function(ast, visitor) {
   if (Array.isArray(ast)) {
     return visitor.visitArray(ast, this);
   } else if (ast == null || typeof ast == 'string' || typeof ast == 'number' ||
-      typeof ast == 'boolean') {
+      typeof ast == 'boolean' || ast instanceof RegExp) {
     return visitor.visitPrimitive(ast, this);
   } else if (typeof ast == 'object' && typeof ast['type'] == 'string') {
     var type = this.getType_(ast['type']);
