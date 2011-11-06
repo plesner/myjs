@@ -66,6 +66,7 @@ function forEachAsync(values, callback, finallyOpt, indexOpt) {
 function parseAllFiles(files) {
   var totalTimeMillis = 0;
   var charsProcessed = 0;
+  var failed = [];
   forEachAsync(files, function(pair, doNext) {
     var name = pair[0];
     var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
@@ -75,7 +76,11 @@ function parseAllFiles(files) {
       var source = rawSource.replace(/^\#\!.*/, '');
       var origin = new myjs.tedir.SourceOrigin(name);
       var now = new Date();
-      dialect.translate(source, origin);
+      try {
+        dialect.translate(source, origin);
+      } catch (e) {
+        failed.push(name);
+      }
       var duration = new Date() - now;
       totalTimeMillis += duration;
       charsProcessed += source.length;
@@ -83,11 +88,16 @@ function parseAllFiles(files) {
       doNext();
     });
   }, function() {
-    console.log('All files parsed successfully.');
-    var megas = charsProcessed / (1024 * 1024);
-    var megasPerMilli = megas / totalTimeMillis;
-    var megasPerSec = megasPerMilli * 1000;
-    console.log('Throughput: ' + megasPerSec.toPrecision(4) + " M/s");
+    if (failed.size == 0) {
+      console.log('All files parsed successfully.');
+      var megas = charsProcessed / (1024 * 1024);
+      var megasPerMilli = megas / totalTimeMillis;
+      var megasPerSec = megasPerMilli * 1000;
+      console.log('Throughput: ' + megasPerSec.toPrecision(4) + " M/s");
+    } else {
+      console.log('Tests failed:');
+      console.log(failed.map(function(name) { return "  '" + name + "': true,"; }).join("\n"));
+    }
   });
 }
 
@@ -154,61 +164,19 @@ Runner.prototype.listFiles = function(root, callback, partial) {
 };
 
 var benchBlacklist = {
-  // grammar
-  'download/library/closure/goog/cssom/cssom.js': true,
-  'download/library/closure/goog/editor/link.js': true,
-  'download/library/closure/goog/editor/plugins/basictextformatter.js': true,
-  'download/library/closure/goog/editor/plugins/blockquote.js': true,
-//  'download/library/closure/goog/editor/seamlessfield_test.js': true,
   'download/library/closure/goog/format/format.js': true,
-  'download/library/closure/goog/format/htmlprettyprinter.js': true,
   'download/library/closure/goog/gears/database.js': true,
   'download/library/closure/goog/i18n/bidi.js': true,
-  'download/library/closure/goog/i18n/datetimeformat.js': true,
   'download/library/closure/goog/i18n/numberformat.js': true,
-  'download/library/closure/goog/jsaction/eventcontract.js': true,
   'download/library/closure/goog/math/bezier.js': true,
-  'download/library/closure/goog/net/crossdomainrpc.js': true,
   'download/library/closure/goog/net/filedownloader.js': true,
-  'download/library/closure/goog/net/xpc/crosspagechannel.js': true,
-  'download/library/closure/goog/proto2/message.js': true,
-  'download/library/closure/goog/proto2/package_test.pb.js': true,
-  'download/library/closure/goog/proto2/test.pb.js': true,
-  'download/library/closure/goog/storage/mechanism/mechanism_test.js': true,
-  'download/library/closure/goog/style/style_test.js': true,
-  'download/library/closure/goog/testing/fs/entry.js': true,
-  'download/library/closure/goog/testing/loosemock.js': true,
-  'download/library/closure/goog/testing/mock.js': true,
-  'download/library/closure/goog/testing/performancetable.js': true,
-  'download/library/closure/goog/testing/strictmock.js': true,
-  'download/library/closure/goog/tweak/tweakui.js': true,
-  'download/library/closure/goog/ui/dragdropdetector.js': true,
-  'download/library/closure/goog/ui/editor/defaulttoolbar.js': true,
-  'download/library/closure/goog/ui/media/flickr.js': true,
-  'download/library/closure/goog/ui/media/googlevideo.js': true,
-  'download/library/closure/goog/ui/media/mp3.js': true,
-  'download/library/closure/goog/ui/media/picasa.js': true,
-  'download/library/closure/goog/ui/media/vimeo.js': true,
-  'download/library/closure/goog/uri/uri.js': true,
-  'download/library/closure/goog/useragent/adobereader.js': true,
-  'download/library/closure/goog/useragent/product_isversion.js': true,
-  'download/library/closure/goog/useragent/useragent.js': true,
-  'download/library/closure/goog/vec/vec.js': true,
-  'download/library/third_party/closure/goog/dojo/dom/query.js': true,
-  'download/library/third_party/closure/goog/dojo/dom/query_test.js': true,
-  'download/library/third_party/closure/goog/jpeg_encoder/jpeg_encoder_basic.js': true,
-  'download/library/third_party/closure/goog/loremipsum/text/loremipsum.js': true,
-  'download/library/closure/goog/datasource/datamanager.js': true,
-  'download/library/closure/goog/demos/autocompleteremotedata.js': true,
-  'download/library/closure/goog/demos/autocompleterichremotedata.js': true,
-  'download/library/closure/goog/demos/graphics/tigerdata.js': true,
-  'download/library/closure/goog/demos/tree/testdata.js': true,
-  'download/library/closure/goog/dom/savedcaretrange.js': true,
-  'download/library/closure/goog/format/emailaddress.js': true,
-  'download/library/closure/goog/json/json.js': true,
   'download/library/closure/goog/storage/mechanism/ieuserdata.js': true,
   'download/library/closure/goog/string/string.js': true,
+  'download/library/closure/goog/testing/fs/entry.js': true,
+  'download/library/closure/goog/testing/performancetable.js': true,
   'download/library/closure/goog/testing/stacktrace.js': true,
+  'download/library/closure/goog/uri/uri.js': true,
+  'download/library/closure/goog/vec/vec.js': true,
   'download/library/closure/goog/window/window.js': true,
   'download/library/third_party/closure/goog/caja/string/html/htmlparser.js': true
 };

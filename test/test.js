@@ -379,7 +379,9 @@ function testNumberScanning() {
 registerTest(testRegExpParsing);
 function testRegExpParsing() {
   function runTest(expr, flags) {
-    var ast = exprParser('( /' + expr + '/' + (flags || '') + ' )');
+    var fullExpr = '( /' + expr + '/' + (flags || '') + ' )';
+    console.log(fullExpr);
+    var ast = exprParser(fullExpr);
     assertEquals('Literal', ast.type);
     assertEquals(RegExp(expr, flags).toString(), ast.value.toString());
   }
@@ -388,6 +390,7 @@ function testRegExpParsing() {
   runTest('[b\\-a]');
   runTest(' +');
   runTest('&nbsp;', 'g');
+  runTest('\\/');
 }
 
 function alphaJson(obj) {

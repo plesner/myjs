@@ -1071,6 +1071,8 @@ myjs.Scanner_.prototype.scanToken = function() {
   case '\"':
   case "'":
     return this.scanString();
+  case '\\':
+    return this.scanEscape();
   case '/':
     switch (this.getLookahead()) {
     case '/':
@@ -1123,6 +1125,18 @@ myjs.Scanner_.prototype.scanWhiteSpace = function() {
   }
   var end = this.getCursor();
   return new myjs.SoftToken_(this.getPart(start, end));
+};
+
+/**
+ * Scans over a character escape.
+ *
+ * @return {myjs.HardToken_} a hard token containing the escape sequence.
+ */
+myjs.Scanner_.prototype.scanEscape = function() {
+  var start = this.getCursor();
+  this.advanceIfPossible(2);
+  var end = this.getCursor();
+  return new myjs.HardToken_(this.getPart(start, end));
 };
 
 /**
