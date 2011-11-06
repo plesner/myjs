@@ -20,6 +20,10 @@
 
 'use strict';
 
+/**
+ * @name myjs.tedir
+ * @namespace
+ */
 goog.provide('myjs.tedir');
 
 goog.require('myjs.ast');

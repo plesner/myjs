@@ -3,7 +3,7 @@ SHARED_FILES=                \
 src/utils.js                 \
 src/ast.js                   \
 src/tedir.js                 \
-src/my.js                    \
+src/myjs.js                  \
 src/fragments/control.js     \
 src/fragments/core.js        \
 src/fragments/declaration.js \
@@ -37,9 +37,11 @@ goog/base.js
 # Current version.
 VERSION=0.1
 
+OUTDIR=out
+
 # Output library files.
-WEB_LIB=myjs-$(VERSION).js
-NODE_LIB=myjs-$(VERSION)-node.js
+WEB_LIB=$(OUTDIR)/myjs-web.js
+NODE_LIB=$(OUTDIR)/myjs-node.js
 
 # Extra closure flags.
 CLOSURE_FLAGS=                               \
@@ -49,80 +51,86 @@ CLOSURE_FLAGS=                               \
   --externs src/externs.js                   \
   --output_wrapper="(function() { %output% })();"
 
-# Builds the library and then tests it.
-all:		$(WEB_LIB) test
+# Patch to the command-line tool.
+TOOL=tools/main.js
+
+# Builds the library, tests it, benchmarks it, lints it.
+all:		$(WEB_LIB) test bench lint
 
 # Runs the tests and lints all files.
 presubmit:	test lint docs
 
-$(WEB_LIB):	$(WEB_LIB_FILES) tools/compiler tools/library $(EXTRA_DEPS)
-		java -jar tools/compiler/compiler.jar              \
-		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
+$(WEB_LIB):	$(WEB_LIB_FILES) download/compiler download/library $(OUTDIR) $(EXTRA_DEPS)
+		java -jar download/compiler/compiler.jar              \
+		  $(CLOSURE_DEPS:%=--js=download/library/closure/%)   \
 		  $(WEB_LIB_FILES:%=--js=%)                        \
 		  $(CLOSURE_FLAGS)                                 \
 		  --js_output_file $(WEB_LIB)
 
-$(NODE_LIB):	$(NODE_LIB_FILES) tools/compiler tools/library $(EXTRA_DEPS)
-		java -jar tools/compiler/compiler.jar              \
-		  $(CLOSURE_DEPS:%=--js=tools/library/closure/%)   \
+$(NODE_LIB):	$(NODE_LIB_FILES) download/compiler download/library $(OUTDIR) $(EXTRA_DEPS)
+		java -jar download/compiler/compiler.jar              \
+		  $(CLOSURE_DEPS:%=--js=download/library/closure/%)   \
 		  $(NODE_LIB_FILES:%=--js=%)                       \
 		  $(CLOSURE_FLAGS)                                 \
 		  --js_output_file $(NODE_LIB)
 
 # Runs the tests using closure.
 test:		$(NODE_LIB)
-		node src/main.js test
+		$(TOOL) test
 
 # Runs the benchmarks.
-bench:		$(NODE_LIB) tools/library
-		node src/main.js bench
+bench:		$(NODE_LIB) download/library
+		$(TOOL) bench
 
 # Lints all files
 lint:
 		gjslint $(SHARED_FILES) $(MISC_FILES)
 
-JSDOC_ROOT=tools/jsdoc/jsdoc_toolkit-2.4.0/jsdoc-toolkit/
+JSDOC_ROOT=download/jsdoc/jsdoc_toolkit-2.4.0/jsdoc-toolkit/
 JSDOC_FLAGS=-t=$(JSDOC_ROOT)/templates/jsdoc
-docs:		$(SHARED_FILES) tools/jsdoc
+docs:		$(SHARED_FILES) download/jsdoc $(OUTDIR) $(EXTRA_DEPS)
 		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
 		  $(JSDOC_FLAGS)                                           \
-		  -d=doc                                                   \
+		  -d=$(OUTDIR)/doc                                         \
 		  $(SHARED_FILES)
 
-private-docs:	$(SHARED_FILES) tools/jsdoc
+private-docs:	$(SHARED_FILES) download/jsdoc $(OUTDIR) $(EXTRA_DEPS)
 		java -jar $(JSDOC_ROOT)/jsrun.jar $(JSDOC_ROOT)/app/run.js \
 		  $(JSDOC_FLAGS)                                           \
 		  -p -a							   \
-		  -d=private-doc                                           \
+		  -d=$(OUTDIR)/private-doc                                 \
 		  $(SHARED_FILES)
 
 # Cleans up any files we've built.
 clean:
-		rm -rf $(WEB_LIB) $(NODE_LIB) doc private-doc
+		rm -rf $(OUTDIR)
 
 # Cleans up any file we've built and downloaded.
 very-clean:	clean
-		rm -rf tools
+		rm -rf download
 
 COMPILER_ZIP=http://closure-compiler.googlecode.com/files/compiler-latest.zip
 # Download and unpack the closure compiler.
-tools/compiler:
+download/compiler:
 		curl -o compiler.zip $(COMPILER_ZIP)
-		mkdir -p tools/compiler
-		unzip -d tools/compiler compiler.zip
+		mkdir -p download/compiler
+		unzip -d download/compiler compiler.zip
 		rm compiler.zip
 
 CLOSURE_LIBRARY=http://closure-library.googlecode.com/svn/trunk/
 # Check out the closure library.
-tools/library:
-		svn checkout $(CLOSURE_LIBRARY) tools/library
+download/library:
+		svn checkout $(CLOSURE_LIBRARY) download/library
+
+$(OUTDIR):
+		mkdir -p $(OUTDIR)
 
 JSDOC_ZIP=http://jsdoc-toolkit.googlecode.com/files/jsdoc_toolkit-2.4.0.zip
 # Download and unpack the jsdoc generator
-tools/jsdoc:
+download/jsdoc:
 		curl -o jsdoc.zip $(JSDOC_ZIP)
-		mkdir -p tools/jsdoc
-		unzip -d tools/jsdoc jsdoc.zip
+		mkdir -p download/jsdoc
+		unzip -d download/jsdoc jsdoc.zip
 		rm jsdoc.zip
 
-.PHONY: 	test lint clean docs
+.PHONY: 	test lint clean docs bench all

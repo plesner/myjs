@@ -18,6 +18,10 @@
 
 'use strict';
 
+/**
+ * @name myjs.mimetype
+ * @namespace
+ */
 goog.provide('myjs.mimetype');
 
 goog.require('myjs');

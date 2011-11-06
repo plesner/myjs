@@ -18,7 +18,7 @@
 
 'use strict';
 
-var myjs = require('../myjs-0.1-node.js');
+var myjs = require('../out/myjs-node.js');
 
 /**
  * Returns true if this string starts with the given substring.

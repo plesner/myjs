@@ -18,6 +18,10 @@
 
 'use strict';
 
+/**
+ * @name myjs.utils
+ * @namespace
+ */
 goog.provide('myjs.utils');
 
 /**

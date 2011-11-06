@@ -45,3 +45,4 @@ goog.exportProperty(module.exports['tedir'], 'Error', myjs.tedir.Error);
 goog.exportProperty(module.exports['tedir'], 'SyntaxError', myjs.tedir.SyntaxError);
 goog.exportProperty(module.exports['tedir'], 'Invoker_', myjs.tedir.Invoker_);
 goog.exportProperty(module.exports['tedir'], 'SourceOrigin', myjs.tedir.SourceOrigin);
+

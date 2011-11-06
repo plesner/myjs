@@ -21,6 +21,10 @@
 
 'use strict';
 
+/**
+ * @name myjs.ast
+ * @namespace
+ */
 goog.provide('myjs.ast');
 
 goog.require('myjs.utils');

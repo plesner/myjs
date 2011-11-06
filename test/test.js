@@ -16,7 +16,7 @@
  * Tests of tedir and myjs.
  */
 
-var myjs = require('../myjs-0.1-node.js');
+var myjs = require('../out/myjs-node.js');
 var framework = require('./framework.js');
 
 (function() {
