@@ -125,9 +125,9 @@ myjs.ast.BlockStatement.prototype.unparse = function(context) {
       .setConstructor(myjs.ast.EmptyStatement);
 
     // <ExpressionStatement>
-    //   -> <Expression> ";"
+    //   -> <Expression> <AutoSemi>
     syntax.getRule('ExpressionStatement')
-      .addProd(f.nonterm('Expression'), f.punct(';'))
+      .addProd(f.nonterm('Expression'), f.nonterm('AutoSemi'))
       .setConstructor(myjs.ast.ExpressionStatement);
 
     // <Block>
@@ -137,10 +137,10 @@ myjs.ast.BlockStatement.prototype.unparse = function(context) {
       .setConstructor(myjs.ast.BlockStatement);
 
     // <VariableStatement>
-    //   -> "var" <VariableDeclarationList> ";"
+    //   -> "var" <VariableDeclarationList> <AutoSemi>
     syntax.getRule('VariableStatement')
       .addProd(f.keyword('var'), f.nonterm('VariableDeclarationList'),
-        f.punct(';'));
+        f.ignore(f.nonterm('AutoSemi')));
 
     return syntax;
   }

@@ -178,24 +178,24 @@ myjs.ast.SwitchCase = function(test, consequent) {
       .addProd(f.nonterm('SwitchStatement'));
 
     // <ReturnStatement>
-    //   -> "return" <Expression>? ";"
+    //   -> "return" <Expression>? <AutoSemi>
     syntax.getRule('ReturnStatement')
       .addProd(f.keyword('return'), f.option(f.nonterm('Expression')),
-        f.punct(';'))
+        f.ignore(f.nonterm('AutoSemi')))
       .setConstructor(myjs.ast.ReturnStatement);
 
     // <BreakStatement>
-    //   -> "break" <Identifier>? ";"
+    //   -> "break" <Identifier>? <AutoSemi>
     syntax.getRule('BreakStatement')
       .addProd(f.keyword('break'), f.option(f.nonterm('Identifier')),
-        f.punct(';'))
+        f.ignore(f.nonterm('AutoSemi')))
       .setConstructor(myjs.ast.BreakStatement);
 
     // <ContinueStatement>
-    //   -> "continue" <Identifier>? ";"
+    //   -> "continue" <Identifier>? <AutoSemi>
     syntax.getRule('ContinueStatement')
       .addProd(f.keyword('continue'), f.option(f.nonterm('Identifier')),
-        f.punct(';'))
+        f.ignore(f.nonterm('AutoSemi')))
       .setConstructor(myjs.ast.ContinueStatement);
 
     // <IfStatement>

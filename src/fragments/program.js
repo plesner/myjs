@@ -74,6 +74,50 @@ myjs.ast.Program.prototype.unparse = function(context) {
       .addProd(f.star(f.nonterm('SourceElement')))
       .setConstructor(myjs.ast.BlockStatement);
 
+    /**
+     * Custom expression used to parse optional semicolons.
+     *
+     * @constructor
+     * @extends myjs.tedir.CustomHandler
+     */
+    function AutoSemiHandler() { }
+    goog.inherits(AutoSemiHandler, myjs.tedir.CustomHandler);
+
+    AutoSemiHandler.prototype.parse = function(context) {
+      var input = context.getTokenStream();
+      var current = input.getCurrent();
+      if (current.value == ';') {
+        // If we're at a semicolon advance over it to the next hard token
+        // and return success.
+        input.advanceHard();
+        return null;
+      } else {
+        // Else we need to rewind past the leading ether and look for a
+        // newline.
+        input.rewindEther();
+        var current = input.getCurrent();
+        while (current.isSoft()) {
+          if (current.value.indexOf('\n') != -1) {
+            // Found a piece of ether containing a newline. Skip back to
+            // where we started and return success.
+            input.advanceHard();
+            return null;
+          } else {
+            // Otherwise we continue skipping forward.
+            input.advanceSoft();
+            current = input.getCurrent();
+          }
+        }
+        // Found no soft token containing a newline. Fail.
+        return context.getErrorMarker();
+      }
+    };
+
+    // <AutoSemi>
+    //   -> ";"
+    syntax.getRule('AutoSemi')
+      .addProd(f.custom(new AutoSemiHandler()));
+
     return syntax;
   }
 

@@ -112,7 +112,7 @@ myjs.ast.ForInStatement = function(left, right, body) {
       .addProd(f.nonterm('IterationStatement'));
 
     // <IterationStatement>
-    //   -> "do" <Statement> "while" "(" <Expression> ")" ";"
+    //   -> "do" <Statement> "while" "(" <Expression> ")" <AutoSemi>
     //   -> "while" "(" <Expression> ")" <Statement>
     //   -> "for" "(" "var" <VariableDeclarationList> ";" <Expression>? ";"
     //      <Expression>? ")" <Statement>
@@ -123,7 +123,8 @@ myjs.ast.ForInStatement = function(left, right, body) {
     //   -> "for" "(" <LeftHandSideExpression> "in" <Expression> ")" <Statement>
     syntax.getRule('IterationStatement')
       .addProd(f.keyword('do'), f.nonterm('Statement'), f.keyword('while'),
-        f.punct('('), f.nonterm('Expression'), f.punct(')'), f.punct(';'))
+        f.punct('('), f.nonterm('Expression'), f.punct(')'),
+        f.ignore(f.nonterm('AutoSemi')))
       .setConstructor(myjs.ast.DoWhileStatement)
       .addProd(f.keyword('while'), f.punct('('), f.nonterm('Expression'),
         f.punct(')'), f.nonterm('Statement'))

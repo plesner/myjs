@@ -1639,7 +1639,7 @@ myjs.tedir.TokenStream.prototype.hasMore = function() {
  * @see myjs.tedir.Token#isSoft
  */
 myjs.tedir.TokenStream.prototype.rewindEther = function() {
-  while (this.cursor >= 1 && this.tokens[this.cursor-1].isSoft()) {
+  while (this.cursor >= 1 && this.tokens[this.cursor - 1].isSoft()) {
     this.cursor--;
   }
 };

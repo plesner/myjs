@@ -159,7 +159,7 @@ var benchBlacklist = {
   'download/library/closure/goog/editor/link.js': true,
   'download/library/closure/goog/editor/plugins/basictextformatter.js': true,
   'download/library/closure/goog/editor/plugins/blockquote.js': true,
-  'download/library/closure/goog/editor/seamlessfield_test.js': true,
+//  'download/library/closure/goog/editor/seamlessfield_test.js': true,
   'download/library/closure/goog/format/format.js': true,
   'download/library/closure/goog/format/htmlprettyprinter.js': true,
   'download/library/closure/goog/gears/database.js': true,

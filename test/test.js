@@ -387,7 +387,7 @@ function testRegExpParsing() {
   runTest('[\\w]');
   runTest('[b\\-a]');
   runTest(' +');
-  runTest('&nbsp;', "g");
+  runTest('&nbsp;', 'g');
 }
 
 function alphaJson(obj) {

@@ -77,9 +77,10 @@ myjs.ast.CatchClause = function(param, body) {
       .addProd(f.nonterm('TryStatement'));
 
     // <ThrowStatement>
-    //   -> "throw" <Expression> ";"
+    //   -> "throw" <Expression> <AutoSemi>
     syntax.getRule('ThrowStatement')
-      .addProd(f.keyword('throw'), f.nonterm('Expression'), f.punct(';'))
+      .addProd(f.keyword('throw'), f.nonterm('Expression'),
+        f.ignore(f.nonterm('AutoSemi')))
       .setConstructor(myjs.ast.ThrowStatement);
 
     // <TryStatement>
