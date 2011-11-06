@@ -199,8 +199,6 @@ var benchBlacklist = {
   'download/library/third_party/closure/goog/dojo/dom/query_test.js': true,
   'download/library/third_party/closure/goog/jpeg_encoder/jpeg_encoder_basic.js': true,
   'download/library/third_party/closure/goog/loremipsum/text/loremipsum.js': true,
-
-  // bug
   'download/library/closure/goog/datasource/datamanager.js': true,
   'download/library/closure/goog/demos/autocompleteremotedata.js': true,
   'download/library/closure/goog/demos/autocompleterichremotedata.js': true,

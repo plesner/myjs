@@ -80,7 +80,8 @@ goog.exportSymbol('myjs.tedir.SyntaxError', myjs.tedir.SyntaxError);
  * @private
  */
 myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
-  return this.input.tokens[index].value;
+  var tokens = this.input.tokens;
+  return index < tokens.length ? tokens[index].value : "<eof>";
 };
 
 /**
@@ -1582,15 +1583,12 @@ myjs.tedir.EOF_TOKEN_ = new myjs.tedir.EofToken_();
  * the current token.
  *
  * @param {Array.<myjs.tedir.Token>} tokens an array of tokens.
- * @param {Array.<number>} opt_trace an array to store a trace in or null
- *   if no trace should be stored.
  * @constructor
  */
-myjs.tedir.TokenStream = function(tokens, opt_trace) {
+myjs.tedir.TokenStream = function(tokens) {
   this.tokens = tokens;
   this.cursor = 0;
   this.highWaterMark = 0;
-  this.traceOut = opt_trace;
   this.skipEther();
 };
 
@@ -1628,9 +1626,6 @@ myjs.tedir.TokenStream.prototype.skipEther = function() {
   }
   if (this.cursor > this.highWaterMark) {
     this.highWaterMark = this.cursor;
-  }
-  if (this.traceOut) {
-    this.traceOut.push(this.cursor);
   }
 };
 
@@ -1743,23 +1738,18 @@ goog.exportSymbol('myjs.tedir.Parser', myjs.tedir.Parser);
  * @param {string} nonterm the start production.
  * @param {Array} tokens the array of tokens to parse.
  * @param {myjs.tedir.SourceOrigin=} opt_origin the origin of the source.
- * @param {boolean=} opt_trace whether or not to trace parsing.
  * @return {*} a syntax tree constructed according to the grammar.
  * @throws {myjs.tedir.SyntaxError} if the tokens can't be parsed.
  */
-myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, opt_origin,
-    opt_trace) {
+myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, opt_origin) {
   var origin = opt_origin || new myjs.tedir.SourceOrigin();
   var start = this.grammar.getNonterm(nonterm);
-  var steps = opt_trace ? [] : null;
-  var stream = new myjs.tedir.TokenStream(tokens, steps);
+  var stream = new myjs.tedir.TokenStream(tokens);
   var context = new myjs.tedir.ParseContext(this, stream);
   var result = start.parse(context);
   var error = (context.isError(result) || stream.hasMore()) ?
       new myjs.tedir.SyntaxError(origin, stream, stream.highWaterMark) : null;
-  if (opt_trace) {
-    return new myjs.tedir.ParseTrace_(steps, tokens, error || result);
-  } else if (context.isError(result) || stream.hasMore()) {
+  if (context.isError(result) || stream.hasMore()) {
     throw error;
   } else {
     return result;
@@ -1768,28 +1758,3 @@ myjs.tedir.Parser.prototype.parse = function(nonterm, tokens, opt_origin,
 
 goog.exportProperty(myjs.tedir.Parser.prototype, 'parse',
   myjs.tedir.Parser.prototype.parse);
-
-/**
- * A collection of information about the process of parsing one piece
- * of input.
- *
- * @param {Array.<number>} steps the steps taken by the parser.
- * @param {Array} tokens the tokens that were parsed.
- * @param {*} result the parse result, either an ast or a syntax error.
- * @constructor
- * @private
- */
-myjs.tedir.ParseTrace_ = function(steps, tokens, result) {
-  this.steps = steps;
-  this.tokens = tokens;
-  this.result = result;
-};
-
-/**
- * Did this parse fail?
- *
- * @return {boolean} true iff parsing failed.
- */
-myjs.tedir.ParseTrace_.prototype.isError = function() {
-  return this.result instanceof myjs.tedir.SyntaxError;
-};

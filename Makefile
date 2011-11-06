@@ -1,3 +1,6 @@
+# Use this flag to get a debug version of the output library.
+DEBUG=0
+
 # Files that need to be part of the resulting library.
 SHARED_FILES=                \
 src/utils.js                 \
@@ -43,9 +46,15 @@ OUTDIR=out
 WEB_LIB=$(OUTDIR)/myjs-web.js
 NODE_LIB=$(OUTDIR)/myjs-node.js
 
+ifeq ($(DEBUG), 0)
+COMPILATION_LEVEL=ADVANCED_OPTIMIZATIONS
+else
+COMPILATION_LEVEL=WHITESPACE_ONLY
+endif
+
 # Extra closure flags.
 CLOSURE_FLAGS=                               \
-  --compilation_level=ADVANCED_OPTIMIZATIONS \
+  --compilation_level=$(COMPILATION_LEVEL)   \
   --warning_level=VERBOSE                    \
   --language_in=ECMASCRIPT5		     \
   --externs src/externs.js                   \
