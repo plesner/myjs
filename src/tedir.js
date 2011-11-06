@@ -81,7 +81,7 @@ goog.exportSymbol('myjs.tedir.SyntaxError', myjs.tedir.SyntaxError);
  */
 myjs.tedir.SyntaxError.prototype.getToken_ = function(index) {
   var tokens = this.input.tokens;
-  return index < tokens.length ? tokens[index].value : "<eof>";
+  return index < tokens.length ? tokens[index].value : '<eof>';
 };
 
 /**

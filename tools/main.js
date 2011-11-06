@@ -155,8 +155,6 @@ Runner.prototype.listFiles = function(root, callback, partial) {
 var benchBlacklist = {
   // grammar
   'download/library/closure/goog/cssom/cssom.js': true,
-  'download/library/closure/goog/dom/dom.js': true,
-  'download/library/closure/goog/dom/dom_test.js': true,
   'download/library/closure/goog/editor/link.js': true,
   'download/library/closure/goog/editor/plugins/basictextformatter.js': true,
   'download/library/closure/goog/editor/plugins/blockquote.js': true,

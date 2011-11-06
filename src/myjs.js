@@ -1044,7 +1044,7 @@ myjs.Scanner_.isHexDigit = function(c) {
  * @return {boolean} is c legal as the start of an identifier?
  */
 myjs.Scanner_.isIdentifierStart = function(c) {
-  return (/[\w]/).test(c);
+  return (/[\w\$]/).test(c);
 };
 
 /**
@@ -1054,7 +1054,7 @@ myjs.Scanner_.isIdentifierStart = function(c) {
  * @return {boolean} is c legal as part of an identifier?
  */
 myjs.Scanner_.isIdentifierPart = function(c) {
-  return (/[\w\d]/).test(c);
+  return (/[\w\d\$]/).test(c);
 };
 
 /**
