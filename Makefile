@@ -38,7 +38,7 @@ CLOSURE_DEPS=     \
 goog/base.js
 
 # Current version.
-VERSION=0.1
+VERSION=0.2
 
 OUTDIR=out
 
@@ -72,16 +72,20 @@ presubmit:	test lint docs
 $(WEB_LIB):	$(WEB_LIB_FILES) download/compiler download/library $(OUTDIR) $(EXTRA_DEPS)
 		java -jar download/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=download/library/closure/%)   \
-		  $(WEB_LIB_FILES:%=--js=%)                        \
-		  $(CLOSURE_FLAGS)                                 \
+		  $(WEB_LIB_FILES:%=--js=%)                           \
+		  $(CLOSURE_FLAGS)                                    \
 		  --js_output_file $(WEB_LIB)
 
 $(NODE_LIB):	$(NODE_LIB_FILES) download/compiler download/library $(OUTDIR) $(EXTRA_DEPS)
 		java -jar download/compiler/compiler.jar              \
 		  $(CLOSURE_DEPS:%=--js=download/library/closure/%)   \
-		  $(NODE_LIB_FILES:%=--js=%)                       \
-		  $(CLOSURE_FLAGS)                                 \
+		  $(NODE_LIB_FILES:%=--js=%)                          \
+		  $(CLOSURE_FLAGS)                                    \
 		  --js_output_file $(NODE_LIB)
+
+arch:		$(WEB_LIB) $(NODE_LIB) test bench
+		cp $(WEB_LIB) archive/myjs-web-$(VERSION).js
+		cp $(NODE_LIB) archive/myjs-node-$(VERSION).js
 
 # Runs the tests using closure.
 test:		$(NODE_LIB)
@@ -142,4 +146,4 @@ download/jsdoc:
 		unzip -d download/jsdoc jsdoc.zip
 		rm jsdoc.zip
 
-.PHONY: 	test lint clean docs bench all
+.PHONY: 	test lint clean docs bench all arch
