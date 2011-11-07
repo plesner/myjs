@@ -35,6 +35,32 @@ String.prototype.startsWith = function(substr) {
 };
 
 /**
+ * Converts an object into json such that object properties are lexcally
+ * sorted.
+ *
+ * @param {*} obj the value to convert.
+ * @return {string} the sorted json representation of the value.
+ */
+module.exports.sortedJson = function(obj) {
+  if (Array.isArray(obj)) {
+    return '[' + obj.map(module.exports.sortedJson).join(',') + ']';
+  } else if (!obj || typeof obj != 'object') {
+    return JSON.stringify(obj);
+  } else if (typeof obj == 'object') {
+    var parts = Object.keys(obj).sort().map(function(key) {
+      return module.exports.sortedJson(key) + ':' +
+        module.exports.sortedJson(obj[key]);
+    });
+    return '{' + parts.join(',') + '}';
+  }
+};
+
+module.exports.assertJsonEquals = function(a, b) {
+  module.exports.assertEquals(module.exports.sortedJson(a),
+    module.exports.sortedJson(b));
+};
+
+/**
  * Fails if the two arguments are not equal.
  *
  * @param {*} a first value.

@@ -42,6 +42,7 @@ var assertTrue = framework.assertTrue;
 var assertFalse = framework.assertFalse;
 var assertEquals = framework.assertEquals;
 var assertListEquals = framework.assertListEquals;
+var assertJsonEquals = framework.assertJsonEquals;
 
 var allTests = [];
 function registerTest(fun) {
@@ -396,22 +397,9 @@ function testRegExpParsing() {
   runTest('\\/');
 }
 
-function alphaJson(obj) {
-  if (Array.isArray(obj)) {
-    return '[' + obj.map(alphaJson).join(',') + ']';
-  } else if (!obj || typeof obj != 'object') {
-    return JSON.stringify(obj);
-  } else if (typeof obj == 'object') {
-    var parts = Object.keys(obj).sort().map(function(key) {
-      return alphaJson(key) + ':' + alphaJson(obj[key]);
-    });
-    return '{' + parts.join(',') + '}';
-  }
-}
-
 var exprParser = getFragmentParser('Expression');
 function exprCheck(source, expected) {
-  assertEquals(alphaJson(exprParser(source)), alphaJson(expected));
+  assertJsonEquals(expected, exprParser(source));
 }
 
 function lit(value) {
@@ -653,7 +641,7 @@ function testFunctionExpressionParsing() {
 
 var stmtParser = getFragmentParser('Statement');
 function stmtCheck(source, expected) {
-  assertEquals(alphaJson(stmtParser(source)), alphaJson(expected));
+  assertJsonEquals(expected, stmtParser(source));
 }
 
 function exp(expr) {
@@ -709,6 +697,10 @@ function fr(init, test, update, body) {
 
 function fin(left, right, body) {
   return {type: 'ForInStatement', left: left, right: right, body: body};
+}
+
+function wth(object, body) {
+  return {type: 'WithStatement', object: object, body: body};
 }
 
 function swc(disc, var_args) {
@@ -783,6 +775,11 @@ function testWhileStatementParsing() {
   stmtCheck('do a; while (b);', dow(exp(id('a')), id('b')));
 }
 
+registerTest(testWithStatementParsing);
+function testWithStatementParsing() {
+  stmtCheck('with (a) b;', wth(id('a'), exp(id('b'))));
+}
+
 registerTest(testForStatementParsing);
 function testForStatementParsing() {
   // Three-clause
@@ -829,7 +826,7 @@ function testVariableStatementParsing() {
 
 var elmParser = getFragmentParser('SourceElement');
 function elmCheck(source, expected) {
-  assertEquals(alphaJson(elmParser(source)), alphaJson(expected));
+  assertJsonEquals(expected, elmParser(source));
 }
 
 function fdc(name, params, body) {
@@ -845,7 +842,7 @@ function testSourceElementParsing() {
 
 var progParser = getFragmentParser('Program');
 function progCheck(source, expected) {
-  assertEquals(alphaJson(progParser(source)), alphaJson(expected));
+  assertJsonEquals(expected, progParser(source));
 }
 
 function prg(var_args) {
@@ -873,11 +870,39 @@ function testStatementUnparsing() {
   stmtUnparse('if (3) 4;');
   stmtUnparse('if (3) 4; else 5;');
   stmtUnparse('while (3) 4;');
+  stmtUnparse('with (3) 4;');
   stmtUnparse('do 4; while (3);');
   stmtUnparse('break;');
   stmtUnparse('break foo;');
   stmtUnparse('continue;');
   stmtUnparse('continue foo;');
+}
+
+
+registerTest(testQuoting);
+function testQuoting() {
+  var dialect = new myjs.Dialect('myjs.Quote').addFragment('myjs.Quote');
+  function run(expected, input) {
+    var source = dialect.translate("(" + input + ");");
+    source = source.replace(/;$/m, '');
+    // Don't look now!
+    var global = {};
+    dialect.installLibraries(global);
+    with (global) {
+      var value = eval("(" + source + ")");
+      assertJsonEquals(expected, value);
+    }
+  }
+  run(id('foo'), '`foo');
+  run(bin(lit(1), "+", lit(2)), '`(1 + 2)');
+  run(lit(3), '`3');
+  run(lit(3), '`(,(lift(1 + 2)))');
+  run(call(id("foo"), lit(1), lit(2)), '`(foo(1, 2))');
+  run(call(id("foo"), lit(1), lit(3)), '`(foo(1, ,(lift(1 + 2))))');
+  run(call(id("foo"), lit(1), lit(2)), '`(foo(,@[`1, `2]))');
+  run(fun(null, ['a', 'b'], bck(ret(lit(0)))), '`(function(a, b) { return 0; })');
+  run(fun(null, ['a', 'b'], bck(ret(lit(0)))), '`(function(a, ,(`b)) { return 0; })');
+  run(fun(null, ['a', 'c'], bck(ret(lit(0)))), '`(function(,@[`a, `c]) { return 0; })');
 }
 
 module.exports.getAllTests = function() {

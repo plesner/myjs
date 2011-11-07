@@ -40,6 +40,9 @@ goog.require('myjs.ast');
     this.translateContext = translateContext;
   }
 
+  /**
+   * @suppress {checkTypes}
+   */
   QuoteVisitor.prototype.visitArray = function(asts, dialect) {
     function flushBuffer() {
       if (buffer.length > 0) {
@@ -141,8 +144,15 @@ goog.require('myjs.ast');
     return syntax;
   }
 
+  function installLibrary(global) {
+    global.lift = function(value) {
+      return new myjs.ast.Literal(value);
+    };
+  }
+
   var fragment = new myjs.Fragment('myjs.Quote')
     .setSyntaxProvider(getSyntax)
+    .setLibraryProvider(installLibrary)
     .registerType('QuoteExpression', myjs.ast.QuoteExpression)
     .registerType('UnquoteExpression', myjs.ast.UnquoteExpression);
 

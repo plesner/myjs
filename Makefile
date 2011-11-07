@@ -17,7 +17,9 @@ src/fragments/lefthand.js    \
 src/fragments/operators.js   \
 src/fragments/program.js     \
 src/fragments/statement.js   \
-src/extensions/quote.js
+src/fragments/with.js        \
+src/extensions/quote.js      \
+src/extensions/harmony-classes.js
 
 EXTRA_DEPS=Makefile
 

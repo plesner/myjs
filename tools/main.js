@@ -41,6 +41,7 @@ var FILES = [
   ['src/fragments/control.js'],
   ['src/fragments/iteration.js'],
   ['src/fragments/exceptions.js'],
+  ['src/fragments/with.js'],
   ['src/extensions/quote.js']
 ];
 

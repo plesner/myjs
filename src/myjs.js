@@ -190,6 +190,7 @@ myjs.Dialect = function(name) {
   this.punctuators = null;
   this.settings = null;
   this.types = null;
+  this.libraries = null;
 };
 
 /**
@@ -221,6 +222,9 @@ myjs.Dialect.prototype.addFragment = function(var_args) {
   }
   return this;
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'addFragment',
+    myjs.Dialect.prototype.addFragment);
 
 /**
  * Sets the name of this dialect's parent dialect.
@@ -276,8 +280,25 @@ myjs.Dialect.prototype.getSyntax_ = function() {
   return this.syntax;
 };
 
-goog.exportProperty(myjs.Dialect.prototype, 'getSyntax_',
-    myjs.Dialect.prototype.getSyntax_);
+myjs.Dialect.prototype.installLibraries = function(global) {
+  if (this.libraries == null) {
+    var libraries = [];
+    if (this.parent) {
+      var parentDialect = myjs.getDialect(this.parent);
+      libraries.push(parentDialect.installLibraries.bind(parentDialect));
+    }
+    this.fragments.forEach(function(name) {
+      var fragment = myjs.getFragment(name);
+      if (fragment.libraryProvider) {
+        libraries.push(fragment.libraryProvider);
+      }
+    });
+    this.libraries = libraries;
+  }
+  this.libraries.forEach(function(library) {
+    library(global);
+  });
+};
 
 /**
  * Given a set of objects, returns one object that for each key in one of the
@@ -364,17 +385,18 @@ myjs.Dialect.prototype.getScannerSettings_ = function() {
  *
  * @param {string} source source code in this dialect.
  * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
- * @param {boolean} trace true if parsing should be traced.
  * @return {*} the syntax tree for the given source.
- * @private
  * @suppress {checkTypes}
  */
-myjs.Dialect.prototype.parse_ = function(source, origin, trace) {
+myjs.Dialect.prototype.parse = function(source, origin) {
   var grammar = this.getGrammar_();
   var parser = new myjs.tedir.Parser(grammar);
   var tokens = this.tokenize_(source);
-  return parser.parse(this.getStart_(), tokens, origin, trace);
+  return parser.parse(this.getStart_(), tokens, origin);
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'parse',
+    myjs.Dialect.prototype.parse);
 
 /**
  * Abstract syntax tree visitor.
@@ -564,16 +586,12 @@ myjs.Dialect.prototype.tokenize_ = function(source) {
  *
  * @param {string} source source code in this dialect.
  * @param {myjs.tedir.SourceOrigin} origin origin of the source code.
- * @param {boolean} trace true if parsing should be traced.
  * @return {*} plain javascript translation of the source.
  */
-myjs.Dialect.prototype.translate = function(source, origin, trace) {
-  var ast = this.parse_(source, origin, trace);
-  if (trace) {
-    return ast;
-  }
+myjs.Dialect.prototype.translate = function(source, origin) {
+  var ast = this.parse(source, origin);
   var translated = this.translate_(ast);
-  return this.unparse_(translated);
+  return this.unparse(translated);
 };
 
 goog.exportProperty(myjs.Dialect.prototype, 'translate',
@@ -654,13 +672,15 @@ myjs.Dialect.prototype.calcTokenTypes_ = function() {
  *
  * @param {*} ast the ast node to unparse.
  * @return {string} the source code as a string.
- * @private
  */
-myjs.Dialect.prototype.unparse_ = function(ast) {
+myjs.Dialect.prototype.unparse = function(ast) {
   var context = new myjs.SourceStream(this);
   context.node(ast);
   return context.flush_();
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'unparse',
+  myjs.Dialect.prototype.unparse);
 
 /**
  * Adds the given dialect to the set known by myjs.
@@ -696,6 +716,7 @@ goog.exportSymbol('myjs.getDialect', myjs.getDialect);
 myjs.Fragment = function(name) {
   this.name = name;
   this.syntaxProvider = null;
+  this.libraryProvider = null;
   this.syntax = null;
   this.types = {};
 };
@@ -718,6 +739,19 @@ myjs.Fragment.registry_ = {};
  */
 myjs.Fragment.prototype.setSyntaxProvider = function(syntaxProvider) {
   this.syntaxProvider = syntaxProvider;
+  return this;
+};
+
+/**
+ * Sets the library provider function for this fragment. This function will be
+ * called with the global namespace as an argument to add any library functions.
+ *
+ * @param {function(Object):*} libraryProvider function to call to set up the
+ *   library.
+ * @return {myjs.Fragment} this fragment, for chaining.
+ */
+myjs.Fragment.prototype.setLibraryProvider = function(libraryProvider) {
+  this.libraryProvider = libraryProvider;
   return this;
 };
 
@@ -1505,4 +1539,5 @@ myjs.registerDialect(new myjs.Dialect('myjs.JavaScript')
   .addFragment('myjs.Expression')
   .addFragment('myjs.Control')
   .addFragment('myjs.Iteration')
-  .addFragment('myjs.Exceptions'));
+  .addFragment('myjs.Exceptions')
+  .addFragment('myjs.With'));

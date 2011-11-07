@@ -32,6 +32,7 @@ goog.exportProperty(module.exports['factory'], 'seq', myjs.factory.seq);
 goog.exportProperty(module.exports, 'getDialect', myjs.getDialect);
 goog.exportProperty(module.exports, 'Trie_', myjs.Trie_);
 goog.exportProperty(module.exports, 'Syntax', myjs.Syntax);
+goog.exportProperty(module.exports, 'Dialect', myjs.Dialect);
 
 // utils
 goog.exportProperty(module.exports, 'utils', {});
