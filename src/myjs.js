@@ -412,13 +412,46 @@ myjs.AstVisitor.prototype.visitArray = goog.abstractMethod;
 myjs.AstVisitor.prototype.visitPrimitive = goog.abstractMethod;
 
 /**
+ * Data associated with a translation operation.
+ *
+ * @param {myjs.Dialect} dialect the dialect we're translating within.
+ * @constructor
+ */
+myjs.TranslateContext = function(dialect) {
+  this.dialect = dialect;
+  this.visitor = new myjs.TranslateVisitor_(this);
+};
+
+/**
+ * Translate the given node within this context.
+ *
+ * @param {*} node the node to translate.
+ * @return {*} translated version of the node.
+ */
+myjs.TranslateContext.prototype.translate = function(node) {
+  return this.dialect.traverse(node, this.visitor);
+};
+
+/**
+ * Returns the dialect this translation is taking place within.
+ *
+ * @return {myjs.Dialect} the dialect we're translating within.
+ */
+myjs.TranslateContext.prototype.getDialect = function() {
+  return this.dialect;
+};
+
+/**
  * Ast visitor for translating syntax trees.
  *
+ * @param {myjs.TranslateContext} context the translate context.
  * @constructor
  * @implements myjs.AstVisitor
  * @private
  */
-myjs.TranslateVisitor_ = function() { };
+myjs.TranslateVisitor_ = function(context) {
+  this.context = context;
+};
 
 /**
  * @inheritDoc
@@ -429,16 +462,14 @@ myjs.TranslateVisitor_.prototype.visitNode = function(node, type, dialect) {
   if (type && type.prototype['translate']) {
     // If this node type has a custom translater we call it to do the
     // translation.
-    return type.prototype['translate'].call(node, dialect, function(child) {
-      return dialect.traverse(child, self);
-    });
+    return type.prototype['translate'].call(node, this.context);
   } else {
     // Otherwise we manually scan through the node and build a translated
     // result.
     var keys = Object.keys(node);
     var result = {};
     keys.forEach(function(key) {
-      result[key] = dialect.traverse(node[key], self);
+      result[key] = self.context.translate(node[key]);
     });
     return result;
   }
@@ -449,7 +480,7 @@ myjs.TranslateVisitor_.prototype.visitNode = function(node, type, dialect) {
  */
 myjs.TranslateVisitor_.prototype.visitArray = function(nodes, dialect) {
   var self = this;
-  return nodes.map(function(node) { return dialect.traverse(node, self); });
+  return nodes.map(function(node) { return self.context.translate(node); });
 };
 
 /**
@@ -467,8 +498,8 @@ myjs.TranslateVisitor_.prototype.visitPrimitive = function(value, dialect) {
  * @private
  */
 myjs.Dialect.prototype.translate_ = function(ast) {
-  var visitor = new myjs.TranslateVisitor_();
-  return this.traverse(ast, visitor);
+  var context = new myjs.TranslateContext(this);
+  return context.translate(ast);
 };
 
 /**
@@ -492,6 +523,21 @@ myjs.Dialect.prototype.traverse = function(ast, visitor) {
   } else {
     throw new myjs.Error('Unexpected syntax tree node ' + JSON.stringify(ast) +
       '.');
+  }
+};
+
+/**
+ * Returns the syntax tree value's type, if it is a node. Otherwise null.
+ *
+ * @param {*} ast the syntax tree value.
+ * @return {Function|null} the ast node's type.
+ */
+myjs.Dialect.prototype.getType = function(ast) {
+  if (ast != null && (typeof ast == 'object') &&
+    (typeof ast['type'] == 'string')) {
+    return this.getType_(ast['type']);
+  } else {
+    return null;
   }
 };
 

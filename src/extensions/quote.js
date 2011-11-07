@@ -36,14 +36,45 @@ goog.require('myjs.ast');
    * @constructor
    * @implements myjs.AstVisitor
    */
-  function QuoteVisitor(translatePlain) {
-    this.translatePlain = translatePlain;
+  function QuoteVisitor(translateContext) {
+    this.translateContext = translateContext;
   }
 
   QuoteVisitor.prototype.visitArray = function(asts, dialect) {
-    var self = this;
-    var elms = asts.map(function(ast) { return dialect.traverse(ast, self); });
-    return new myjs.ast.ArrayExpression(elms);
+    function flushBuffer() {
+      if (buffer.length > 0) {
+        segments.push(new myjs.ast.ArrayExpression(buffer));
+        buffer = [];
+      }
+    }
+    var buffer = [];
+    var segments = [];
+    for (var i = 0; i < asts.length; i++) {
+      var ast = asts[i];
+      var type = dialect.getType(ast);
+      if (type == myjs.ast.UnquoteExpression && ast['splice']) {
+        var part = type.prototype.translate.call(ast, this.translateContext);
+        flushBuffer();
+        segments.push(part);
+      } else {
+        buffer.push(dialect.traverse(ast, this));
+      }
+    }
+    flushBuffer();
+    if (segments.length == 0) {
+      return new myjs.ast.ArrayExpression([]);
+    } else {
+      var result = segments[0];
+      for (var i = 1; i < segments.length; i++) {
+        result = new myjs.ast.CallExpression(
+          new myjs.ast.MemberExpression(
+            result,
+            new myjs.ast.Identifier('concat'),
+            false),
+          [ segments[i] ]);
+      }
+      return result;
+    }
   };
 
   /**
@@ -51,7 +82,7 @@ goog.require('myjs.ast');
    */
   QuoteVisitor.prototype.visitNode = function(ast, type, dialect) {
     if (type == myjs.ast.UnquoteExpression) {
-      return (this.translatePlain)(ast['value']);
+      return type.prototype.translate.call(ast, this.translateContext);
     } else {
       var self = this;
       var keys = Object.keys(ast);
@@ -68,9 +99,9 @@ goog.require('myjs.ast');
     return new myjs.ast.Literal(value);
   };
 
-  myjs.ast.QuoteExpression.prototype.translate = function(dialect, recurse) {
-    var visitor = new QuoteVisitor(recurse);
-    return dialect.traverse(this['value'], visitor);
+  myjs.ast.QuoteExpression.prototype.translate = function(context) {
+    var visitor = new QuoteVisitor(context);
+    return context.getDialect().traverse(this['value'], visitor);
   };
 
   goog.exportProperty(myjs.ast.QuoteExpression.prototype, 'translate',
@@ -80,9 +111,14 @@ goog.require('myjs.ast');
    * @constructor
    * @extends myjs.ast.Expression
    */
-  myjs.ast.UnquoteExpression = function(value) {
+  myjs.ast.UnquoteExpression = function(spliceMarker, value) {
     this['type'] = 'UnquoteExpression';
     this['value'] = value;
+    this['splice'] = !!spliceMarker;
+  };
+
+  myjs.ast.UnquoteExpression.prototype.translate = function(context) {
+    return context.translate(this['value']);
   };
 
   function getSyntax() {
@@ -96,9 +132,10 @@ goog.require('myjs.ast');
       .setConstructor(myjs.ast.QuoteExpression);
 
     // <Identifier>
-    //   -> "," <PrimaryExpression>
+    //   -> "," "@"? <PrimaryExpression>
     syntax.getRule('Identifier')
-      .addProd(f.punct(','), f.nonterm('PrimaryExpression'))
+      .addProd(f.punct(','), f.option(f.punctValue('@')),
+        f.nonterm('PrimaryExpression'))
       .setConstructor(myjs.ast.UnquoteExpression);
 
     return syntax;

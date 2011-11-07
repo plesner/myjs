@@ -1,5 +1,5 @@
 # Use this flag to get a debug version of the output library.
-DEBUG=0
+DEBUG=1
 
 # Files that need to be part of the resulting library.
 SHARED_FILES=                \

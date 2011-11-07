@@ -5,10 +5,10 @@ function BoundMethodExpression(atom, name) {
   this.name = name;
 }
 
-BoundMethodExpression.prototype.translate = function(dialect, recurse) {
+BoundMethodExpression.prototype.translate = function(context) {
   return `((function(temp) {
-    return temp.,(recurse(this.name)).bind(temp);
-  })(,(recurse(this.atom))));
+    return temp.,(context.translate(this.name)).bind(temp);
+  })(,(context.translate(this.atom))));
 };
 
 // Unbound method syntax tree node.
@@ -17,9 +17,9 @@ function UnboundMethodExpression(name) {
   this.name = name;
 }
 
-UnboundMethodExpression.prototype.translate = function(dialect, recurse) {
+UnboundMethodExpression.prototype.translate = function(context) {
   return `(function(recv, var_args) {
-    return recv.,(recurse(this.name)).apply(recv, Array.prototype.splice.call(arguments, 1));
+    return recv.,(context.translate(this.name)).apply(recv, Array.prototype.splice.call(arguments, 1));
   });
 };
 

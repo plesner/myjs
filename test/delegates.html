@@ -15,7 +15,7 @@ Printer.prototype.print = function(value) {
 var p = new Printer("Looky here: ");
 
 [1, 2, 3].map(p::print);
-::print(p, "Where?");
+(::print)(p, "Where?");
   </script>
   <body></body>
 </html>
