@@ -72,10 +72,18 @@ function parseAllFiles(files) {
   var failed = [];
   forEachAsync(files, function(pair, doNext) {
     var name = pair[0];
-    var dialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
+    var defaultDialect = myjs.getDialect(pair[1] || 'myjs.JavaScript');
     fs.readFile(name, 'utf8', function(error, rawSource) {
       // Strip any hashbangs.
       var source = rawSource.replace(/^\#\!.*/, '');
+      var dialect = defaultDialect;
+      var useClause = /'use\s+(\S+)';/.exec(source);
+      if (useClause) {
+        var dialectName = useClause[1];
+        if (dialectName != 'strict') {
+          dialect = new myjs.Dialect(dialectName).addFragment(dialectName);
+        }
+      }
       var origin = new myjs.tedir.SourceOrigin(name);
       var now = new Date();
       if (CATCH_ERRORS) {
@@ -182,16 +190,21 @@ var benchBlacklist = {
   'download/library/third_party/closure/goog/caja/string/html/htmlparser.js': true
 };
 
-/**
- * Parse all files in the closure library.
- */
-Runner.prototype.benchHandler = function() {
-  this.listFiles("download/library", function(files) {
+Runner.prototype.scanAndParse = function(root) {
+  this.listFiles(root, function(files) {
     var jses = files.filter(matchFilter(/\.js$/));
     var whitelist = jses.filter(function(elm) { return !benchBlacklist[elm]; });
     var pairs = whitelist.map(function(elm) { return [elm]; });
     parseAllFiles(pairs);
   });
+};
+
+/**
+ * Parse all files in the closure library.
+ */
+Runner.prototype.benchHandler = function() {
+  this.scanAndParse('test/files');
+  this.scanAndParse('download/library');
 };
 
 function strip(text) {

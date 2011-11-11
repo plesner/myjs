@@ -129,7 +129,9 @@ goog.require('myjs.ast');
     var f = myjs.factory;
 
     function chainContents(context, name) {
-      return f.filter(f.seq(f.punct('('), f.nonterm(name), f.punct(')')),
+      return f.filter(f.choice(
+        f.seq(f.punct('('), f.nonterm(name), f.punct(')')),
+        f.seq(f.punct('{'), f.nonterm(name), f.punct('}'))),
         myjs.ast.QuoteExpression, true);
     }
 
