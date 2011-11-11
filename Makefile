@@ -1,5 +1,5 @@
 # Use this flag to get a debug version of the output library.
-DEBUG=1
+DEBUG=0
 
 # Files that need to be part of the resulting library.
 SHARED_FILES=                \
@@ -69,7 +69,7 @@ TOOL=tools/main.js
 all:		$(WEB_LIB) test bench lint
 
 # Runs the tests and lints all files.
-presubmit:	test lint docs
+presubmit:	all
 
 $(WEB_LIB):	$(WEB_LIB_FILES) download/compiler download/library $(OUTDIR) $(EXTRA_DEPS)
 		java -jar download/compiler/compiler.jar              \

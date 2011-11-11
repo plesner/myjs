@@ -6,7 +6,7 @@ function BoundMethodExpression(atom, name) {
 }
 
 BoundMethodExpression.prototype.translate = function(context) {
-  return `((function(temp) {
+  return #Expression((function(temp) {
     return temp.,(context.translate(this.name)).bind(temp);
   })(,(context.translate(this.atom))));
 };
@@ -18,7 +18,7 @@ function UnboundMethodExpression(name) {
 }
 
 UnboundMethodExpression.prototype.translate = function(context) {
-  return `(function(recv, var_args) {
+  return #Expression(function(recv, var_args) {
     return recv.,(context.translate(this.name)).apply(recv, Array.prototype.splice.call(arguments, 1));
   });
 };

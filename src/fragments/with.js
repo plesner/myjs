@@ -58,7 +58,7 @@ myjs.ast.WithStatement.prototype.unparse = function(context) {
     syntax.getRule('WithStatement')
       .addProd(f.keyword('with'), f.punct('('), f.nonterm('Expression'),
         f.punct(')'), f.nonterm('Statement'))
-      .setConstructor(myjs.ast.WithStatement)
+      .setConstructor(myjs.ast.WithStatement);
 
     return syntax;
   }

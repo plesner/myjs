@@ -276,6 +276,20 @@ myjs.tedir.factory.filter = function(body, filter, isConstructor) {
 };
 
 /**
+ * Returns a new expression that first parses the head and then invokes the
+ * tail function, passing the value of the head, to get the expression to
+ * use to continue parsing.
+ *
+ * @param {myjs.tedir.Expression} head the first part of this expression.
+ * @param {function(myjs.tedir.ParseContext, *):myjs.tedir.Expression} tailFun
+ *   the function to provide the rest of the expression.
+ * @return {myjs.tedir.Expression} the resulting chain expression.
+ */
+myjs.tedir.factory.chain = function(head, tailFun) {
+  return new myjs.tedir.Chain_(head, tailFun);
+};
+
+/**
  * The singleton error marker.
  * @type {Object}
  * @private
@@ -474,7 +488,7 @@ myjs.tedir.Nonterm_.prototype.normalize = function() {
  * @inheritDoc
  */
 myjs.tedir.Nonterm_.prototype.parse = function(context) {
-  var grammar = context.parser.grammar;
+  var grammar = context.getParser().getGrammar();
   return grammar.getNonterm(this.name).parse(context);
 };
 
@@ -897,20 +911,17 @@ myjs.tedir.Ignore_.prototype.toString = function() {
  * @param {myjs.tedir.Expression} term the subexpression to parse.
  * @param {function(Array):*} filter the filter function to invoke.
  * @param {boolean} isConstructor call the function as a constructor?
- * @param {number=} opt_arity the arity of the subexpression, if known. If
- *   not specified it will be calculated when needed.
  * @constructor
  * @extends myjs.tedir.Expression
  * @private
  */
-myjs.tedir.Filter_ = function(term, filter, isConstructor, opt_arity) {
+myjs.tedir.Filter_ = function(term, filter, isConstructor) {
+  myjs.utils.base(this).call(this);
   this.term = term;
   this.filter = filter;
   this.isConstructor = isConstructor;
-  var arity = (opt_arity === undefined) ? -1 : opt_arity;
-  this.arity = arity;
-  this.invoker = myjs.tedir.Invoker_.forArity(arity, this.isConstructor,
-    this.filter);
+  this.arity = -1;
+  this.invoker = null;
 };
 goog.inherits(myjs.tedir.Filter_, myjs.tedir.Expression);
 
@@ -929,12 +940,41 @@ myjs.tedir.Filter_.prototype.forEachChild = function(visitor) {
 };
 
 /**
+ * Returns the arity of the body of this expression, calculating it the first
+ * time the method is called.
+ *
+ * @return {number} the arity of the body of this expression.
+ * @private
+ */
+myjs.tedir.Filter_.prototype.getBodyArity_ = function() {
+  if (this.arity == -1) {
+    this.arity = this.term.getArity();
+  }
+  return this.arity;
+};
+
+/**
+ * Returns the invoker appropriate for calling the handler, calculating it
+ * the first time this method is called.
+ *
+ * @return {function(Array):*} the invoker.
+ * @private
+ */
+myjs.tedir.Filter_.prototype.getInvoker_ = function() {
+  if (!this.invoker) {
+    this.invoker = myjs.tedir.Invoker_.forArity(this.getBodyArity_(),
+      this.isConstructor, this.filter);
+  }
+  return this.invoker;
+};
+
+/**
  * @inheritDoc
  * @suppress {checkTypes}
  */
 myjs.tedir.Filter_.prototype.parse = function(context) {
   var value = this.term.parse(context);
-  return context.isError(value) ? value : (this.invoker)(value);
+  return context.isError(value) ? value : (this.getInvoker_())(value);
 };
 
 /**
@@ -942,9 +982,60 @@ myjs.tedir.Filter_.prototype.parse = function(context) {
  */
 myjs.tedir.Filter_.prototype.normalize = function() {
   var term = this.term.normalize();
-  var arity = (this.arity === -1) ? term.getArity() : this.arity;
-  return new myjs.tedir.Filter_(term, this.filter, this.isConstructor,
-    arity);
+  return new myjs.tedir.Filter_(term, this.filter, this.isConstructor);
+};
+
+/**
+ * A grammar expression that, when parsing, first parses according to the
+ * head expression and then invokes the given tail function with the
+ * result, using the returned expression to continue parsing..
+ *
+ * @param {myjs.tedir.Expression} head the subexpression to parse.
+ * @param {function(myjs.tedir.ParseContext, *):myjs.tedir.Expression} tailFun
+ *   the function that provides the expression to continue parsing.
+ * @constructor
+ * @extends myjs.tedir.Expression
+ * @private
+ */
+myjs.tedir.Chain_ = function(head, tailFun) {
+  myjs.utils.base(this).call(this);
+  this.head = head;
+  this.tailFun = tailFun;
+};
+goog.inherits(myjs.tedir.Chain_, myjs.tedir.Expression);
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Chain_.prototype.getType = function() {
+  return 'CHAIN';
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Chain_.prototype.forEachChild = function(visitor) {
+  visitor(this.head);
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Chain_.prototype.normalize = function() {
+  return new myjs.tedir.Chain_(this.head.normalize(), this.tailFun);
+};
+
+/**
+ * @inheritDoc
+ */
+myjs.tedir.Chain_.prototype.parse = function(context) {
+  var value = this.head.parse(context);
+  if (context.isError(value)) {
+    return value;
+  } else {
+    var rest = (this.tailFun)(context, value);
+    return rest.parse(context);
+  }
 };
 
 /**
@@ -1713,6 +1804,21 @@ myjs.tedir.ParseContext.prototype.getTokenStream = function() {
   return this.input;
 };
 
+goog.exportProperty(myjs.tedir.ParseContext.prototype, 'getTokenStream',
+    myjs.tedir.ParseContext.prototype.getTokenStream);
+
+/**
+ * Returns the current active parser.
+ *
+ * @return {myjs.tedir.Parser} the raw array of input tokens.
+ */
+myjs.tedir.ParseContext.prototype.getParser = function() {
+  return this.parser;
+};
+
+goog.exportProperty(myjs.tedir.ParseContext.prototype, 'getParser',
+    myjs.tedir.ParseContext.prototype.getParser);
+
 /**
  * Returns the sentinel object used to signal that parsing failed.
  *
@@ -1768,6 +1874,18 @@ myjs.tedir.Parser = function(grammarOrSyntax) {
   this.grammar = grammarOrSyntax.asGrammar();
 };
 goog.exportSymbol('myjs.tedir.Parser', myjs.tedir.Parser);
+
+/**
+ * Return this parser's grammar.
+ *
+ * @return {myjs.tedir.Grammar} the grammar.
+ */
+myjs.tedir.Parser.prototype.getGrammar = function() {
+  return this.grammar;
+};
+
+goog.exportProperty(myjs.tedir.Parser.prototype, 'getGrammar',
+    myjs.tedir.Parser.prototype.getGrammar);
 
 /**
  * Parses the given array of tokens according to this parser's grammar.

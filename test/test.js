@@ -878,31 +878,34 @@ function testStatementUnparsing() {
   stmtUnparse('continue foo;');
 }
 
-
 registerTest(testQuoting);
 function testQuoting() {
   var dialect = new myjs.Dialect('myjs.Quote').addFragment('myjs.Quote');
   function run(expected, input) {
-    var source = dialect.translate("(" + input + ");");
+    var source = dialect.translate('(' + input + ');');
     source = source.replace(/;$/m, '');
     // Don't look now!
     var global = {};
     dialect.installLibraries(global);
     with (global) {
-      var value = eval("(" + source + ")");
+      var value = eval('(' + source + ')');
       assertJsonEquals(expected, value);
     }
   }
-  run(id('foo'), '`foo');
-  run(bin(lit(1), "+", lit(2)), '`(1 + 2)');
-  run(lit(3), '`3');
-  run(lit(3), '`(,(lift(1 + 2)))');
-  run(call(id("foo"), lit(1), lit(2)), '`(foo(1, 2))');
-  run(call(id("foo"), lit(1), lit(3)), '`(foo(1, ,(lift(1 + 2))))');
-  run(call(id("foo"), lit(1), lit(2)), '`(foo(,@[`1, `2]))');
-  run(fun(null, ['a', 'b'], bck(ret(lit(0)))), '`(function(a, b) { return 0; })');
-  run(fun(null, ['a', 'b'], bck(ret(lit(0)))), '`(function(a, ,(`b)) { return 0; })');
-  run(fun(null, ['a', 'c'], bck(ret(lit(0)))), '`(function(,@[`a, `c]) { return 0; })');
+  run(id('foo'), '#Expression(foo)');
+  run(bin(lit(1), '+', lit(2)), '#Expression(1 + 2)');
+  run(lit(3), '#Expression(3)');
+  run(lit(3), '#Expression(,(lift(1 + 2)))');
+  run(call(id('foo'), lit(1), lit(2)), '#Expression(foo(1, 2))');
+  run(call(id('foo'), lit(1), lit(3)), '#Expression(foo(1, ,(lift(1 + 2))))');
+  run(call(id('foo'), lit(1), lit(2)),
+    '#Expression(foo(,@[#Expression(1), #Expression(2)]))');
+  run(fun(null, ['a', 'b'], bck(ret(lit(0)))),
+    '#Expression(function(a, b) { return 0; })');
+  run(fun(null, ['a', 'b'], bck(ret(lit(0)))),
+    '#Expression(function(a, ,(#Expression(b))) { return 0; })');
+  run(fun(null, ['a', 'c'], bck(ret(lit(0)))),
+      '#Expression(function(,@[#Expression(a), #Expression(c)]) {return 0;})');
 }
 
 module.exports.getAllTests = function() {

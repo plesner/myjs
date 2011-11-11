@@ -55,6 +55,12 @@ module.exports.sortedJson = function(obj) {
   }
 };
 
+/**
+ * Asserts that the two given objects are identical when viewed as json.
+ *
+ * @param {Object} a first value.
+ * @param {Object} b second value.
+ */
 module.exports.assertJsonEquals = function(a, b) {
   module.exports.assertEquals(module.exports.sortedJson(a),
     module.exports.sortedJson(b));

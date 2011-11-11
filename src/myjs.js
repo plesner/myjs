@@ -67,6 +67,18 @@ goog.exportProperty(myjs.factory, 'custom', myjs.factory.custom);
 myjs.factory.seq = myjs.tedir.factory.seq;
 goog.exportProperty(myjs.factory, 'seq', myjs.factory.seq);
 
+/***/
+myjs.factory.chain = myjs.tedir.factory.chain;
+goog.exportProperty(myjs.factory, 'chain', myjs.factory.chain);
+
+/***/
+myjs.factory.empty = myjs.tedir.factory.empty;
+goog.exportProperty(myjs.factory, 'empty', myjs.factory.empty);
+
+/***/
+myjs.factory.filter = myjs.tedir.factory.filter;
+goog.exportProperty(myjs.factory, 'filter', myjs.factory.filter);
+
 /**
  * @inheritDoc
  */
@@ -280,6 +292,12 @@ myjs.Dialect.prototype.getSyntax_ = function() {
   return this.syntax;
 };
 
+/**
+ * Installs any libraries defined by fragments in this dialect in the given
+ * object, typically the global object.
+ *
+ * @param {Object} global the object to install libraries in.
+ */
 myjs.Dialect.prototype.installLibraries = function(global) {
   if (this.libraries == null) {
     var libraries = [];
@@ -299,6 +317,9 @@ myjs.Dialect.prototype.installLibraries = function(global) {
     library(global);
   });
 };
+
+goog.exportProperty(myjs.Dialect.prototype, 'installLibraries',
+    myjs.Dialect.prototype.installLibraries);
 
 /**
  * Given a set of objects, returns one object that for each key in one of the
@@ -552,7 +573,7 @@ myjs.Dialect.prototype.traverse = function(ast, visitor) {
  * Returns the syntax tree value's type, if it is a node. Otherwise null.
  *
  * @param {*} ast the syntax tree value.
- * @return {Function|null} the ast node's type.
+ * @return {?Function} the ast node's type.
  */
 myjs.Dialect.prototype.getType = function(ast) {
   if (ast != null && (typeof ast == 'object') &&

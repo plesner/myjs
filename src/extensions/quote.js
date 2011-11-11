@@ -74,7 +74,7 @@ goog.require('myjs.ast');
             result,
             new myjs.ast.Identifier('concat'),
             false),
-          [ segments[i] ]);
+          [segments[i]]);
       }
       return result;
     }
@@ -128,11 +128,16 @@ goog.require('myjs.ast');
     var syntax = myjs.Syntax.create();
     var f = myjs.factory;
 
+    function chainContents(context, name) {
+      return f.filter(f.seq(f.punct('('), f.nonterm(name), f.punct(')')),
+        myjs.ast.QuoteExpression, true);
+    }
+
     // <PrimaryExpression>
-    //   -> "`" <PrimaryExpression>
+    //   -> "#" [$Identifier -> "("  ")"]
     syntax.getRule('PrimaryExpression')
-      .addProd(f.punct('`'), f.nonterm('PrimaryExpression'))
-      .setConstructor(myjs.ast.QuoteExpression);
+      .addProd(f.punct('#'), f.chain(f.value('Identifier'),
+        chainContents));
 
     // <Identifier>
     //   -> "," "@"? <PrimaryExpression>
@@ -145,7 +150,7 @@ goog.require('myjs.ast');
   }
 
   function installLibrary(global) {
-    global.lift = function(value) {
+    global['lift'] = function(value) {
       return new myjs.ast.Literal(value);
     };
   }
