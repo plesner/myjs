@@ -859,6 +859,7 @@ goog.exportSymbol('myjs.getFragment', myjs.getFragment);
 /**
  * A "hard" token with a string value.
  *
+ * @param {number} offset the token's offset within the input.
  * @param {string} value the value of this token.
  * @param {string=} opt_type the type of this token. If none is specified
  *   the value will be used.
@@ -866,7 +867,8 @@ goog.exportSymbol('myjs.getFragment', myjs.getFragment);
  * @implements myjs.tedir.Token
  * @private
  */
-myjs.HardToken_ = function(value, opt_type) {
+myjs.HardToken_ = function(offset, value, opt_type) {
+  this.offset = offset;
   this.value = value;
   this.type = opt_type || value;
 };
@@ -896,12 +898,14 @@ myjs.HardToken_.prototype.toString = function() {
  * A "soft" piece of ether that doesn't affect parsing but which we need
  * to keep around to be able to unparse the code again.
  *
+ * @param {number} offset the token's offset within the input.
  * @param {string} value the value of this token.
  * @constructor
  * @implements myjs.tedir.Token
  * @private
  */
-myjs.SoftToken_ = function(value) {
+myjs.SoftToken_ = function(offset, value) {
+  this.offset = offset;
   this.value = value;
 };
 
@@ -1167,6 +1171,7 @@ myjs.Scanner_.isIdentifierPart = function(c) {
  * @return {myjs.tedir.Token} the next token.
  */
 myjs.Scanner_.prototype.scanToken = function() {
+  var start = this.getCursor();
   var c = this.getCurrent();
   switch (c) {
   case '\"':
@@ -1182,9 +1187,9 @@ myjs.Scanner_.prototype.scanToken = function() {
       return this.scanBlockComment();
     case '=':
       this.advance();
-      return this.advanceAndYield('/=');
+      return this.advanceAndYield(start, '/=');
     default:
-      return this.advanceAndYield('/');
+      return this.advanceAndYield(start, '/');
     }
   }
   if (myjs.Scanner_.isWhiteSpace(c)) {
@@ -1197,7 +1202,7 @@ myjs.Scanner_.prototype.scanToken = function() {
     return this.scanIdentifier();
   } else {
     this.advance();
-    return new myjs.SoftToken_(c);
+    return new myjs.SoftToken_(start, c);
   }
 };
 
@@ -1205,13 +1210,14 @@ myjs.Scanner_.prototype.scanToken = function() {
  * Skips over the current character and returns a hard token with the given
  * contents.
  *
+ * @param {number} start the start offset of the token.
  * @param {string} value the token value.
  * @param {string=} opt_type an optional token type.
  * @return {myjs.HardToken_} a hard token with the given value/type.
  */
-myjs.Scanner_.prototype.advanceAndYield = function(value, opt_type) {
+myjs.Scanner_.prototype.advanceAndYield = function(start, value, opt_type) {
   this.advance();
-  return new myjs.HardToken_(value, opt_type);
+  return new myjs.HardToken_(start, value, opt_type);
 };
 
 /**
@@ -1225,7 +1231,7 @@ myjs.Scanner_.prototype.scanWhiteSpace = function() {
     this.advance();
   }
   var end = this.getCursor();
-  return new myjs.SoftToken_(this.getPart(start, end));
+  return new myjs.SoftToken_(start, this.getPart(start, end));
 };
 
 /**
@@ -1237,7 +1243,7 @@ myjs.Scanner_.prototype.scanEscape = function() {
   var start = this.getCursor();
   this.advanceIfPossible(2);
   var end = this.getCursor();
-  return new myjs.HardToken_(this.getPart(start, end));
+  return new myjs.HardToken_(start, this.getPart(start, end));
 };
 
 /**
@@ -1253,9 +1259,9 @@ myjs.Scanner_.prototype.scanIdentifier = function() {
   var end = this.getCursor();
   var value = this.getPart(start, end);
   if (this.settings.isKeyword(value)) {
-    return new myjs.HardToken_(value);
+    return new myjs.HardToken_(start, value);
   } else {
-    return new myjs.HardToken_(value, 'Identifier');
+    return new myjs.HardToken_(start, value, 'Identifier');
   }
 };
 
@@ -1277,7 +1283,7 @@ myjs.Scanner_.prototype.scanPunctuation = function() {
   } while (current && this.hasMore());
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken_(value);
+  return new myjs.HardToken_(start, value);
 };
 
 /**
@@ -1312,7 +1318,7 @@ myjs.Scanner_.prototype.scanNumber = function() {
   }
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken_(value, 'NumericLiteral');
+  return new myjs.HardToken_(start, value, 'NumericLiteral');
 
 };
 
@@ -1354,7 +1360,7 @@ myjs.Scanner_.prototype.scanString = function() {
   this.advanceIfPossible(1);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.HardToken_(value, 'StringLiteral');
+  return new myjs.HardToken_(start, value, 'StringLiteral');
 };
 
 /**
@@ -1370,7 +1376,7 @@ myjs.Scanner_.prototype.scanEndOfLineComment = function() {
   this.advanceIfPossible(1);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.SoftToken_(value);
+  return new myjs.SoftToken_(start, value);
 };
 
 /**
@@ -1387,7 +1393,7 @@ myjs.Scanner_.prototype.scanBlockComment = function() {
   this.advanceIfPossible(2);
   var end = this.getCursor();
   var value = this.getPart(start, end);
-  return new myjs.SoftToken_(value);
+  return new myjs.SoftToken_(start, value);
 };
 
 /**
