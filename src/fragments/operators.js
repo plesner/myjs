@@ -78,6 +78,14 @@ myjs.ast.UnaryExpression = function(operator, argument, prefix) {
   this['prefix'] = prefix;
 };
 
+myjs.ast.UnaryExpression.prototype.unparse = function(context) {
+  if (this['prefix']) {
+    context.node(this['operator']).node(this['argument']);
+  } else {
+    context.node(this['argument']).node(this['operator']);
+  }
+};
+
 /**
  * A unary operator token.
  *
@@ -96,6 +104,10 @@ myjs.ast.UnaryOperator = function(token) {
    * @type {string}
    */
   this['token'] = token;
+};
+
+myjs.ast.UnaryOperator.prototype.unparse = function(context) {
+  context.write(this['token']);
 };
 
 /**
@@ -244,6 +256,14 @@ myjs.ast.UpdateExpression = function(operator, argument, prefix) {
   this['prefix'] = prefix;
 };
 
+myjs.ast.UpdateExpression.prototype.unparse = function(context) {
+  if (this['prefix']) {
+    context.node(this['operator']).node(this['argument']);
+  } else {
+    context.node(this['argument']).node(this['operator']);
+  }
+};
+
 /**
  * An update (increment or decrement) operator token.
  *
@@ -262,6 +282,10 @@ myjs.ast.UpdateOperator = function(token) {
    * @type {string}
    */
   this['token'] = token;
+};
+
+myjs.ast.UpdateOperator.prototype.unparse = function(context) {
+  context.write(this['token']);
 };
 
 /**
@@ -513,7 +537,11 @@ myjs.ast.LogicalOperator = function(token) {
     .registerType('BinaryExpression', BinaryHandler)
     .registerType('BinaryOperator', OperatorHandler)
     .registerType('LogicalExpression', BinaryHandler)
-    .registerType('LogicalOperator', OperatorHandler);
+    .registerType('LogicalOperator', OperatorHandler)
+    .registerType('UnaryExpression', myjs.ast.UnaryExpression)
+    .registerType('UnaryOperator', myjs.ast.UnaryOperator)
+    .registerType('UpdateExpression', myjs.ast.UpdateExpression)
+    .registerType('UpdateOperator', myjs.ast.UpdateOperator);
 
   myjs.registerFragment(fragment);
 

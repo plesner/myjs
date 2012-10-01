@@ -84,6 +84,26 @@ myjs.ast.ForStatement = function(init, test, update, body) {
 };
 
 /**
+ * @inheritDoc
+ */
+myjs.ast.ForStatement.prototype.unparse = function(context) {
+  context.write('for (');
+  if (this['init']) {
+    context.node(this['init']);
+  } else {
+    context.write(';');
+  }
+  if (this['test']) {
+    context.node(this['test']);
+  }
+  context.write(';');
+  if (this['update']) {
+    context.node(this['update']);
+  }
+  context.write(')').node(this['body']);
+};
+
+/**
  * A for/in statement.
  *
  * @param {myjs.ast.Expression|myjs.ast.VariableDeclaration} left the loop
@@ -156,7 +176,8 @@ myjs.ast.ForInStatement = function(left, right, body) {
   var fragment = new myjs.Fragment('myjs.Iteration')
     .setSyntaxProvider(getSyntax)
     .registerType('WhileStatement', myjs.ast.WhileStatement)
-    .registerType('DoWhileStatement', myjs.ast.DoWhileStatement);
+    .registerType('DoWhileStatement', myjs.ast.DoWhileStatement)
+    .registerType('ForStatement', myjs.ast.ForStatement);
 
   myjs.registerFragment(fragment);
 

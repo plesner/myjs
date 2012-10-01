@@ -88,6 +88,7 @@ myjs.mimetype.getFile = function(url, callback) {
 myjs.mimetype.processSource = function(dialect, source, origin) {
   var result = dialect.translate(source, origin);
   console.log(result);
+  dialect.installLibraries(window);
   window.eval(result);
 };
 

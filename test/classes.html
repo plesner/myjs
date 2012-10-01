@@ -1,0 +1,30 @@
+<html>
+  <script src="../out/myjs-web.js"></script>
+  <script type="text/myjs" src="harmony-classes.js" dialect="myjs.Quote"></script>
+  <script type="text/myjs" dialect="harmony.Classes">
+class Point {
+
+  constructor(x, y) {
+    public getX() { return x; }
+    public getY() { return y; }
+  }
+
+  toString() {
+    return "a Point(" + this.getX() + ", " + this.getY() + ")";
+  }
+
+  ORIGIN = new Point(0, 0);
+
+}
+
+function log(obj) {
+  var div = document.createElement('div');
+  div.innerText = String(obj);
+  document.body.appendChild(div);
+}
+
+log(new Point(2, 3));
+log(Point.ORIGIN);
+  </script>
+  <body></body>
+</html>
